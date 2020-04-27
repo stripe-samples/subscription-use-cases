@@ -1,0 +1,14 @@
+{
+  "name": "subscriptions-with-card-and-direct-debit",
+  "version": "1.0.0",
+  "description": "A Stripe sample implementing card and direct debit methods for subscriptions.",
+  "require": {
+    "slim/slim": "^3.12",
+    "vlucas/phpdotenv": "^3.4",
+    "stripe/stripe-php": "^6.40",
+    "monolog/monolog": "^1.17"
+  },
+  "scripts": {
+    "start": "php -S localhost:4242 index.php"
+  }
+}
