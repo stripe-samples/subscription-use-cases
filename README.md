@@ -4,6 +4,17 @@ Create a subscription for an online service with fixed-price options, and work w
 This sample shows how to create a customer, set up a card for recurring use, and subscribe them to a subscription plan with
 [Stripe Billing](https://stripe.com/billing).
 
+
+**Demo**
+
+See a hosted version of the [sample](https://2ow1q.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/great-wood-2ow1q)
+
+The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
+
+Use the `4000000000003220` test card number to trigger a 3D Secure challenge flow.
+
+Read more about test cards on Stripe at https://stripe.com/docs/testing.
+
 <img src="subscription-with-fixed-price.png" alt="Preview of recipe" style="max-width:25%;">
 
 ### Features:
