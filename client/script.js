@@ -1,6 +1,6 @@
-var stripe, customer, setupIntent, plan, card;
+let stripe, customer, plan, card;
 
-var planInfo = {
+let planInfo = {
   basic: {
     amount: '500',
     interval: 'monthly',
@@ -13,14 +13,14 @@ var planInfo = {
   },
 };
 
-var stripeElements = function (publishableKey) {
+function stripeElements(publishableKey) {
   stripe = Stripe(publishableKey);
 
   if (document.getElementById('card-element')) {
-    var elements = stripe.elements();
+    let elements = stripe.elements();
 
     // Card Element styles
-    var style = {
+    let style = {
       base: {
         fontSize: '16px',
         color: '#32325d',
@@ -38,26 +38,21 @@ var stripeElements = function (publishableKey) {
     card.mount('#card-element');
 
     card.on('focus', function () {
-      var el = document.getElementById('card-element-errors');
+      let el = document.getElementById('card-element-errors');
       el.classList.add('focused');
     });
 
     card.on('blur', function () {
-      var el = document.getElementById('card-element-errors');
+      let el = document.getElementById('card-element-errors');
       el.classList.remove('focused');
     });
 
     card.on('change', function (event) {
-      var displayError = document.getElementById('card-element-errors');
-      if (event.error) {
-        displayError.textContent = event.error.message;
-      } else {
-        displayError.textContent = '';
-      }
+      displayError(event);
     });
   }
 
-  var signupForm = document.getElementById('signup-form');
+  let signupForm = document.getElementById('signup-form');
   if (signupForm) {
     signupForm.addEventListener('submit', function (evt) {
       evt.preventDefault();
@@ -65,27 +60,72 @@ var stripeElements = function (publishableKey) {
       // Create customer
       createCustomer().then((result) => {
         customer = result.customer;
-        setupIntent = result.setupIntent;
 
-        window.location.href =
-          '/plans.html?customerId=' +
-          customer.id +
-          '&client_secret=' +
-          setupIntent.client_secret;
+        window.location.href = '/plans.html?customerId=' + customer.id;
       });
     });
   }
-};
+
+  let paymentForm = document.getElementById('payment-form');
+  if (paymentForm) {
+    paymentForm.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      changeLoadingStatePlans(true);
+      // setup payment method & create subscription
+      setupPaymentMethod(card);
+    });
+  }
+}
+
+function displayError(event) {
+  changeLoadingStatePlans(false);
+  let displayError = document.getElementById('card-element-errors');
+  if (event.error) {
+    displayError.textContent = event.error.message;
+  } else {
+    displayError.textContent = '';
+  }
+}
+
+function setupPaymentMethod(card) {
+  const params = new URLSearchParams(document.location.search.substring(1));
+  const customerId = params.get('customerId');
+  // Set up payment method for recurring usage
+  let billingName = document.querySelector('#name').value;
+
+  let planId = document.getElementById('planId').innerHTML.toLowerCase();
+
+  stripe
+    .createPaymentMethod({
+      type: 'card',
+      card: card,
+      billing_details: {
+        name: billingName,
+      },
+    })
+    .then((result) => {
+      if (result.error) {
+        showCardError(result.error);
+      } else {
+        // Create the subscription
+        createSubscription(
+          customerId,
+          result.paymentMethod.id,
+          planId.toUpperCase()
+        );
+      }
+    });
+}
 
 function goToPaymentPage(planId) {
-  var date = new Date(); // Now
+  let date = new Date(); // Now
   date.setDate(date.getDate() + 30); // Set now + 30 days as the new date
 
   let day = date.getDate();
   let month = date.getMonth() + 1;
   let year = date.getFullYear();
 
-  var trialEndDate = month + '/' + day + '/' + year;
+  let trialEndDate = month + '/' + day + '/' + year;
 
   // Show the payment screen
   document.querySelector('#payment-form').classList.remove('hidden');
@@ -126,7 +166,7 @@ function switchPlans(newPlanIdSelected) {
   retrieveUpcomingInvoice(
     customerId,
     subscriptionId,
-    newPlanIdSelected,
+    newPlanIdSelected.toUpperCase(),
     trialEndDate
   ).then(function (upcomingInvoice) {
     // Change the plan details for plan upgrade/downgrade
@@ -136,7 +176,7 @@ function switchPlans(newPlanIdSelected) {
     ).innerHTML = currentSubscribedPlanId;
     document.getElementById('new-plan-selected').innerHTML = newPlanIdSelected;
 
-    var nextPaymentAttemptDateToDisplay = getDateStringFromUnixTimestamp(
+    let nextPaymentAttemptDateToDisplay = getDateStringFromUnixTimestamp(
       upcomingInvoice.next_payment_attempt
     );
     document.getElementById(
@@ -155,54 +195,76 @@ function switchPlans(newPlanIdSelected) {
   }
 }
 
-var confirmPlanChange = function () {
+function confirmPlanChange() {
   const params = new URLSearchParams(document.location.search.substring(1));
   const subscriptionId = params.get('subscriptionId');
-  var newPlanId = document.getElementById('new-plan-selected').innerHTML;
+  let newPlanId = document.getElementById('new-plan-selected').innerHTML;
 
-  updateSubscription(newPlanId, subscriptionId).then(function (result) {
-    var searchParams = new URLSearchParams(window.location.search);
+  updateSubscription(newPlanId.toUpperCase(), subscriptionId).then(function (
+    result
+  ) {
+    let searchParams = new URLSearchParams(window.location.search);
     searchParams.set('planId', newPlanId);
     searchParams.set('planHasChanged', true);
     window.location.search = searchParams.toString();
   });
-};
+}
 
-var setupPaymentMethod = function () {
-  const params = new URLSearchParams(document.location.search.substring(1));
-  const client_secret = params.get('client_secret');
-  const customerId = params.get('customerId');
-  // Set up payment method for recurring usage
-  var billingName = document.querySelector('#name').value;
-  changeLoadingStatePlans(true);
+function confirmSubscription(planId, subscription, paymentMethodId) {
+  console.log(subscription);
+  if (subscription.result && subscription.result.error) {
+    // The card has had an error
+    displayError(subscription.result);
+  } else {
+    const { pending_setup_intent, latest_invoice } = subscription;
+    const { payment_intent } = latest_invoice;
 
-  var planId = document.getElementById('planId').innerHTML.toLowerCase();
+    if (payment_intent) {
+      const { client_secret, status } = payment_intent;
 
-  stripe
-    .confirmCardSetup(client_secret, {
-      payment_method: {
-        card: card,
-        billing_details: {
-          name: billingName,
-        },
-      },
-    })
-    .then(function (result) {
-      if (result.error) {
-        showCardError(result.error);
+      if (status === 'requires_action') {
+        stripe.confirmCardPayment(client_secret).then(function (result) {
+          if (result.error) {
+            // start code flow to handle updating the payment details
+            // Display error message in your UI.
+            // The card was declined (i.e. insufficient funds, card has expired, etc)
+            displayError(result);
+          } else {
+            // Show a success message to your customer
+            subscriptionComplete(planId, subscription, paymentMethodId);
+          }
+        });
       } else {
-        // Create the subscription
-        createSubscription(
-          customerId,
-          result.setupIntent.payment_method,
-          planId
-        );
+        // No additional information was needed
+        // The subscription is completed, show a success message to your customer
+        // and provision access to your service.
+        subscriptionComplete(planId, subscription, paymentMethodId);
       }
-    });
-};
+    } else if (pending_setup_intent) {
+      const { client_secret, status } = subscription.pending_setup_intent;
+
+      if (status === 'requires_action') {
+        stripe
+          .confirmCardSetup(client_secret + '11111')
+          .then(function (result) {
+            if (result.error) {
+              // Display error.message in your UI.
+              displayError(result);
+            } else {
+              // The subscription is completed, show a success message to your customer
+              // and provision access to your service.
+              subscriptionComplete(planId, subscription, paymentMethodId);
+            }
+          });
+      }
+    } else {
+      subscriptionComplete(planId, subscription, paymentMethodId);
+    }
+  }
+}
 
 function createCustomer() {
-  var billingEmail = document.querySelector('#email').value;
+  let billingEmail = document.querySelector('#email').value;
 
   return fetch('/create-customer', {
     method: 'post',
@@ -233,11 +295,11 @@ function createSubscription(customerId, paymentMethodId, planId) {
       planId: planId,
     }),
   })
-    .then(function (response) {
+    .then((response) => {
       return response.json();
     })
-    .then(function (subscription) {
-      orderComplete(planId, subscription, paymentMethodId);
+    .then((subscription) => {
+      confirmSubscription(planId, subscription, paymentMethodId);
     });
 }
 
@@ -259,10 +321,10 @@ function retrieveUpcomingInvoice(
       newPlanId: newPlanId,
     }),
   })
-    .then(function (response) {
+    .then((response) => {
       return response.json();
     })
-    .then(function (invoice) {
+    .then((invoice) => {
       return invoice;
     });
 }
@@ -300,10 +362,10 @@ function updateSubscription(planId, subscriptionId) {
       newPlanId: planId,
     }),
   })
-    .then(function (response) {
+    .then((response) => {
       return response.json();
     })
-    .then(function (response) {
+    .then((response) => {
       return response;
     });
 }
@@ -318,10 +380,10 @@ function retrieveCustomerPaymentMethod(paymentMethodId) {
       paymentMethodId: paymentMethodId,
     }),
   })
-    .then(function (response) {
+    .then((response) => {
       return response.json();
     })
-    .then(function (response) {
+    .then((response) => {
       return response;
     });
 }
@@ -329,7 +391,7 @@ function retrieveCustomerPaymentMethod(paymentMethodId) {
 function showCardError(error) {
   changeLoadingStatePlans(false);
   // The card was declined (i.e. insufficient funds, card has expired, etc)
-  var errorMsg = document.getElementById('card-element-errors');
+  let errorMsg = document.getElementById('card-element-errors');
   errorMsg.textContent = error.message;
   setTimeout(function () {
     errorMsg.textContent = '';
@@ -343,10 +405,10 @@ function getConfig() {
       'Content-Type': 'application/json',
     },
   })
-    .then(function (response) {
+    .then((response) => {
       return response.json();
     })
-    .then(function (response) {
+    .then((response) => {
       // Set up Stripe Elements
       stripeElements(response.publishableKey);
     });
@@ -361,7 +423,7 @@ function capitalizeFirstLetter(string) {
 }
 
 function getDateStringFromUnixTimestamp(date) {
-  var nextPaymentAttemptDate = new Date(date * 1000);
+  let nextPaymentAttemptDate = new Date(date * 1000);
   let day = nextPaymentAttemptDate.getDate();
   let month = nextPaymentAttemptDate.getMonth() + 1;
   let year = nextPaymentAttemptDate.getFullYear();
@@ -371,12 +433,12 @@ function getDateStringFromUnixTimestamp(date) {
 
 // For demo purpose only
 function hasPlanChangedShowBanner() {
-  var params = new URLSearchParams(document.location.search.substring(1));
+  let params = new URLSearchParams(document.location.search.substring(1));
   if (params.get('planHasChanged')) {
     document.querySelector('#plan-changed-alert').classList.remove('hidden');
 
-    var current_period_end = params.get('current_period_end');
-    var planId = params.get('planId');
+    let current_period_end = params.get('current_period_end');
+    let planId = params.get('planId');
     document.getElementById('plan-changing-to').innerText = planId;
     document.getElementById(
       'plan-changing-on'
@@ -384,7 +446,7 @@ function hasPlanChangedShowBanner() {
     document.getElementById('subscription-status-text').innerText =
       'Subscription successfully updated';
   }
-  var paymentMethodId = params.get('paymentMethodId');
+  let paymentMethodId = params.get('paymentMethodId');
   if (paymentMethodId) {
     retrieveCustomerPaymentMethod(paymentMethodId).then(function (response) {
       document.getElementById('credit-card-last-four').innerText =
@@ -393,7 +455,8 @@ function hasPlanChangedShowBanner() {
         response.card.last4;
 
       document.getElementById('subscribed-plan').innerText =
-        'Current plan: ' + capitalizeFirstLetter(params.get('planId'));
+        'Current plan: ' +
+        capitalizeFirstLetter(params.get('planId').toLowerCase());
     });
   }
 }
@@ -410,15 +473,15 @@ function cancelChangePlan() {
 }
 
 // Shows the cancellation response
-var subscriptionCancelled = function () {
+function subscriptionCancelled() {
   document.querySelector('#subscription-cancelled').classList.remove('hidden');
   document.querySelector('#subscription-settings').classList.add('hidden');
   document.querySelector('#cancel-form').classList.add('hidden');
-};
+}
 
 /* Shows a success / error message when the payment is complete */
-var orderComplete = function (planId, subscription, paymentMethodId) {
-  var subscriptionId = subscription.id;
+function subscriptionComplete(planId, subscription, paymentMethodId) {
+  let subscriptionId = subscription.id;
   window.location.href =
     '/account.html?subscriptionId=' +
     subscriptionId +
@@ -432,9 +495,9 @@ var orderComplete = function (planId, subscription, paymentMethodId) {
     subscription.trial_end +
     '&paymentMethodId=' +
     paymentMethodId;
-};
+}
 
-var demoChangePlan = function () {
+function demoChangePlan() {
   document.querySelector('#basic').classList.remove('border-pasha');
   document.querySelector('#premium').classList.remove('border-pasha');
   document.querySelector('#plan-change-form').classList.add('hidden');
@@ -465,17 +528,17 @@ var demoChangePlan = function () {
   }
   // Hide cancel form if needed
   document.querySelector('#cancel-form').classList.add('hidden');
-};
+}
 
 // Changes the plan selected
-var changePlanSelection = function (planId) {
+function changePlanSelection(planId) {
   document.querySelector('#basic').classList.remove('border-pasha');
   document.querySelector('#premium').classList.remove('border-pasha');
   document.querySelector('#' + planId).classList.add('border-pasha');
-};
+}
 
 // Show a spinner on subscription submission
-var changeLoadingState = function (isLoading) {
+function changeLoadingState(isLoading) {
   if (isLoading) {
     document.querySelector('#button-text').classList.add('hidden');
     document.querySelector('#signup-form button').disabled = true;
@@ -485,10 +548,10 @@ var changeLoadingState = function (isLoading) {
     document.querySelector('#loading').classList.remove('loading');
     document.querySelector('#button-text').classList.remove('hidden');
   }
-};
+}
 
 // Show a spinner on subscription submission
-var changeLoadingStatePlans = function (isLoading) {
+function changeLoadingStatePlans(isLoading) {
   if (isLoading) {
     let buttons = document.querySelectorAll('#button-text');
     let loading = document.querySelectorAll('#loading');
@@ -504,4 +567,4 @@ var changeLoadingStatePlans = function (isLoading) {
       loading[i].classList.remove('loading');
     }
   }
-};
+}

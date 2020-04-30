@@ -65,7 +65,7 @@ post '/create-subscription' do
     trial_from_plan: true,
     items: [
       {
-        plan: ENV[data['planId'].upcase]
+        plan: ENV[data['planId']]
       }
     ],
     expand: ['latest_invoice.payment_intent']
@@ -92,7 +92,7 @@ post '/retrieve-upcoming-invoice' do
         deleted: true
       },
       {
-        plan: ENV[data['newPlanId'].upcase],
+        plan: ENV[data['newPlanId']],
         deleted: false
       }
     ]
@@ -122,7 +122,7 @@ post '/update-subscription' do
     items: [
       {
         id: subscription.items.data[0].id,
-        plan: ENV[data['newPlanId'].upcase]
+        plan: ENV[data['newPlanId']]
       }
     ]
   )
@@ -198,7 +198,7 @@ post '/webhook' do
 
   if event_type == 'customer.subscription.deleted'
     # handle subscription cancelled automatically based
-    # upon your subscription settings. Or if the user cancels it. 
+    # upon your subscription settings. Or if the user cancels it.
     # puts data_object
   end
 

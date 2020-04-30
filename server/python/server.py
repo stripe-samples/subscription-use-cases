@@ -79,7 +79,7 @@ def createSubscription():
             trial_from_plan=True,
             items=[
                 {
-                    'plan': os.getenv(data['planId'].upper())
+                    'plan': os.getenv(data['planId'])
                 }
             ]
         )
@@ -106,7 +106,7 @@ def retrieveUpcomingInvoice():
                     'deleted': True
                 },
                 {
-                    'plan': os.getenv(data['newPlanId'].upper()),
+                    'plan': os.getenv(data['newPlanId']),
                     'deleted': False
                 }
             ],
@@ -139,7 +139,7 @@ def updateSubscription():
             cancel_at_period_end=False,
             items=[{
                 'id': subscription['items']['data'][0].id,
-                'plan': os.getenv(data['newPlanId'].upper()),
+                'plan': os.getenv(data['newPlanId']),
             }]
         )
         return jsonify(updatedSubscription)

@@ -71,7 +71,7 @@ $app->post('/create-subscription', function (Request $request, Response $respons
     'trial_from_plan' => true,
     'items' => [
       [
-        'plan' => getenv(strtoupper($body->planId)),
+        'plan' => getenv($body->planId),
       ],
     ],
   ]);
@@ -97,7 +97,7 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
         'deleted' => TRUE
       ],
       [
-        'plan' => getenv(strtoupper($body->newPlanId)),
+        'plan' => getenv($body->newPlanId),
         'deleted' => FALSE
       ],
     ]
@@ -127,7 +127,7 @@ $app->post('/update-subscription', function (Request $request, Response $respons
     'items' => [
       [
         'id' => $subscription->items->data[0]->id,
-        'plan' => getenv(strtoupper($body->newPlanId)),
+        'plan' => getenv($body->newPlanId),
       ],
     ],
   ]);

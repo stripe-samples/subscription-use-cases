@@ -33,32 +33,49 @@ app.post('/create-customer', async (req, res) => {
     email: req.body.email,
   });
 
-  // save the customer.id as stripe-customerId
-  // in your memcache/database.
+  // save the customer.id as stripeCustomerId
+  // in your database.
 
   // Create a SetupIntent to set up our payment methods recurring usage
-  const setupIntent = await stripe.setupIntents.create({
-    payment_method_types: ['card'],
-    customer: customer.id,
-  });
+  // const setupIntent = await stripe.setupIntents.create({
+  //   payment_method_types: ['card'],
+  //   customer: customer.id,
+  // });
 
-  res.send({ customer, setupIntent });
+  // res.send({ customer, setupIntent });
+  res.send({ customer });
 });
 
 app.post('/create-subscription', async (req, res) => {
   // Set the default payment method on the customer
-  let update = await stripe.customers.update(req.body.customerId, {
-    invoice_settings: {
-      default_payment_method: req.body.paymentMethodId,
-    },
-  });
+
+  try {
+    await stripe.paymentMethods.attach(req.body.paymentMethodId, {
+      customer: req.body.customerId,
+    });
+  } catch (error) {
+    return res
+      .status('402')
+      .send({ result: { error: { message: error.message } } });
+  }
+
+  let updateCustomerDefaultPaymentMethod = await stripe.customers.update(
+    req.body.customerId,
+    {
+      invoice_settings: {
+        default_payment_method: req.body.paymentMethodId,
+      },
+    }
+  );
 
   // Create the subscription
   const subscription = await stripe.subscriptions.create({
     customer: req.body.customerId,
-    items: [{ plan: process.env[req.body.planId.toUpperCase()] }],
-    trial_from_plan: true,
+    items: [{ plan: process.env[req.body.planId] }],
+    expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+    // trial_from_plan: true,
   });
+
   res.send(subscription);
 });
 
@@ -71,14 +88,14 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
     subscription_prorate: true,
     customer: req.body.customerId,
     subscription: req.body.subscriptionId,
-    subscription_trial_end: req.body.subscription_trial_end,
+    // subscription_trial_end: req.body.subscription_trial_end || '',
     subscription_items: [
       {
         id: subscription.items.data[0].id,
         deleted: true,
       },
       {
-        plan: process.env[req.body.newPlanId.toUpperCase()],
+        plan: process.env[req.body.newPlanId],
         deleted: false,
       },
     ],
@@ -105,7 +122,7 @@ app.post('/update-subscription', async (req, res) => {
       items: [
         {
           id: subscription.items.data[0].id,
-          plan: process.env[req.body.newPlanId.toUpperCase()],
+          plan: process.env[req.body.newPlanId],
         },
       ],
     }
