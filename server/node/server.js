@@ -72,11 +72,49 @@ app.post('/create-subscription', async (req, res) => {
   const subscription = await stripe.subscriptions.create({
     customer: req.body.customerId,
     items: [{ plan: process.env[req.body.planId] }],
-    expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
-    // trial_from_plan: true,
+    expand: ['latest_invoice.payment_intent'],
   });
 
   res.send(subscription);
+});
+
+app.post('/update-customer-payment-method-retry-invoice', async (req, res) => {
+  // Set the default payment method on the customer
+
+  try {
+    let updateAndAttach = await stripe.paymentMethods.attach(
+      req.body.paymentMethodId,
+      {
+        customer: req.body.customerId,
+      }
+    );
+    let updateCustomerDefaultPaymentMethod = await stripe.customers.update(
+      req.body.customerId,
+      {
+        invoice_settings: {
+          default_payment_method: req.body.paymentMethodId,
+        },
+      }
+    );
+  } catch (error) {
+    // in case card_decline error
+    return res
+      .status('402')
+      .send({ result: { error: { message: error.message } } });
+  }
+
+  try {
+    // Pay the invoice
+    const invoice = await stripe.invoices.pay(req.body.invoiceId, {
+      expand: ['payment_intent'],
+    });
+    res.send(invoice);
+  } catch (error) {
+    const invoice = await stripe.invoices.retrieve(req.body.invoiceId, {
+      expand: ['payment_intent'],
+    });
+    res.send(invoice);
+  }
 });
 
 app.post('/retrieve-upcoming-invoice', async (req, res) => {

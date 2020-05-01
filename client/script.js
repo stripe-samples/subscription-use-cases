@@ -75,6 +75,16 @@ function stripeElements(publishableKey) {
       setupPaymentMethod(card);
     });
   }
+
+  let updatePaymentForm = document.getElementById('update-payment-form');
+  if (updatePaymentForm) {
+    updatePaymentForm.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      changeLoadingStatePlans(true);
+      // setup payment method & create subscription
+      updatePaymentMethodAndRetryInvoicePayment(card);
+    });
+  }
 }
 
 function displayError(event) {
@@ -117,6 +127,32 @@ function setupPaymentMethod(card) {
     });
 }
 
+function updatePaymentMethodAndRetryInvoicePayment(card) {
+  const params = new URLSearchParams(document.location.search.substring(1));
+  let customerId = params.get('customerId');
+  let invoiceId = params.get('invoiceId');
+  let planId = params.get('planId');
+
+  stripe
+    .createPaymentMethod({
+      type: 'card',
+      card: card,
+    })
+    .then((result) => {
+      if (result.error) {
+        showCardError(result.error);
+      } else {
+        // Update the payment method and retry invoice payment
+        retryInvoiceWithNewPaymentMethod(
+          customerId,
+          result.paymentMethod.id,
+          invoiceId,
+          planId
+        );
+      }
+    });
+}
+
 function goToPaymentPage(planId) {
   let date = new Date(); // Now
   date.setDate(date.getDate() + 30); // Set now + 30 days as the new date
@@ -131,8 +167,10 @@ function goToPaymentPage(planId) {
   document.querySelector('#payment-form').classList.remove('hidden');
   // Display trial end date by showing 30 days in
   // the future
-  document.getElementById('no-charge-until').innerHTML =
-    '→ No charge until ' + trialEndDate;
+
+  document.getElementById('total-due-now').innerText = getFormattedAmount(
+    planInfo[planId].amount
+  );
 
   // Add the plan selected
   document.getElementById('plan-selected').innerHTML =
@@ -210,14 +248,50 @@ function confirmPlanChange() {
   });
 }
 
-function confirmSubscription(planId, subscription, paymentMethodId) {
-  console.log(subscription);
-  if (subscription.result && subscription.result.error) {
+function requiresPaymentMethodError(
+  customerId,
+  invoiceId,
+  amountDue,
+  currentPeriodEnd,
+  planId
+) {
+  window.location.href =
+    '/updateCard.html?customerId=' +
+    customerId +
+    '&planId=' +
+    planId +
+    '&invoiceId=' +
+    invoiceId +
+    '&amountDue=' +
+    amountDue +
+    '&currentPeriodEnd=' +
+    currentPeriodEnd;
+}
+
+function confirmSubscription({
+  planId: planId,
+  subscription: subscription,
+  paymentMethodId: paymentMethodId,
+  invoice: invoice,
+}) {
+  if (
+    (subscription && subscription.result && subscription.result.error) ||
+    (invoice && invoice.result && invoice.result.error)
+  ) {
     // The card has had an error
-    displayError(subscription.result);
+    displayError(
+      (subscription && subscription.result) || (invoice && invoice.result)
+    );
   } else {
-    const { pending_setup_intent, latest_invoice } = subscription;
-    const { payment_intent } = latest_invoice;
+    let pending_setup_intent;
+    let payment_intent;
+    if (subscription) {
+      pending_setup_intent = subscription.pending_setup_intent;
+      const { latest_invoice } = subscription;
+      payment_intent = latest_invoice.payment_intent;
+    } else if (invoice) {
+      payment_intent = invoice.payment_intent;
+    }
 
     if (payment_intent) {
       const { client_secret, status } = payment_intent;
@@ -231,34 +305,61 @@ function confirmSubscription(planId, subscription, paymentMethodId) {
             displayError(result);
           } else {
             // Show a success message to your customer
-            subscriptionComplete(planId, subscription, paymentMethodId);
+            subscriptionComplete({
+              planId: planId,
+              subscription: subscription,
+              paymentMethodId: paymentMethodId,
+              invoice: invoice,
+            });
           }
         });
+      } else if (status === 'requires_payment_method') {
+        requiresPaymentMethodError(
+          subscription.customer,
+          subscription.latest_invoice.id,
+          subscription.latest_invoice.amount_due,
+          subscription.current_period_end,
+          planId
+        );
       } else {
         // No additional information was needed
         // The subscription is completed, show a success message to your customer
         // and provision access to your service.
-        subscriptionComplete(planId, subscription, paymentMethodId);
+        // subscriptionComplete(planId, subscription, paymentMethodId);
+        subscriptionComplete({
+          planId: planId,
+          subscription: subscription,
+          paymentMethodId: paymentMethodId,
+          invoice: invoice,
+        });
       }
     } else if (pending_setup_intent) {
       const { client_secret, status } = subscription.pending_setup_intent;
 
       if (status === 'requires_action') {
-        stripe
-          .confirmCardSetup(client_secret + '11111')
-          .then(function (result) {
-            if (result.error) {
-              // Display error.message in your UI.
-              displayError(result);
-            } else {
-              // The subscription is completed, show a success message to your customer
-              // and provision access to your service.
-              subscriptionComplete(planId, subscription, paymentMethodId);
-            }
-          });
+        stripe.confirmCardSetup(client_secret).then(function (result) {
+          if (result.error) {
+            // Display error.message in your UI.
+            displayError(result);
+          } else {
+            // The subscription is completed, show a success message to your customer
+            // and provision access to your service.
+            subscriptionComplete({
+              planId: planId,
+              subscription: subscription,
+              paymentMethodId: paymentMethodId,
+              invoice: invoice,
+            });
+          }
+        });
       }
     } else {
-      subscriptionComplete(planId, subscription, paymentMethodId);
+      subscriptionComplete({
+        planId: planId,
+        subscription: subscription,
+        paymentMethodId: paymentMethodId,
+        invoice: invoice,
+      });
     }
   }
 }
@@ -299,7 +400,40 @@ function createSubscription(customerId, paymentMethodId, planId) {
       return response.json();
     })
     .then((subscription) => {
-      confirmSubscription(planId, subscription, paymentMethodId);
+      confirmSubscription({
+        planId: planId,
+        subscription: subscription,
+        paymentMethodId: paymentMethodId,
+      });
+    });
+}
+
+function retryInvoiceWithNewPaymentMethod(
+  customerId,
+  paymentMethodId,
+  invoiceId,
+  planId
+) {
+  return fetch('/update-customer-payment-method-retry-invoice', {
+    method: 'post',
+    headers: {
+      'Content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      customerId: customerId,
+      paymentMethodId: paymentMethodId,
+      invoiceId: invoiceId,
+    }),
+  })
+    .then((response) => {
+      return response.json();
+    })
+    .then((invoice) => {
+      confirmSubscription({
+        planId: planId,
+        paymentMethodId: paymentMethodId,
+        invoice: invoice,
+      });
     });
 }
 
@@ -418,6 +552,27 @@ getConfig();
 
 /* ------ Sample helpers ------- */
 
+function getFormattedAmount(amount) {
+  // Format price details and detect zero decimal currencies
+  var amount = amount;
+  var numberFormat = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    currencyDisplay: 'symbol',
+  });
+  var parts = numberFormat.formatToParts(amount);
+  var zeroDecimalCurrency = true;
+  for (var part of parts) {
+    if (part.type === 'decimal') {
+      zeroDecimalCurrency = false;
+    }
+  }
+  amount = zeroDecimalCurrency ? amount : amount / 100;
+  var formattedAmount = numberFormat.format(amount);
+
+  return formattedAmount;
+}
+
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
@@ -459,6 +614,14 @@ function hasPlanChangedShowBanner() {
         capitalizeFirstLetter(params.get('planId').toLowerCase());
     });
   }
+
+  let invoiceId = params.get('invoiceId');
+  let amountDue = params.get('amountDue');
+  if (invoiceId) {
+    document.getElementById('total-due-now').innerText = getFormattedAmount(
+      amountDue
+    );
+  }
 }
 
 hasPlanChangedShowBanner();
@@ -480,19 +643,35 @@ function subscriptionCancelled() {
 }
 
 /* Shows a success / error message when the payment is complete */
-function subscriptionComplete(planId, subscription, paymentMethodId) {
-  let subscriptionId = subscription.id;
+function subscriptionComplete({
+  planId: planId,
+  subscription: subscription,
+  paymentMethodId: paymentMethodId,
+  invoice: invoice,
+}) {
+  let subscriptionId;
+  let current_period_end;
+  let customerId;
+  if (subscription) {
+    subscritionId = subscription.id;
+    currentPeriodEnd = subscription.current_period_end;
+    customerId = subscription.customer;
+  } else {
+    const params = new URLSearchParams(document.location.search.substring(1));
+    subscriptionId = invoice.subscription;
+    currentPeriodEnd = params.get('currentPeriodEnd');
+    customerId = invoice.customer;
+  }
+
   window.location.href =
     '/account.html?subscriptionId=' +
     subscriptionId +
     '&planId=' +
     planId +
     '&current_period_end=' +
-    subscription.current_period_end +
+    current_period_end +
     '&customerId=' +
-    subscription.customer +
-    '&trialEndDate=' +
-    subscription.trial_end +
+    customerId +
     '&paymentMethodId=' +
     paymentMethodId;
 }

@@ -31,74 +31,10 @@
       </div>
     </nav>
     <div id="plans-and-payment">
-      <div id="plans-form">
-        <div class="text-center text-pasha font-bold text-2xl mt-6 mb-6">
-          Subscribe to a plan
-        </div>
-
-        <div class="flex justify-center">
-          <div
-            id="basic"
-            class="w-64 rounded overflow-hidden border rounded-md p-2 md:mr-4 mb-4"
-          >
-            <div class="md:px-6 py-4">
-              <div class="text-gray-500 text-xl mb-2 font-medium">Basic</div>
-              <p class="text-pasha text-2xl font-extrabold">
-                $5.00
-              </p>
-              <span class="text-gray-500 text-xs font-medium">
-                Per month, billed monthly
-              </span>
-              <div class="flex justify-center mt-6">
-                <button
-                  id="submit-basic"
-                  onClick="goToPaymentPage('basic')"
-                  class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
-                  type="submit"
-                >
-                  <div class="w-auto -mx-2 md:mx-0">
-                    <div id="loading" class=""></div>
-                    <span id="button-text">Continue</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            id="premium"
-            class="w-64 rounded overflow-hidden border rounded-md p-2 md:mr-4 mb-4"
-          >
-            <div class="md:px-6 py-4">
-              <div class="text-gray-500 text-xl mb-2 font-medium">Premium</div>
-              <p class="text-pasha text-2xl font-extrabold">
-                $15.00
-              </p>
-              <span class="text-gray-500 text-xs font-medium">
-                Per month, billed monthly
-              </span>
-              <div class="flex justify-center mt-6">
-                <button
-                  id="submit-premium"
-                  onClick="goToPaymentPage('premium')"
-                  class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
-                  type="submit"
-                >
-                  <div class="w-auto -mx-2 md:mx-0">
-                    <div id="loading" class=""></div>
-                    <span id="button-text">Continue</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="payment-form" class="w-5/6 flex justify-center hidden">
+      <div id="" class="w-5/6 flex justify-center mt-6">
         <div class="inline-block border p-4 rounded-md">
           <div class="font-bold text-xl mb-2">
-            Enter your card details. Your subscription will start now.
+            Payment failed. Please enter new card details.
           </div>
           <p class="text-gray-700 text-base">
             → Total due now <span id="total-due-now">$0.00</span>
@@ -106,24 +42,7 @@
           <p id="plan-selected" class="text-gray-700 text-base mb-4"></p>
 
           <div class="w-full max-w-lg">
-            <div class="flex flex-wrap -mx-3 mb-2">
-              <div class="w-full px-3 md:mb-0">
-                <label
-                  class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-                  for="grid-first-name"
-                >
-                  Full name
-                </label>
-                <input
-                  class="appearance-none block w-full bg-gray-200 text-gray-700 border rounded-md py-3 px-2 mb-3 leading-tight focus:outline-none focus:bg-white"
-                  id="name"
-                  type="text"
-                  placeholder="First and last name"
-                  required
-                />
-              </div>
-            </div>
-            <form id="payment-form">
+            <form id="update-payment-form">
               <div class="flex flex-wrap -mx-3 mb-3">
                 <div class="w-full px-3 mb-0">
                   <label
@@ -150,7 +69,7 @@
               >
                 <div class="">
                   <div id="loading" class=""></div>
-                  <span id="button-text">Subscribe</span>
+                  <span id="button-text">Update card details</span>
                 </div>
               </button>
             </form>
