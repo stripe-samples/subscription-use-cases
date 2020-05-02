@@ -273,6 +273,7 @@ function confirmSubscription({
   subscription: subscription,
   paymentMethodId: paymentMethodId,
   invoice: invoice,
+    isRetry: isRetry,
 }) {
   let pending_setup_intent;
   let payment_intent;
@@ -287,8 +288,8 @@ function confirmSubscription({
   if (payment_intent) {
     const { client_secret, status } = payment_intent;
 
-    if (status === 'requires_action') {
-      stripe.confirmCardPayment(client_secret).then(function (result) {
+    if (status === 'requires_action' || (status === 'requires_payment_method' && isRetry)) {
+        stripe.confirmCardPayment(client_secret, {payment_method: paymentMethodId}).then(function (result) {
         if (result.error) {
           // start code flow to handle updating the payment details
           // Display error message in your UI.
@@ -328,7 +329,7 @@ function confirmSubscription({
     const { client_secret, status } = subscription.pending_setup_intent;
 
     if (status === 'requires_action') {
-      stripe.confirmCardSetup(client_secret).then(function (result) {
+        stripe.confirmCardSetup(client_secret, {payment_method: paymentMethodId}).then(function (result) {
         if (result.error) {
           // Display error.message in your UI.
           displayError(result);
@@ -409,7 +410,8 @@ function createSubscription(customerId, paymentMethodId, planId) {
         confirmSubscription({
           planId: planId,
           subscription: result,
-          paymentMethodId: paymentMethodId,
+            paymentMethodId: paymentMethodId,
+            isRetry: false,
         });
       }
     });
@@ -443,7 +445,8 @@ function retryInvoiceWithNewPaymentMethod(
         confirmSubscription({
           planId: planId,
           paymentMethodId: paymentMethodId,
-          invoice: result,
+            invoice: result,
+            isRetry: true,
         });
       }
     });

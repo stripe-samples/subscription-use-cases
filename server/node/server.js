@@ -80,13 +80,13 @@ app.post('/update-customer-payment-method-retry-invoice', async (req, res) => {
   // Set the default payment method on the customer
 
   try {
-    let updateAndAttach = await stripe.paymentMethods.attach(
+    await stripe.paymentMethods.attach(
       req.body.paymentMethodId,
       {
         customer: req.body.customerId,
       }
     );
-    let updateCustomerDefaultPaymentMethod = await stripe.customers.update(
+    await stripe.customers.update(
       req.body.customerId,
       {
         invoice_settings: {
@@ -101,18 +101,10 @@ app.post('/update-customer-payment-method-retry-invoice', async (req, res) => {
       .send({ result: { error: { message: error.message } } });
   }
 
-  try {
-    // Pay the invoice
-    const invoice = await stripe.invoices.pay(req.body.invoiceId, {
-      expand: ['payment_intent'],
-    });
-    res.send(invoice);
-  } catch (error) {
-    const invoice = await stripe.invoices.retrieve(req.body.invoiceId, {
-      expand: ['payment_intent'],
-    });
-    res.send(invoice);
-  }
+  const invoice = await stripe.invoices.retrieve(req.body.invoiceId, {
+     expand: ['payment_intent'],
+  });
+  res.send(invoice);
 });
 
 app.post('/retrieve-upcoming-invoice', async (req, res) => {
