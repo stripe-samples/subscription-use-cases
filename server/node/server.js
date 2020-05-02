@@ -54,9 +54,7 @@ app.post('/create-subscription', async (req, res) => {
       customer: req.body.customerId,
     });
   } catch (error) {
-    return res
-      .status('402')
-      .send({ result: { error: { message: error.message } } });
+    return res.status('402').send({ error: { message: error.message } });
   }
 
   let updateCustomerDefaultPaymentMethod = await stripe.customers.update(

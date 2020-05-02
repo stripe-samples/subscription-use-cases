@@ -274,86 +274,49 @@ function confirmSubscription({
   paymentMethodId: paymentMethodId,
   invoice: invoice,
 }) {
-  if (
-    (subscription && subscription.result && subscription.result.error) ||
-    (invoice && invoice.result && invoice.result.error)
-  ) {
-    // The card has had an error
-    displayError(
-      (subscription && subscription.result) || (invoice && invoice.result)
-    );
-  } else {
-    let pending_setup_intent;
-    let payment_intent;
-    if (subscription) {
-      pending_setup_intent = subscription.pending_setup_intent;
-      const { latest_invoice } = subscription;
-      payment_intent = latest_invoice.payment_intent;
-    } else if (invoice) {
-      payment_intent = invoice.payment_intent;
-    }
+  let pending_setup_intent;
+  let payment_intent;
+  if (subscription) {
+    pending_setup_intent = subscription.pending_setup_intent;
+    const { latest_invoice } = subscription;
+    payment_intent = latest_invoice.payment_intent;
+  } else if (invoice) {
+    payment_intent = invoice.payment_intent;
+  }
 
-    if (payment_intent) {
-      const { client_secret, status } = payment_intent;
+  if (payment_intent) {
+    const { client_secret, status } = payment_intent;
 
-      if (status === 'requires_action') {
-        stripe.confirmCardPayment(client_secret).then(function (result) {
-          if (result.error) {
-            // start code flow to handle updating the payment details
-            // Display error message in your UI.
-            // The card was declined (i.e. insufficient funds, card has expired, etc)
-            displayError(result);
-          } else {
-            // Show a success message to your customer
-            subscriptionComplete({
-              planId: planId,
-              subscription: subscription,
-              paymentMethodId: paymentMethodId,
-              invoice: invoice,
-            });
-          }
-        });
-      } else if (status === 'requires_payment_method') {
-        requiresPaymentMethodError(
-          subscription.customer,
-          subscription.latest_invoice.id,
-          subscription.latest_invoice.amount_due,
-          subscription.current_period_end,
-          planId
-        );
-      } else {
-        // No additional information was needed
-        // The subscription is completed, show a success message to your customer
-        // and provision access to your service.
-        // subscriptionComplete(planId, subscription, paymentMethodId);
-        subscriptionComplete({
-          planId: planId,
-          subscription: subscription,
-          paymentMethodId: paymentMethodId,
-          invoice: invoice,
-        });
-      }
-    } else if (pending_setup_intent) {
-      const { client_secret, status } = subscription.pending_setup_intent;
-
-      if (status === 'requires_action') {
-        stripe.confirmCardSetup(client_secret).then(function (result) {
-          if (result.error) {
-            // Display error.message in your UI.
-            displayError(result);
-          } else {
-            // The subscription is completed, show a success message to your customer
-            // and provision access to your service.
-            subscriptionComplete({
-              planId: planId,
-              subscription: subscription,
-              paymentMethodId: paymentMethodId,
-              invoice: invoice,
-            });
-          }
-        });
-      }
+    if (status === 'requires_action') {
+      stripe.confirmCardPayment(client_secret).then(function (result) {
+        if (result.error) {
+          // start code flow to handle updating the payment details
+          // Display error message in your UI.
+          // The card was declined (i.e. insufficient funds, card has expired, etc)
+          displayError(result);
+        } else {
+          // Show a success message to your customer
+          subscriptionComplete({
+            planId: planId,
+            subscription: subscription,
+            paymentMethodId: paymentMethodId,
+            invoice: invoice,
+          });
+        }
+      });
+    } else if (status === 'requires_payment_method') {
+      requiresPaymentMethodError(
+        subscription.customer,
+        subscription.latest_invoice.id,
+        subscription.latest_invoice.amount_due,
+        subscription.current_period_end,
+        planId
+      );
     } else {
+      // No additional information was needed
+      // The subscription is completed, show a success message to your customer
+      // and provision access to your service.
+      // subscriptionComplete(planId, subscription, paymentMethodId);
       subscriptionComplete({
         planId: planId,
         subscription: subscription,
@@ -361,6 +324,44 @@ function confirmSubscription({
         invoice: invoice,
       });
     }
+  } else if (pending_setup_intent) {
+    const { client_secret, status } = subscription.pending_setup_intent;
+
+    if (status === 'requires_action') {
+      stripe.confirmCardSetup(client_secret).then(function (result) {
+        if (result.error) {
+          // Display error.message in your UI.
+          displayError(result);
+        } else {
+          // The subscription is completed, show a success message to your customer
+          // and provision access to your service.
+          subscriptionComplete({
+            planId: planId,
+            subscription: subscription,
+            paymentMethodId: paymentMethodId,
+            invoice: invoice,
+          });
+        }
+      });
+    } else {
+      // No additional information was needed
+      // The subscription is completed, show a success message to your customer
+      // and provision access to your service.
+      // subscriptionComplete(planId, subscription, paymentMethodId);
+      subscriptionComplete({
+        planId: planId,
+        subscription: subscription,
+        paymentMethodId: paymentMethodId,
+        invoice: invoice,
+      });
+    }
+  } else {
+    subscriptionComplete({
+      planId: planId,
+      subscription: subscription,
+      paymentMethodId: paymentMethodId,
+      invoice: invoice,
+    });
   }
 }
 
@@ -399,12 +400,18 @@ function createSubscription(customerId, paymentMethodId, planId) {
     .then((response) => {
       return response.json();
     })
-    .then((subscription) => {
-      confirmSubscription({
-        planId: planId,
-        subscription: subscription,
-        paymentMethodId: paymentMethodId,
-      });
+    .then((result) => {
+      console.log(result.error);
+      if (result.error) {
+        // The card has had an error
+        displayError(result.error);
+      } else {
+        confirmSubscription({
+          planId: planId,
+          subscription: result,
+          paymentMethodId: paymentMethodId,
+        });
+      }
     });
 }
 
@@ -428,12 +435,17 @@ function retryInvoiceWithNewPaymentMethod(
     .then((response) => {
       return response.json();
     })
-    .then((invoice) => {
-      confirmSubscription({
-        planId: planId,
-        paymentMethodId: paymentMethodId,
-        invoice: invoice,
-      });
+    .then((result) => {
+      if (result.error) {
+        // The card has had an error
+        displayError(result.error);
+      } else {
+        confirmSubscription({
+          planId: planId,
+          paymentMethodId: paymentMethodId,
+          invoice: result,
+        });
+      }
     });
 }
 
