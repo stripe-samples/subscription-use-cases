@@ -3,11 +3,13 @@ let stripe, customer, plan, card;
 let planInfo = {
   basic: {
     amount: '500',
+    name: 'Basic',
     interval: 'monthly',
     currency: 'USD',
   },
   premium: {
     amount: '1500',
+    name: 'Premium',
     interval: 'monthly',
     currency: 'USD',
   },
@@ -71,18 +73,25 @@ function stripeElements(publishableKey) {
     paymentForm.addEventListener('submit', function (evt) {
       evt.preventDefault();
       changeLoadingStatePlans(true);
-      // setup payment method & create subscription
-      setupPaymentMethod(card);
-    });
-  }
 
-  let updatePaymentForm = document.getElementById('update-payment-form');
-  if (updatePaymentForm) {
-    updatePaymentForm.addEventListener('submit', function (evt) {
-      evt.preventDefault();
-      changeLoadingStatePlans(true);
-      // setup payment method & create subscription
-      updatePaymentMethodAndRetryInvoicePayment(card);
+      // If a previous payment was attempted, get the lastest invoice
+      const latestInvoicePaymentIntentStatus = localStorage.getItem(
+        'latestInvoicePaymentIntentStatus'
+      );
+
+      if (latestInvoicePaymentIntentStatus === 'requires_payment_method') {
+        const latestInvoiceId = localStorage.getItem('latestInvoiceId');
+        const isPaymentRetry = true;
+        // create new payment method & retry payment on invoice with new payment method
+        createPaymentMethod({
+          card,
+          isPaymentRetry,
+          latestInvoiceId,
+        });
+      } else {
+        // create new payment method & create subscription
+        createPaymentMethod({ card });
+      }
     });
   }
 }
@@ -91,19 +100,20 @@ function displayError(event) {
   changeLoadingStatePlans(false);
   let displayError = document.getElementById('card-element-errors');
   if (event.error) {
+    console.log(event.error.message);
     displayError.textContent = event.error.message;
   } else {
     displayError.textContent = '';
   }
 }
 
-function setupPaymentMethod(card) {
+function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
   const params = new URLSearchParams(document.location.search.substring(1));
   const customerId = params.get('customerId');
   // Set up payment method for recurring usage
   let billingName = document.querySelector('#name').value;
 
-  let planId = document.getElementById('planId').innerHTML.toLowerCase();
+  let planId = document.getElementById('planId').innerHTML.toUpperCase();
 
   stripe
     .createPaymentMethod({
@@ -115,58 +125,27 @@ function setupPaymentMethod(card) {
     })
     .then((result) => {
       if (result.error) {
-        showCardError(result.error);
+        displayError(error);
       } else {
-        // Create the subscription
-        createSubscription(
-          customerId,
-          result.paymentMethod.id,
-          planId.toUpperCase()
-        );
-      }
-    });
-}
-
-function updatePaymentMethodAndRetryInvoicePayment(card) {
-  const params = new URLSearchParams(document.location.search.substring(1));
-  let customerId = params.get('customerId');
-  let invoiceId = params.get('invoiceId');
-  let planId = params.get('planId');
-
-  stripe
-    .createPaymentMethod({
-      type: 'card',
-      card: card,
-    })
-    .then((result) => {
-      if (result.error) {
-        showCardError(result.error);
-      } else {
-        // Update the payment method and retry invoice payment
-        retryInvoiceWithNewPaymentMethod(
-          customerId,
-          result.paymentMethod.id,
-          invoiceId,
-          planId
-        );
+        if (isPaymentRetry) {
+          // Update the payment method and retry invoice payment
+          retryInvoiceWithNewPaymentMethod(
+            customerId,
+            result.paymentMethod.id,
+            invoiceId,
+            planId
+          );
+        } else {
+          // Create the subscription
+          createSubscription(customerId, result.paymentMethod.id, planId);
+        }
       }
     });
 }
 
 function goToPaymentPage(planId) {
-  let date = new Date(); // Now
-  date.setDate(date.getDate() + 30); // Set now + 30 days as the new date
-
-  let day = date.getDate();
-  let month = date.getMonth() + 1;
-  let year = date.getFullYear();
-
-  let trialEndDate = month + '/' + day + '/' + year;
-
   // Show the payment screen
   document.querySelector('#payment-form').classList.remove('hidden');
-  // Display trial end date by showing 30 days in
-  // the future
 
   document.getElementById('total-due-now').innerText = getFormattedAmount(
     planInfo[planId].amount
@@ -176,7 +155,7 @@ function goToPaymentPage(planId) {
   document.getElementById('plan-selected').innerHTML =
     '→ Subscribing to ' +
     '<span id="planId" class="font-bold">' +
-    capitalizeFirstLetter(planId) +
+    planInfo[planId].name +
     '</span>';
 
   // Update the border to show which plan is selected
@@ -206,7 +185,7 @@ function switchPlans(newPlanIdSelected) {
     subscriptionId,
     newPlanIdSelected.toUpperCase(),
     trialEndDate
-  ).then(function (upcomingInvoice) {
+  ).then((upcomingInvoice) => {
     // Change the plan details for plan upgrade/downgrade
     // calculate if it's upgrade or downgrade
     document.getElementById(
@@ -238,132 +217,12 @@ function confirmPlanChange() {
   const subscriptionId = params.get('subscriptionId');
   let newPlanId = document.getElementById('new-plan-selected').innerHTML;
 
-  updateSubscription(newPlanId.toUpperCase(), subscriptionId).then(function (
-    result
-  ) {
+  updateSubscription(newPlanId.toUpperCase(), subscriptionId).then((result) => {
     let searchParams = new URLSearchParams(window.location.search);
     searchParams.set('planId', newPlanId);
     searchParams.set('planHasChanged', true);
     window.location.search = searchParams.toString();
   });
-}
-
-function requiresPaymentMethodError(
-  customerId,
-  invoiceId,
-  amountDue,
-  currentPeriodEnd,
-  planId
-) {
-  window.location.href =
-    '/updateCard.html?customerId=' +
-    customerId +
-    '&planId=' +
-    planId +
-    '&invoiceId=' +
-    invoiceId +
-    '&amountDue=' +
-    amountDue +
-    '&currentPeriodEnd=' +
-    currentPeriodEnd;
-}
-
-function confirmSubscription({
-  planId: planId,
-  subscription: subscription,
-  paymentMethodId: paymentMethodId,
-  invoice: invoice,
-    isRetry: isRetry,
-}) {
-  let pending_setup_intent;
-  let payment_intent;
-  if (subscription) {
-    pending_setup_intent = subscription.pending_setup_intent;
-    const { latest_invoice } = subscription;
-    payment_intent = latest_invoice.payment_intent;
-  } else if (invoice) {
-    payment_intent = invoice.payment_intent;
-  }
-
-  if (payment_intent) {
-    const { client_secret, status } = payment_intent;
-
-    if (status === 'requires_action' || (status === 'requires_payment_method' && isRetry)) {
-        stripe.confirmCardPayment(client_secret, {payment_method: paymentMethodId}).then(function (result) {
-        if (result.error) {
-          // start code flow to handle updating the payment details
-          // Display error message in your UI.
-          // The card was declined (i.e. insufficient funds, card has expired, etc)
-          displayError(result);
-        } else {
-          // Show a success message to your customer
-          subscriptionComplete({
-            planId: planId,
-            subscription: subscription,
-            paymentMethodId: paymentMethodId,
-            invoice: invoice,
-          });
-        }
-      });
-    } else if (status === 'requires_payment_method') {
-      requiresPaymentMethodError(
-        subscription.customer,
-        subscription.latest_invoice.id,
-        subscription.latest_invoice.amount_due,
-        subscription.current_period_end,
-        planId
-      );
-    } else {
-      // No additional information was needed
-      // The subscription is completed, show a success message to your customer
-      // and provision access to your service.
-      // subscriptionComplete(planId, subscription, paymentMethodId);
-      subscriptionComplete({
-        planId: planId,
-        subscription: subscription,
-        paymentMethodId: paymentMethodId,
-        invoice: invoice,
-      });
-    }
-  } else if (pending_setup_intent) {
-    const { client_secret, status } = subscription.pending_setup_intent;
-
-    if (status === 'requires_action') {
-        stripe.confirmCardSetup(client_secret, {payment_method: paymentMethodId}).then(function (result) {
-        if (result.error) {
-          // Display error.message in your UI.
-          displayError(result);
-        } else {
-          // The subscription is completed, show a success message to your customer
-          // and provision access to your service.
-          subscriptionComplete({
-            planId: planId,
-            subscription: subscription,
-            paymentMethodId: paymentMethodId,
-            invoice: invoice,
-          });
-        }
-      });
-    } else {
-      // No additional information was needed
-      // The subscription is completed, show a success message to your customer
-      // and provision access to your service.
-      // subscriptionComplete(planId, subscription, paymentMethodId);
-      subscriptionComplete({
-        planId: planId,
-        subscription: subscription,
-        paymentMethodId: paymentMethodId,
-        invoice: invoice,
-      });
-    }
-  } else {
-    subscriptionComplete({
-      planId: planId,
-      subscription: subscription,
-      paymentMethodId: paymentMethodId,
-      invoice: invoice,
-    });
-  }
 }
 
 function createCustomer() {
@@ -386,35 +245,152 @@ function createCustomer() {
     });
 }
 
+function handlePaymentThatRequiresCustomerAction({
+  subscription,
+  invoice,
+  planId,
+  paymentMethodId,
+  isRetry,
+}) {
+  if (subscription && subscription.status === 'active') {
+    // subscription is active, no customer actions required.
+    return { subscription, planId, paymentMethodId };
+  }
+
+  let payment_intent;
+  if (invoice) {
+    payment_intent = invoice.payment_intent;
+  }
+
+  if (subscription) {
+    payment_intent = subscription.latest_invoice.payment_intent;
+  }
+
+  if (
+    payment_intent.status === 'requires_action' ||
+    (isRetry === true && payment_intent.status === 'requires_payment_method')
+  ) {
+    return stripe
+      .confirmCardPayment(payment_intent.client_secret, {
+        payment_method: paymentMethodId,
+      })
+      .then((result) => {
+        if (result.error) {
+          // start code flow to handle updating the payment details
+          // Display error message in your UI.
+          // The card was declined (i.e. insufficient funds, card has expired, etc)
+          throw result;
+        } else {
+          if (result.paymentIntent.status === 'succeeded') {
+            // Show a success message to your customer
+            // There's a risk of the customer closing the window before callback
+            // execution. To handle this case, set up a webhook endpoint and
+            // listen to invoice.payment_succeeded. This webhook endpoint
+            // returns an Invoice.
+            return {
+              planId: planId,
+              subscription: subscription,
+              invoice: invoice,
+              paymentMethodId: paymentMethodId,
+            };
+          }
+        }
+      })
+      .catch((error) => {
+        displayError(error);
+      });
+  } else {
+    // No customer action needed
+    return { subscription, planId, paymentMethodId };
+  }
+}
+
+function handleRequiresPaymentMethod({
+  subscription,
+  paymentMethodId,
+  planId,
+}) {
+  if (subscription.status === 'active') {
+    // subscription is active, no customer actions required.
+    return { subscription, planId, paymentMethodId };
+  } else if (
+    subscription.latest_invoice.payment_intent.status ===
+    'requires_payment_method'
+  ) {
+    // Using localStorage to store the state of the retry here
+    // (feel free to replace with what you prefer)
+    // Store the latest invoice ID and status
+    localStorage.setItem('latestInvoiceId', subscription.latest_invoice.id);
+    localStorage.setItem(
+      'latestInvoicePaymentIntentStatus',
+      subscription.latest_invoice.payment_intent.status
+    );
+    throw { error: { message: 'Your card was declined.' } };
+  } else {
+    return { subscription, planId, paymentMethodId };
+  }
+}
+
+function onSubscriptionComplete(result) {
+  // Payment was successful. Provision access to your service.
+  // Remove invoice from localstorage because payment is now complete.
+  clearCache();
+  // Change your UI to show a success message to your customer.
+  onSubscriptionSampleDemoComplete(result);
+}
+
 function createSubscription(customerId, paymentMethodId, planId) {
-  return fetch('/create-subscription', {
-    method: 'post',
-    headers: {
-      'Content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      customerId: customerId,
-      paymentMethodId: paymentMethodId,
-      planId: planId,
-    }),
-  })
-    .then((response) => {
-      return response.json();
+  return (
+    fetch('/create-subscription', {
+      method: 'post',
+      headers: {
+        'Content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        customerId: customerId,
+        paymentMethodId: paymentMethodId,
+        planId: planId,
+      }),
     })
-    .then((result) => {
-      console.log(result.error);
-      if (result.error) {
-        // The card has had an error
-        displayError(result.error);
-      } else {
-        confirmSubscription({
+      .then((response) => {
+        return response.json();
+      })
+      // If the card is declined, display an error to the user.
+      .then((result) => {
+        if (result.error) {
+          // The card had an error when trying to attach it to a customer
+          throw result;
+        }
+        return result;
+      })
+      // Normalize the result to contain the object returned
+      // by Stripe. Add the addional details we need.
+      .then((result) => {
+        return {
+          // Use the Stripe 'object' property on the
+          // returned result to understand what object is returned.
+          [result['object']]: result,
+          paymentMethodId: paymentMethodId,
           planId: planId,
-          subscription: result,
-            paymentMethodId: paymentMethodId,
-            isRetry: false,
-        });
-      }
-    });
+        };
+      })
+      // Some payment methods require a customer to be on session
+      // to complete the payment process. Check the status of the
+      // payment intent to handle these actions.
+      .then(handlePaymentThatRequiresCustomerAction)
+      // If attaching this card to a Customer object succeeds,
+      // but attempts to charge the customer fail. You will
+      // get a requires_payment_method error.
+      .then(handleRequiresPaymentMethod)
+      // No more actions required. Provision your service for the user.
+      .then(onSubscriptionComplete)
+      .catch((error) => {
+        console.log(error);
+        // An error has happened. Display the failure to the user here.
+        // We utilize the HTML element we created.
+        displayError(error);
+      })
+  );
 }
 
 function retryInvoiceWithNewPaymentMethod(
@@ -423,33 +399,53 @@ function retryInvoiceWithNewPaymentMethod(
   invoiceId,
   planId
 ) {
-  return fetch('/update-customer-payment-method-retry-invoice', {
-    method: 'post',
-    headers: {
-      'Content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      customerId: customerId,
-      paymentMethodId: paymentMethodId,
-      invoiceId: invoiceId,
-    }),
-  })
-    .then((response) => {
-      return response.json();
+  return (
+    fetch('/update-customer-payment-method-retry-invoice', {
+      method: 'post',
+      headers: {
+        'Content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        customerId: customerId,
+        paymentMethodId: paymentMethodId,
+        invoiceId: invoiceId,
+      }),
     })
-    .then((result) => {
-      if (result.error) {
-        // The card has had an error
-        displayError(result.error);
-      } else {
-        confirmSubscription({
-          planId: planId,
+      .then((response) => {
+        return response.json();
+      })
+      // If the card is declined, display an error to the user.
+      .then((result) => {
+        if (result.error) {
+          // The card had an error when trying to attach it to a customer
+          throw result;
+        }
+        return result;
+      })
+      // Normalize the result to contain the object returned
+      // by Stripe. Add the addional details we need.
+      .then((result) => {
+        return {
+          // Use the Stripe 'object' property on the
+          // returned result to understand what object is returned.
+          [result['object']]: result,
           paymentMethodId: paymentMethodId,
-            invoice: result,
-            isRetry: true,
-        });
-      }
-    });
+          planId: planId,
+          isRetry: true,
+        };
+      })
+      // Some payment methods require a customer to be on session
+      // to complete the payment process. Check the status of the
+      // payment intent to handle these actions.
+      .then(handlePaymentThatRequiresCustomerAction)
+      // No more actions required. Provision your service for the user.
+      .then(onSubscriptionComplete)
+      .catch((error) => {
+        // An error has happened. Display the failure to the user here.
+        // We utilize the HTML element we created.
+        displayError(error);
+      })
+  );
 }
 
 function retrieveUpcomingInvoice(
@@ -537,16 +533,6 @@ function retrieveCustomerPaymentMethod(paymentMethodId) {
     });
 }
 
-function showCardError(error) {
-  changeLoadingStatePlans(false);
-  // The card was declined (i.e. insufficient funds, card has expired, etc)
-  let errorMsg = document.getElementById('card-element-errors');
-  errorMsg.textContent = error.message;
-  setTimeout(function () {
-    errorMsg.textContent = '';
-  }, 8000);
-}
-
 function getConfig() {
   return fetch('/config', {
     method: 'get',
@@ -629,14 +615,6 @@ function hasPlanChangedShowBanner() {
         capitalizeFirstLetter(params.get('planId').toLowerCase());
     });
   }
-
-  let invoiceId = params.get('invoiceId');
-  let amountDue = params.get('amountDue');
-  if (invoiceId) {
-    document.getElementById('total-due-now').innerText = getFormattedAmount(
-      amountDue
-    );
-  }
 }
 
 hasPlanChangedShowBanner();
@@ -658,7 +636,7 @@ function subscriptionCancelled() {
 }
 
 /* Shows a success / error message when the payment is complete */
-function subscriptionComplete({
+function onSubscriptionSampleDemoComplete({
   planId: planId,
   subscription: subscription,
   paymentMethodId: paymentMethodId,
@@ -761,4 +739,13 @@ function changeLoadingStatePlans(isLoading) {
       loading[i].classList.remove('loading');
     }
   }
+}
+
+function clearCache() {
+  localStorage.clear();
+}
+
+function resetDemo() {
+  clearCache();
+  window.location.href = '/';
 }
