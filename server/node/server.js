@@ -102,7 +102,6 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
     subscription_prorate: true,
     customer: req.body.customerId,
     subscription: req.body.subscriptionId,
-    // subscription_trial_end: req.body.subscription_trial_end || '',
     subscription_items: [
       {
         id: subscription.items.data[0].id,

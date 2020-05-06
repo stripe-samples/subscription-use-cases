@@ -400,9 +400,6 @@ public class Server {
                     // upon your subscription settings. Or if the user
                     // cancels it.
                     break;
-                case "customer.subscription.trial_will_end":
-                    // Send notification to your user that the trial will end
-                    break;
                 default:
                     // Unhandled event type
             }

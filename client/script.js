@@ -100,7 +100,6 @@ function displayError(event) {
   changeLoadingStatePlans(false);
   let displayError = document.getElementById('card-element-errors');
   if (event.error) {
-    console.log(event.error.message);
     displayError.textContent = event.error.message;
   } else {
     displayError.textContent = '';
@@ -169,10 +168,8 @@ function changePlan() {
 function switchPlans(newPlanIdSelected) {
   const params = new URLSearchParams(document.location.search.substring(1));
   const currentSubscribedPlanId = params.get('planId');
-  const currentPeriodEnd = params.get('current_period_end');
   const customerId = params.get('customerId');
   const subscriptionId = params.get('subscriptionId');
-  const trialEndDate = params.get('trialEndDate');
   // Update the border to show which plan is selected
   changePlanSelection(newPlanIdSelected);
 
@@ -180,30 +177,29 @@ function switchPlans(newPlanIdSelected) {
 
   // Retrieve the upcoming invoice to display details about
   // the plan change
-  retrieveUpcomingInvoice(
-    customerId,
-    subscriptionId,
-    newPlanIdSelected.toUpperCase(),
-    trialEndDate
-  ).then((upcomingInvoice) => {
-    // Change the plan details for plan upgrade/downgrade
-    // calculate if it's upgrade or downgrade
-    document.getElementById(
-      'current-plan-subscribed'
-    ).innerHTML = currentSubscribedPlanId;
-    document.getElementById('new-plan-selected').innerHTML = newPlanIdSelected;
+  retrieveUpcomingInvoice(customerId, subscriptionId, newPlanIdSelected).then(
+    (upcomingInvoice) => {
+      // Change the plan details for plan upgrade/downgrade
+      // calculate if it's upgrade or downgrade
+      document.getElementById(
+        'current-plan-subscribed'
+      ).innerHTML = currentSubscribedPlanId;
+      document.getElementById(
+        'new-plan-selected'
+      ).innerHTML = newPlanIdSelected;
 
-    let nextPaymentAttemptDateToDisplay = getDateStringFromUnixTimestamp(
-      upcomingInvoice.next_payment_attempt
-    );
-    document.getElementById(
-      'new-plan-start-date'
-    ).innerHTML = nextPaymentAttemptDateToDisplay;
+      let nextPaymentAttemptDateToDisplay = getDateStringFromUnixTimestamp(
+        upcomingInvoice.next_payment_attempt
+      );
+      document.getElementById(
+        'new-plan-start-date'
+      ).innerHTML = nextPaymentAttemptDateToDisplay;
 
-    document.getElementById('new-plan-price').innerHTML =
-      '$' + upcomingInvoice.amount_due / 100 + '/month';
-    changeLoadingStatePlans(false);
-  });
+      document.getElementById('new-plan-price').innerHTML =
+        '$' + upcomingInvoice.amount_due / 100 + '/month';
+      changeLoadingStatePlans(false);
+    }
+  );
 
   if (currentSubscribedPlanId != newPlanIdSelected) {
     document.querySelector('#plan-change-form').classList.remove('hidden');
@@ -282,7 +278,6 @@ function handleCustomerActionRequired({
           throw result;
         } else {
           if (result.paymentIntent.status === 'succeeded') {
-            // Show a success message to your customer
             // There's a risk of the customer closing the window before callback
             // execution. To handle this case, set up a webhook endpoint and
             // listen to invoice.payment_succeeded. This webhook endpoint
@@ -339,7 +334,7 @@ function onSubscriptionComplete(result) {
   onSubscriptionSampleDemoComplete(result);
   // Call your backend to grant access to your service based on
   // the product your customer subscribed to.
-  // call backend
+  // Get the product by using result.subscription.plan.product
 }
 
 function createSubscription(customerId, paymentMethodId, planId) {
@@ -369,7 +364,6 @@ function createSubscription(customerId, paymentMethodId, planId) {
       // Normalize the result to contain the object returned
       // by Stripe. Add the addional details we need.
       .then((result) => {
-        console.log(result);
         return {
           // Use the Stripe 'object' property on the
           // returned result to understand what object is returned.
@@ -451,12 +445,7 @@ function retryInvoiceWithNewPaymentMethod(
   );
 }
 
-function retrieveUpcomingInvoice(
-  customerId,
-  subscriptionId,
-  newPlanId,
-  trialEndDate
-) {
+function retrieveUpcomingInvoice(customerId, subscriptionId, newPlanId) {
   return fetch('/retrieve-upcoming-invoice', {
     method: 'post',
     headers: {
@@ -465,7 +454,6 @@ function retrieveUpcomingInvoice(
     body: JSON.stringify({
       customerId: customerId,
       subscriptionId: subscriptionId,
-      subscription_trial_end: trialEndDate,
       newPlanId: newPlanId,
     }),
   })
@@ -596,12 +584,12 @@ function hasPlanChangedShowBanner() {
   if (params.get('planHasChanged')) {
     document.querySelector('#plan-changed-alert').classList.remove('hidden');
 
-    let current_period_end = params.get('current_period_end');
+    let currentPeriodEnd = params.get('currentPeriodEnd');
     let planId = params.get('planId');
     document.getElementById('plan-changing-to').innerText = planId;
     document.getElementById(
       'plan-changing-on'
-    ).innerHTML = getDateStringFromUnixTimestamp(current_period_end);
+    ).innerHTML = getDateStringFromUnixTimestamp(currentPeriodEnd);
     document.getElementById('subscription-status-text').innerText =
       'Subscription successfully updated';
   }
@@ -646,10 +634,10 @@ function onSubscriptionSampleDemoComplete({
   invoice: invoice,
 }) {
   let subscriptionId;
-  let current_period_end;
+  let currentPeriodEnd;
   let customerId;
   if (subscription) {
-    subscritionId = subscription.id;
+    subscriptionId = subscription.id;
     currentPeriodEnd = subscription.current_period_end;
     customerId = subscription.customer;
   } else {
@@ -664,8 +652,8 @@ function onSubscriptionSampleDemoComplete({
     subscriptionId +
     '&planId=' +
     planId +
-    '&current_period_end=' +
-    current_period_end +
+    '&currentPeriodEnd=' +
+    currentPeriodEnd +
     '&customerId=' +
     customerId +
     '&paymentMethodId=' +
@@ -680,7 +668,7 @@ function demoChangePlan() {
   // Grab the PlanID from the URL
   // This is meant for the demo, replace with a cache or database.
   const params = new URLSearchParams(document.location.search.substring(1));
-  const planId = params.get('planId');
+  const planId = params.get('planId').toLowerCase();
 
   // Show the change plan screen
   document.querySelector('#plans-form').classList.remove('hidden');
@@ -709,7 +697,9 @@ function demoChangePlan() {
 function changePlanSelection(planId) {
   document.querySelector('#basic').classList.remove('border-pasha');
   document.querySelector('#premium').classList.remove('border-pasha');
-  document.querySelector('#' + planId).classList.add('border-pasha');
+  document
+    .querySelector('#' + planId.toLowerCase())
+    .classList.add('border-pasha');
 }
 
 // Show a spinner on subscription submission
