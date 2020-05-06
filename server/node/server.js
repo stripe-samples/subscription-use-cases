@@ -36,19 +36,11 @@ app.post('/create-customer', async (req, res) => {
   // save the customer.id as stripeCustomerId
   // in your database.
 
-  // Create a SetupIntent to set up our payment methods recurring usage
-  // const setupIntent = await stripe.setupIntents.create({
-  //   payment_method_types: ['card'],
-  //   customer: customer.id,
-  // });
-
-  // res.send({ customer, setupIntent });
   res.send({ customer });
 });
 
 app.post('/create-subscription', async (req, res) => {
   // Set the default payment method on the customer
-
   try {
     await stripe.paymentMethods.attach(req.body.paymentMethodId, {
       customer: req.body.customerId,
@@ -76,7 +68,7 @@ app.post('/create-subscription', async (req, res) => {
   res.send(subscription);
 });
 
-app.post('/update-customer-payment-method-retry-invoice', async (req, res) => {
+app.post('/retry-invoice', async (req, res) => {
   // Set the default payment method on the customer
 
   try {
@@ -153,7 +145,7 @@ app.post('/update-subscription', async (req, res) => {
   res.send(updatedSubscription);
 });
 
-app.post('/retrieve-customer-paymentMethod', async (req, res) => {
+app.post('/retrieve-customer-payment-method', async (req, res) => {
   const paymentMethod = await stripe.paymentMethods.retrieve(
     req.body.paymentMethodId
   );

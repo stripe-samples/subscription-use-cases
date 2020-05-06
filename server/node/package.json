@@ -1,7 +1,7 @@
 {
-  "name": "subscriptions-with-card-and-direct-debit",
+  "name": "subscriptions-with-fixed-prices",
   "version": "1.0.0",
-  "description": "A Stripe sample implementing card and direct debit methods for subscriptions.",
+  "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

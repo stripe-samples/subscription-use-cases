@@ -31,25 +31,26 @@ post '/create-customer' do
 
   # Create a new customer object
   customer = Stripe::Customer.create(
-    name: data['name'],
     email: data['email']
   )
 
-  # Create a SetupIntent to set up our payment methods recurring usage
-  setup_intent = Stripe::SetupIntent.create(
-    payment_method_types: %w[card],
-    customer: customer.id
-  )
-
   {
-    'customer': customer,
-    'setupIntent': setup_intent
+    'customer': customer
   }.to_json
 end
 
 post '/create-subscription' do
   content_type 'application/json'
   data = JSON.parse request.body.read
+
+  begin
+    Stripe::PaymentMethod.attach(
+      data['paymentMethodId'],
+      { customer: data['customerId'] }
+    )
+  rescue Stripe::CardError => e
+    halt 200, { 'Content-Type' => 'application/json' }, { 'error': { message: e.error.message } }.to_json
+  end
 
   # Set the default payment method on the customer
   Stripe::Customer.update(
@@ -62,7 +63,6 @@ post '/create-subscription' do
   # Create the subscription
   subscription = Stripe::Subscription.create(
     customer: data['customerId'],
-    trial_from_plan: true,
     items: [
       {
         plan: ENV[data['planId']]
@@ -72,6 +72,35 @@ post '/create-subscription' do
   )
 
   subscription.to_json
+end
+
+post '/retry-invoice' do
+  content_type 'application/json'
+  data = JSON.parse request.body.read
+
+  begin
+    Stripe::PaymentMethod.attach(
+      data['paymentMethodId'],
+      { customer: data['customerId'] }
+    )
+  rescue Stripe::CardError => e
+    halt 200, { 'Content-Type' => 'application/json' }, { 'error': { message: e.error.message } }.to_json
+  end
+
+  # Set the default payment method on the customer
+  Stripe::Customer.update(
+    data['customerId'],
+    invoice_settings: {
+      default_payment_method: data['paymentMethodId']
+    }
+  )
+
+  invoice = Stripe::Invoice.retrieve({
+    id: data['invoiceId'],
+    expand: ['payment_intent']
+  })
+
+  invoice.to_json
 end
 
 post '/retrieve-upcoming-invoice' do
@@ -130,7 +159,7 @@ post '/update-subscription' do
   updated_subscription.to_json
 end
 
-post '/retrieve-customer-paymentMethod' do
+post '/retrieve-customer-payment-method' do
   content_type 'application/json'
   data = JSON.parse request.body.read
 

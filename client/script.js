@@ -80,13 +80,13 @@ function stripeElements(publishableKey) {
       );
 
       if (latestInvoicePaymentIntentStatus === 'requires_payment_method') {
-        const latestInvoiceId = localStorage.getItem('latestInvoiceId');
+        const invoiceId = localStorage.getItem('latestInvoiceId');
         const isPaymentRetry = true;
         // create new payment method & retry payment on invoice with new payment method
         createPaymentMethod({
           card,
           isPaymentRetry,
-          latestInvoiceId,
+          invoiceId,
         });
       } else {
         // create new payment method & create subscription
@@ -245,7 +245,7 @@ function createCustomer() {
     });
 }
 
-function handlePaymentThatRequiresCustomerAction({
+function handleCustomerActionRequired({
   subscription,
   invoice,
   planId,
@@ -305,7 +305,7 @@ function handlePaymentThatRequiresCustomerAction({
   }
 }
 
-function handleRequiresPaymentMethod({
+function handlePaymentMethodRequired({
   subscription,
   paymentMethodId,
   planId,
@@ -340,6 +340,7 @@ function onSubscriptionComplete(result) {
 }
 
 function createSubscription(customerId, paymentMethodId, planId) {
+  console.log(paymentMethodId);
   return (
     fetch('/create-subscription', {
       method: 'post',
@@ -366,10 +367,11 @@ function createSubscription(customerId, paymentMethodId, planId) {
       // Normalize the result to contain the object returned
       // by Stripe. Add the addional details we need.
       .then((result) => {
+        console.log(result);
         return {
           // Use the Stripe 'object' property on the
           // returned result to understand what object is returned.
-          [result['object']]: result,
+          subscription: result,
           paymentMethodId: paymentMethodId,
           planId: planId,
         };
@@ -377,15 +379,14 @@ function createSubscription(customerId, paymentMethodId, planId) {
       // Some payment methods require a customer to be on session
       // to complete the payment process. Check the status of the
       // payment intent to handle these actions.
-      .then(handlePaymentThatRequiresCustomerAction)
+      .then(handleCustomerActionRequired)
       // If attaching this card to a Customer object succeeds,
       // but attempts to charge the customer fail. You will
       // get a requires_payment_method error.
-      .then(handleRequiresPaymentMethod)
+      .then(handlePaymentMethodRequired)
       // No more actions required. Provision your service for the user.
-      .then(onSubscriptionComplete)
+      // .then(onSubscriptionComplete)
       .catch((error) => {
-        console.log(error);
         // An error has happened. Display the failure to the user here.
         // We utilize the HTML element we created.
         displayError(error);
@@ -400,7 +401,7 @@ function retryInvoiceWithNewPaymentMethod(
   planId
 ) {
   return (
-    fetch('/update-customer-payment-method-retry-invoice', {
+    fetch('/retry-invoice', {
       method: 'post',
       headers: {
         'Content-type': 'application/json',
@@ -428,7 +429,7 @@ function retryInvoiceWithNewPaymentMethod(
         return {
           // Use the Stripe 'object' property on the
           // returned result to understand what object is returned.
-          [result['object']]: result,
+          invoice: result,
           paymentMethodId: paymentMethodId,
           planId: planId,
           isRetry: true,
@@ -437,7 +438,7 @@ function retryInvoiceWithNewPaymentMethod(
       // Some payment methods require a customer to be on session
       // to complete the payment process. Check the status of the
       // payment intent to handle these actions.
-      .then(handlePaymentThatRequiresCustomerAction)
+      .then(handleCustomerActionRequired)
       // No more actions required. Provision your service for the user.
       .then(onSubscriptionComplete)
       .catch((error) => {
@@ -516,7 +517,7 @@ function updateSubscription(planId, subscriptionId) {
 }
 
 function retrieveCustomerPaymentMethod(paymentMethodId) {
-  return fetch('/retrieve-customer-paymentMethod', {
+  return fetch('/retrieve-customer-payment-method', {
     method: 'post',
     headers: {
       'Content-type': 'application/json',

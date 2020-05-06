@@ -65,6 +65,11 @@ def create_customer():
 def createSubscription():
     data = json.loads(request.data)
     try:
+
+        stripe.PaymentMethod.attach(
+            data['paymentMethodId'],
+            customer=data['customerId'],
+        )
         # Set the default payment method on the customer
         stripe.Customer.modify(
             data['customerId'],
@@ -76,16 +81,41 @@ def createSubscription():
         # Create the subscription
         subscription = stripe.Subscription.create(
             customer=data['customerId'],
-            trial_from_plan=True,
             items=[
                 {
                     'plan': os.getenv(data['planId'])
                 }
-            ]
+            ],
+            expand=['latest_invoice.payment_intent'],
         )
         return jsonify(subscription)
     except Exception as e:
-        return jsonify(error=str(e)), 403
+        return jsonify(error={'message': str(e)}), 200
+
+@app.route('/retry-invoice', methods=['POST'])
+def retrySubscription():
+    data = json.loads(request.data)
+    try:
+
+        stripe.PaymentMethod.attach(
+            data['paymentMethodId'],
+            customer=data['customerId'],
+        )
+        # Set the default payment method on the customer
+        stripe.Customer.modify(
+            data['customerId'],
+            invoice_settings={
+                'default_payment_method': data['paymentMethodId'],
+            },
+        )
+
+        invoice = stripe.Invoice.retrieve(
+            data['invoiceId'],
+            expand=['payment_intent'],
+        )
+        return jsonify(invoice)
+    except Exception as e:
+        return jsonify(error={'message': str(e)}), 200
 
 
 @app.route('/retrieve-upcoming-invoice', methods=['POST'])
@@ -147,7 +177,7 @@ def updateSubscription():
         return jsonify(error=str(e)), 403
 
 
-@app.route('/retrieve-customer-paymentMethod', methods=['POST'])
+@app.route('/retrieve-customer-payment-method', methods=['POST'])
 def retrieveCustomerPaymentMethod():
     data = json.loads(request.data)
     try:

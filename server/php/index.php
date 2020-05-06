@@ -44,19 +44,62 @@ $app->post('/create-customer', function (Request $request, Response $response, a
   $customer = \Stripe\Customer::create([
     'email' => $body->email
   ]);
-  
-  // Create a SetupIntent to set up our payment methods recurring usage
-  $setup_intent = \Stripe\SetupIntent::create([
-    'payment_method_types' => ['card'],
-    'customer' => $customer['id']
-  ]);
 
-  return $response->withJson(['customer' => $customer, 'setupIntent' => $setup_intent]);
+  return $response->withJson(['customer' => $customer]);
 });
 
 $app->post('/create-subscription', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
 
+  
+  try {
+    $payment_method = \Stripe\PaymentMethod::retrieve(
+      $body->paymentMethodId
+    );
+    $payment_method->attach([
+      'customer' => $body->customerId,
+    ]);
+  } catch (Exception $e) {
+    return $response->withJson($e->jsonBody);
+  }
+  
+    
+  // Set the default payment method on the customer
+  \Stripe\Customer::update($body->customerId, [
+    'invoice_settings' => [
+      'default_payment_method' => $body->paymentMethodId
+    ]
+  ]);
+  
+  // Create the subscription
+  $subscription = \Stripe\Subscription::create([
+    'customer' => $body->customerId,
+    'items' => [
+      [
+        'plan' => getenv($body->planId),
+      ],
+    ],
+    'expand' => ['latest_invoice.payment_intent'],
+  ]);
+
+  return $response->withJson($subscription);
+});
+
+$app->post('/retry-invoice', function (Request $request, Response $response, array $args) {  
+  $body = json_decode($request->getBody());
+
+  try {
+    $payment_method = \Stripe\PaymentMethod::retrieve(
+      $body->paymentMethodId
+    );
+    $payment_method->attach([
+      'customer' => $body->customerId,
+    ]);
+  } catch (Exception $e) {
+    return $response->withJson($e->jsonBody);
+  }
+  
+    
   // Set the default payment method on the customer
   \Stripe\Customer::update($body->customerId, [
     'invoice_settings' => [
@@ -64,19 +107,12 @@ $app->post('/create-subscription', function (Request $request, Response $respons
     ]
   ]);
 
-  
-  // Create the subscription
-  $subscription = \Stripe\Subscription::create([
-    'customer' => $body->customerId,
-    'trial_from_plan' => true,
-    'items' => [
-      [
-        'plan' => getenv($body->planId),
-      ],
-    ],
+  $invoice = \Stripe\Invoice::retrieve([
+    'id' => $body->invoiceId,
+    'expand' => ['payment_intent'],
   ]);
 
-  return $response->withJson($subscription);
+  return $response->withJson($invoice);
 });
 
 $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $response, array $args) {  
@@ -135,7 +171,7 @@ $app->post('/update-subscription', function (Request $request, Response $respons
   return $response->withJson($updatedSubscription);
 });
 
-$app->post('/retrieve-customer-paymentMethod', function (Request $request, Response $response, array $args) {  
+$app->post('/retrieve-customer-payment-method', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
 
   $paymentMethod = \Stripe\PaymentMethod::retrieve(

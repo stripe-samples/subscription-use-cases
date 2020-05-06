@@ -6,12 +6,15 @@ import static spark.Spark.post;
 import static spark.Spark.staticFiles;
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.stripe.Stripe;
+import com.stripe.exception.CardException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Customer;
 import com.stripe.model.Plan;
@@ -21,6 +24,7 @@ import com.stripe.model.Invoice;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.StripeObject;
 import com.stripe.model.SetupIntent;
+import com.stripe.param.PaymentMethodAttachParams;
 import com.stripe.param.SetupIntentCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import com.stripe.model.Subscription;
@@ -89,6 +93,29 @@ public class Server {
 
         public String getNewPlanId() {
             return newPlanId;
+        }
+    }
+
+    static class RetryInvoiceBody {
+        @SerializedName("invoiceId")
+        String invoiceId;
+
+        @SerializedName("paymentMethodId")
+        String paymentMethodId;
+
+        @SerializedName("customerId")
+        String customerId;
+
+        public String getInvoiceId() {
+            return invoiceId;
+        }
+
+        public String getPaymentMethodId() {
+            return paymentMethodId;
+        }
+
+        public String getCustomerId() {
+            return customerId;
         }
     }
 
@@ -181,15 +208,8 @@ public class Server {
             customerParams.put("email", postBody.getEmail());
             Customer customer = Customer.create(customerParams);
 
-            // Create a SetupIntent to set up our payment methods recurring usage
-            SetupIntentCreateParams setupIntentParams = new SetupIntentCreateParams.Builder()
-                    .addPaymentMethodType("card").addPaymentMethodType("au_becs_debit").setCustomer(customer.getId())
-                    .build();
-            SetupIntent setupIntent = SetupIntent.create(setupIntentParams);
-
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("customer", customer);
-            responseData.put("setupIntent", setupIntent);
             return gson.toJson(responseData);
         });
 
@@ -198,6 +218,20 @@ public class Server {
             // Set the default payment method on the customer
             CreateSubscriptionBody postBody = gson.fromJson(request.body(), CreateSubscriptionBody.class);
             Customer customer = Customer.retrieve(postBody.getCustomerId());
+
+            try {
+                // Set the default payment method on the customer
+                PaymentMethod pm = PaymentMethod.retrieve(postBody.getPaymentMethodId());
+                pm.attach(PaymentMethodAttachParams.builder().setCustomer(customer.getId()).build());
+            } catch (CardException e) {
+                // Since it's a decline, CardException will be caught
+                Map<String, String> responseErrorMessage = new HashMap<>();
+                responseErrorMessage.put("message", e.getLocalizedMessage());
+                Map<String, Object> responseError = new HashMap<>();
+                responseError.put("error", responseErrorMessage);
+
+                return gson.toJson(responseError);
+            }
 
             Map<String, Object> customerParams = new HashMap<String, Object>();
             Map<String, String> invoiceSettings = new HashMap<String, String>();
@@ -212,11 +246,51 @@ public class Server {
             items.put("0", item);
             Map<String, Object> params = new HashMap<>();
             params.put("customer", postBody.getCustomerId());
-            params.put("trial_from_plan", true);
             params.put("items", items);
+
+            List<String> expandList = new ArrayList<>();
+            expandList.add("latest_invoice.payment_intent");
+            params.put("expand", expandList);
+
             Subscription subscription = Subscription.create(params);
 
             return subscription.toJson();
+        });
+
+        post("/retry-invoice", (request, response) -> {
+            response.type("application/json");
+            // Set the default payment method on the customer
+            RetryInvoiceBody postBody = gson.fromJson(request.body(), RetryInvoiceBody.class);
+            Customer customer = Customer.retrieve(postBody.getCustomerId());
+
+            try {
+                // Set the default payment method on the customer
+                PaymentMethod pm = PaymentMethod.retrieve(postBody.getPaymentMethodId());
+                pm.attach(PaymentMethodAttachParams.builder().setCustomer(customer.getId()).build());
+            } catch (CardException e) {
+                // Since it's a decline, CardException will be caught
+                Map<String, String> responseErrorMessage = new HashMap<>();
+                responseErrorMessage.put("message", e.getLocalizedMessage());
+                Map<String, Object> responseError = new HashMap<>();
+                responseError.put("error", responseErrorMessage);
+                return gson.toJson(responseError);
+            }
+
+            Map<String, Object> customerParams = new HashMap<String, Object>();
+            Map<String, String> invoiceSettings = new HashMap<String, String>();
+            invoiceSettings.put("default_payment_method", postBody.getPaymentMethodId());
+            customerParams.put("invoice_settings", invoiceSettings);
+            customer.update(customerParams);
+
+            List<String> expandList = new ArrayList<>();
+            expandList.add("payment_intent");
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("expand", expandList);
+
+            Invoice invoice = Invoice.retrieve(postBody.getInvoiceId(), params, null);
+
+            return invoice.toJson();
         });
 
         post("/retrieve-upcoming-invoice", (request, response) -> {
@@ -228,7 +302,6 @@ public class Server {
             Map<String, Object> invoiceParams = new HashMap<>();
             invoiceParams.put("customer", postBody.getCustomerId());
             invoiceParams.put("subscription", postBody.getSubscriptionId());
-            invoiceParams.put("subscription_trial_end", postBody.getSubscriptionTrialEnd());
             invoiceParams.put("subscription_prorate", true);
             Map<String, Object> item = new HashMap<>();
             item.put("id", subscription.getItems().getData().get(0).getId());
@@ -274,7 +347,7 @@ public class Server {
             return subscription.toJson();
         });
 
-        post("/retrieve-customer-paymentMethod", (request, response) -> {
+        post("/retrieve-customer-payment-method", (request, response) -> {
             response.type("application/json");
             // Set the default payment method on the customer
             PaymentMethodBody paymentMethodBody = gson.fromJson(request.body(), PaymentMethodBody.class);
