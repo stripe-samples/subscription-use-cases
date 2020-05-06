@@ -337,10 +337,12 @@ function onSubscriptionComplete(result) {
   clearCache();
   // Change your UI to show a success message to your customer.
   onSubscriptionSampleDemoComplete(result);
+  // Call your backend to grant access to your service based on
+  // the product your customer subscribed to.
+  // call backend
 }
 
 function createSubscription(customerId, paymentMethodId, planId) {
-  console.log(paymentMethodId);
   return (
     fetch('/create-subscription', {
       method: 'post',
@@ -376,16 +378,16 @@ function createSubscription(customerId, paymentMethodId, planId) {
           planId: planId,
         };
       })
-      // Some payment methods require a customer to be on session
-      // to complete the payment process. Check the status of the
-      // payment intent to handle these actions.
+      // Some payment methods require a customer to do additional
+      // authentication with their financial institution.
+      // Eg: 2FA for cards.
       .then(handleCustomerActionRequired)
       // If attaching this card to a Customer object succeeds,
       // but attempts to charge the customer fail. You will
       // get a requires_payment_method error.
       .then(handlePaymentMethodRequired)
       // No more actions required. Provision your service for the user.
-      // .then(onSubscriptionComplete)
+      .then(onSubscriptionComplete)
       .catch((error) => {
         // An error has happened. Display the failure to the user here.
         // We utilize the HTML element we created.
