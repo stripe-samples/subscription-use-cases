@@ -253,21 +253,18 @@ function handleCustomerActionRequired({
     return { subscription, planId, paymentMethodId };
   }
 
-  let payment_intent;
-  if (invoice) {
-    payment_intent = invoice.payment_intent;
-  }
-
-  if (subscription) {
-    payment_intent = subscription.latest_invoice.payment_intent;
-  }
+  // If it's a first payment attempt, the payment intent is on the subscription latest invoice.
+  // If it's a retry, the payment intent will be on the invoice itself.
+  let paymentIntent = invoice
+    ? invoice.payment_intent
+    : subscription.latest_invoice.payment_intent;
 
   if (
-    payment_intent.status === 'requires_action' ||
-    (isRetry === true && payment_intent.status === 'requires_payment_method')
+    paymentIntent.status === 'requires_action' ||
+    (isRetry === true && paymentIntent.status === 'requires_payment_method')
   ) {
     return stripe
-      .confirmCardPayment(payment_intent.client_secret, {
+      .confirmCardPayment(paymentIntent.client_secret, {
         payment_method: paymentMethodId,
       })
       .then((result) => {
