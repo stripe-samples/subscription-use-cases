@@ -30,7 +30,7 @@ function stripeElements(publishableKey) {
           '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
         fontSmoothing: 'antialiased',
         '::placeholder': {
-          color: 'rgba(0,0,0,0.4)',
+          color: '#a0aec0',
         },
       },
     };
@@ -591,7 +591,7 @@ function hasPlanChangedShowBanner() {
       'plan-changing-on'
     ).innerHTML = getDateStringFromUnixTimestamp(currentPeriodEnd);
     document.getElementById('subscription-status-text').innerText =
-      'Subscription successfully updated';
+      'Subscription changed';
   }
   let paymentMethodId = params.get('paymentMethodId');
   if (paymentMethodId) {
@@ -601,29 +601,19 @@ function hasPlanChangedShowBanner() {
         ' •••• ' +
         response.card.last4;
 
-      document.getElementById('subscribed-plan').innerText =
-        'Current plan: ' +
-        capitalizeFirstLetter(params.get('planId').toLowerCase());
+      document.getElementById(
+        'subscribed-plan'
+      ).innerText = capitalizeFirstLetter(params.get('planId').toLowerCase());
     });
   }
 }
 
 hasPlanChangedShowBanner();
 
-function showCancel() {
-  document.querySelector('#cancel-form').classList.remove('hidden');
-  document.querySelector('#plans-form').classList.add('hidden');
-}
-
-function cancelChangePlan() {
-  document.querySelector('#plans-form').classList.add('hidden');
-}
-
 // Shows the cancellation response
 function subscriptionCancelled() {
   document.querySelector('#subscription-cancelled').classList.remove('hidden');
   document.querySelector('#subscription-settings').classList.add('hidden');
-  document.querySelector('#cancel-form').classList.add('hidden');
 }
 
 /* Shows a success / error message when the payment is complete */
@@ -689,8 +679,6 @@ function demoChangePlan() {
     document.getElementById('submit-premium').disabled = false;
     document.getElementById('submit-basic').disabled = true;
   }
-  // Hide cancel form if needed
-  document.querySelector('#cancel-form').classList.add('hidden');
 }
 
 // Changes the plan selected
@@ -724,12 +712,32 @@ function changeLoadingStatePlans(isLoading) {
       buttons[i].classList.add('hidden');
       loading[i].classList.add('loading');
     }
+    document.querySelector('#submit-basic').classList.add('invisible');
+    document.querySelector('#submit-premium').classList.add('invisible');
+    if (document.getElementById('confirm-plan-change-cancel')) {
+      document
+        .getElementById('confirm-plan-change-cancel')
+        .classList.add('invisible');
+      // document
+      //   .getElementById('confirm-plan-change-submit')
+      //   .classList.add('invisible');
+    }
   } else {
     let buttons = document.querySelectorAll('#button-text');
     let loading = document.querySelectorAll('#loading');
     for (let i = 0; i < buttons.length; i++) {
       buttons[i].classList.remove('hidden');
       loading[i].classList.remove('loading');
+    }
+    document.querySelector('#submit-basic').classList.remove('invisible');
+    document.querySelector('#submit-premium').classList.remove('invisible');
+    if (document.getElementById('confirm-plan-change-cancel')) {
+      document
+        .getElementById('confirm-plan-change-cancel')
+        .classList.remove('invisible');
+      document
+        .getElementById('confirm-plan-change-submit')
+        .classList.remove('invisible');
     }
   }
 }
