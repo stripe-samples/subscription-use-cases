@@ -153,7 +153,7 @@ app.post('/retrieve-customer-payment-method', async (req, res) => {
 });
 // Webhook handler for asynchronous events.
 app.post(
-  '/stripe-events',
+  '/stripe-webhook',
   bodyParser.raw({ type: 'application/json' }),
   async (req, res) => {
     // Retrieve the event by verifying the signature using the raw body and secret.

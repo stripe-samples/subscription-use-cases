@@ -182,7 +182,7 @@ $app->post('/retrieve-customer-payment-method', function (Request $request, Resp
 });
 
 
-$app->post('/webhook', function(Request $request, Response $response) {
+$app->post('/stripe-webhook', function(Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
     // Parse the message body (and check the signature if possible)

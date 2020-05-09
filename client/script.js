@@ -324,11 +324,12 @@ function handlePaymentMethodRequired({
 }
 
 function onSubscriptionComplete(result) {
+  console.log(result);
   // Payment was successful. Provision access to your service.
   // Remove invoice from localstorage because payment is now complete.
   clearCache();
   // Change your UI to show a success message to your customer.
-  onSubscriptionSampleDemoComplete(result);
+  // onSubscriptionSampleDemoComplete(result);
   // Call your backend to grant access to your service based on
   // the product your customer subscribed to.
   // Get the product by using result.subscription.plan.product

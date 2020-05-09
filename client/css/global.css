@@ -1277,10 +1277,6 @@ video {
     width: 16rem;
   }
 
-  .md\:w-1\/5 {
-    width: 20%;
-  }
-
   .md\:w-2\/5 {
     width: 40%;
   }
@@ -1298,5 +1294,9 @@ video {
   .lg\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+  }
+
+  .lg\:w-1\/5 {
+    width: 20%;
   }
 }

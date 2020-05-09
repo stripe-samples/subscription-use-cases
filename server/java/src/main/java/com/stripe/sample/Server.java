@@ -353,7 +353,7 @@ public class Server {
             return paymentMethod.toJson();
         });
 
-        post("/webhook", (request, response) -> {
+        post("/stripe-webhook", (request, response) -> {
             String payload = request.body();
             String sigHeader = request.headers("Stripe-Signature");
             String endpointSecret = dotenv.get("STRIPE_WEBHOOK_SECRET");
