@@ -32,7 +32,7 @@
     </nav>
     <div id="subscription-cancelled" class="hidden">
       <div class="flex flex-wrap font-bold text-pasha text-xl mt-6 mb-2">
-        Subscription cancelled
+        Subscription canceled
       </div>
       <div>
         <button
@@ -46,205 +46,188 @@
     </div>
     <div id="subscription-settings">
       <div class="flex flex-wrap justify-center mt-4">
-        <div class="md:w-2/5 w-full inline-block border rounded-md p-4">
+        <div class="md:w-2/5 w-full inline-block rounded-md p-4">
           <div
             id="subscription-status-text"
             class="text-center font-bold text-pasha text-2xl"
           >
-            Customer subscribed
+            Account settings
           </div>
-          <div class="p-4">
+          <div class="mt-4 border rounded p-4">
             <div class="font-bold text-xl mb-2">
               Account
             </div>
-            <div class="flex justify-between flex text-sm text-gray-600 text-m">
+            <div class="flex justify-between text-gray-600 text-xl">
               <div>Current plan</div>
               <div
-                class="text-sm font-bold text-m"
+                class="font-bold text-xl"
                 id="subscribed-plan"
                 class="mb-2"
               ></div>
             </div>
 
             <div class="flex justify-between">
-              <div class="text-sm text-gray-600">
+              <div class="text-xl text-gray-600">
                 Credit card
               </div>
               <span
                 id="credit-card-last-four"
-                class="font-bold text-sm text-gray-600"
+                class="font-bold text-xl text-gray-600"
               ></span>
             </div>
 
             <div
-              class="flex justify-between mt-2 mb-2 text-gray-900 font-bold text-m cursor-pointer"
+              class="flex justify-between mt-2 mb-2 text-gray-900 font-bold text-xl cursor-pointer"
               onClick="changePlan()"
             >
-              <span class="">Change plan <span>→</span></span>
+              <span>Change plan <span>→</span></span>
             </div>
-            <button
-              id="submit-cancelation"
+            <div
+              class="flex justify-between mt-2 mb-2 text-gray-900 font-bold text-xl cursor-pointer"
               onClick="cancelSubscription()"
-              class="w-full bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg mt-2"
-              type="submit"
             >
-              <div>
-                <div id="loading" class=""></div>
-                <span id="button-text">Cancel subscription</span>
-              </div>
-            </button>
-          </div>
-          <div
-            id="plan-changed-alert"
-            class="ml-4 mr-4 bg-white border-t-4 border-pasha rounded-b text-pasha px-4 py-4 shadow-md hidden"
-            role="alert"
-          >
-            <div class="flex justify-center text-center">
-              <div class="py-1">
-                <svg
-                  class="fill-current h-6 w-6 text-pasha mr-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p class="text-center">
-                  Your plan will change to
-                  <span id="plan-changing-to"></span> on
-                  <span id="plan-changing-on"></span>
-                </p>
-              </div>
+              <span>Cancel subscription <span>→</span></span>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div id="plans-form" class="w-full mr-4 md:mb-8 hidden">
-        <div class="text-center text-pasha font-bold text-2xl mt-4 mb-6">
-          Change plan
-        </div>
-        <div class="w-full flex justify-center mb-8">
-          <div
-            id="basic"
-            class="w-full md:w-64 rounded overflow-hidden border rounded-md p-2 mr-4 md:mr-8"
-          >
-            <div class="px-6 py-4">
-              <div class="text-gray-500 text-xl mb-2 font-medium">Basic</div>
-              <p class="text-pasha text-2xl font-extrabold">
-                $5.00
-              </p>
-              <div class="flex-wrap">
-                <div class="leading-none text-gray-500 text-xs font-medium">
-                  Per month
-                </div>
-                <div
-                  class="leading-none text-gray-500 text-xs font-medium mt-1"
-                >
-                  Billed monthly
-                </div>
-              </div>
+          <div id="plans-form" class="w-full mr-4 md:mb-8 hidden">
+            <div class="text-center text-pasha font-bold text-2xl mt-4 mb-6">
+              Change plan
+            </div>
 
-              <div class="flex justify-center mt-6">
-                <button
-                  id="submit-basic"
-                  onClick="switchPlans('BASIC')"
-                  class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
-                  type="submit"
-                >
-                  <div
-                    id="submit-basic-button-text"
-                    class="w-auto -mx-2 md:mx-0"
-                  >
-                    <div id="loading" class=""></div>
-                    <span id="button-text">Select</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div
-            id="premium"
-            class="w-full md:w-64 rounded overflow-hidden border rounded-md p-2"
-          >
-            <div class="px-6 py-4">
-              <div class="text-gray-500 text-xl mb-2 font-medium">
-                Premium
-              </div>
-              <p class="text-pasha text-2xl font-extrabold">
-                $15.00
-              </p>
-              <div class="flex-wrap">
-                <div class="leading-none text-gray-500 text-xs font-medium">
-                  Per month
-                </div>
-                <div
-                  class="leading-none text-gray-500 text-xs font-medium mt-1"
-                >
-                  Billed monthly
-                </div>
-              </div>
-              <div class="flex justify-center mt-6">
-                <button
-                  id="submit-premium"
-                  onClick="switchPlans('PREMIUM')"
-                  class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
-                  type="submit"
-                >
-                  <div
-                    id="submit-premium-button-text"
-                    class="w-auto -mx-2 md:mx-0"
-                  >
-                    <div id="loading" class=""></div>
-                    <span id="button-text">Select</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="plan-change-form" class="flex justify-center hidden">
-          <div
-            class="md:w-2/5 w-full rounded overflow-hidden border rounded-md p-4 mb-4"
-          >
-            <div class="text-gray-500 mb-2">
-              <p>CURRENT PLAN: <span id="current-plan-subscribed"></span></p>
-              <p id="current-plan-price"></p>
-            </div>
-            <div class="mb-4">
-              <p>NEW PLAN: <span id="new-plan-selected"></span></p>
-              <p id="new-plan-price"></p>
-            </div>
-            <div>
-              <p class="mb-2">
-                You won't be charged until
-                <span id="new-plan-start-date"></span>
-              </p>
-              <button
-                id="confirm-plan-change-submit"
-                onClick="confirmPlanChange()"
-                class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
-                type="submit"
+            <div class="flex justify-between mb-8">
+              <div
+                id="basic"
+                class="w-1/2 rounded overflow-hidden border rounded-md p-2 mr-4 md:mr-8"
               >
-                <div class="w-auto -mx-2 md:mx-0">
-                  <div id="loading" class=""></div>
-                  <span id="button-text">Confirm change</span>
+                <div class="px-2 py-2">
+                  <div class="text-gray-500 text-xl mb-2 font-medium">
+                    Basic
+                  </div>
+                  <p class="text-pasha text-2xl font-extrabold">
+                    $5.00
+                  </p>
+                  <div class="flex-wrap">
+                    <div class="leading-none text-gray-500 text-xs font-medium">
+                      Per month
+                    </div>
+                    <div
+                      class="leading-none text-gray-500 text-xs font-medium mt-1"
+                    >
+                      Billed monthly
+                    </div>
+                  </div>
+
+                  <div class="flex justify-center mt-6">
+                    <button
+                      id="submit-basic"
+                      onClick="switchPlans('BASIC')"
+                      class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                      type="submit"
+                    >
+                      <div
+                        id="submit-basic-button-text"
+                        class="w-auto -mx-2 md:mx-0"
+                      >
+                        <div id="loading" class=""></div>
+                        <span id="button-text">Select</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-              </button>
-              <button
-                id="confirm-plan-change-cancel"
-                onClick="cancelChangePlan()"
-                class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
-                type="submit"
+              </div>
+              <div
+                id="premium"
+                class="w-1/2 rounded overflow-hidden border rounded-md p-2"
               >
-                <div class="w-auto -mx-2 md:mx-0">
-                  <div id="loading" class=""></div>
-                  <span id="button-text">Cancel</span>
+                <div class="px-2 py-2">
+                  <div class="text-gray-500 text-xl mb-2 font-medium">
+                    Premium
+                  </div>
+                  <p class="text-pasha text-2xl font-extrabold">
+                    $15.00
+                  </p>
+                  <div class="flex-wrap">
+                    <div class="leading-none text-gray-500 text-xs font-medium">
+                      Per month
+                    </div>
+                    <div
+                      class="leading-none text-gray-500 text-xs font-medium mt-1"
+                    >
+                      Billed monthly
+                    </div>
+                  </div>
+                  <div class="flex justify-center mt-6">
+                    <button
+                      id="submit-premium"
+                      onClick="switchPlans('PREMIUM')"
+                      class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                      type="submit"
+                    >
+                      <div
+                        id="submit-premium-button-text"
+                        class="w-auto -mx-2 md:mx-0"
+                      >
+                        <div id="loading" class=""></div>
+                        <span id="button-text">Select</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-              </button>
+              </div>
+            </div>
+            <div id="plan-change-form" class="flex justify-center">
+              <div
+                class="w-full rounded overflow-hidden border rounded-md p-4 mb-4"
+              >
+                <div class="flex justify-between text-gray-600 text-m">
+                  <div>Current plan</div>
+                  <div
+                    class="font-bold text-m"
+                    id="current-plan-subscribed"
+                    class="mb-2"
+                  ></div>
+                </div>
+
+                <div class="flex justify-between text-gray-600 text-m">
+                  <div>New plan</div>
+                  <div
+                    class="font-bold text-m"
+                    id="new-plan-selected"
+                    class="mb-2"
+                  ></div>
+                </div>
+
+                <div>
+                  <p class="mt-4 mb-4 text-gray-600">
+                    You will be charged
+                    <span id="new-plan-price-selected"></span>
+                    on <span id="new-plan-start-date"></span>
+                  </p>
+                  <button
+                    id="confirm-plan-change-submit"
+                    onClick="confirmPlanChange()"
+                    class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                    type="submit"
+                  >
+                    <div class="w-auto -mx-2 md:mx-0">
+                      <div id="loading" class=""></div>
+                      <span id="button-text">Confirm change</span>
+                    </div>
+                  </button>
+                  <button
+                    id="confirm-plan-change-cancel"
+                    onClick="cancelChangePlan()"
+                    class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                    type="submit"
+                  >
+                    <div class="w-auto -mx-2 md:mx-0">
+                      <div id="loading" class=""></div>
+                      <span id="button-text">Cancel</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

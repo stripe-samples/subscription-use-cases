@@ -157,6 +157,16 @@ function goToPaymentPage(planId) {
     planInfo[planId].name +
     '</span>';
 
+  // Show which plan the user selected
+  if (planId === 'premium') {
+    document.querySelector('#submit-premium-button-text').innerText =
+      'Selected';
+    document.querySelector('#submit-basic-button-text').innerText = 'Select';
+  } else {
+    document.querySelector('#submit-premium-button-text').innerText = 'Select';
+    document.querySelector('#submit-basic-button-text').innerText = 'Selected';
+  }
+
   // Update the border to show which plan is selected
   changePlanSelection(planId);
 }
@@ -183,10 +193,14 @@ function switchPlans(newPlanIdSelected) {
       // calculate if it's upgrade or downgrade
       document.getElementById(
         'current-plan-subscribed'
-      ).innerHTML = currentSubscribedPlanId;
+      ).innerHTML = capitalizeFirstLetter(currentSubscribedPlanId);
+
       document.getElementById(
         'new-plan-selected'
-      ).innerHTML = newPlanIdSelected;
+      ).innerText = capitalizeFirstLetter(newPlanIdSelected);
+
+      document.getElementById('new-plan-price-selected').innerText =
+        '$' + upcomingInvoice.amount_due / 100;
 
       let nextPaymentAttemptDateToDisplay = getDateStringFromUnixTimestamp(
         upcomingInvoice.next_payment_attempt
@@ -195,8 +209,6 @@ function switchPlans(newPlanIdSelected) {
         'new-plan-start-date'
       ).innerHTML = nextPaymentAttemptDateToDisplay;
 
-      document.getElementById('new-plan-price').innerHTML =
-        '$' + upcomingInvoice.amount_due / 100 + '/month';
       changeLoadingStatePlans(false);
     }
   );
@@ -215,7 +227,7 @@ function confirmPlanChange() {
 
   updateSubscription(newPlanId.toUpperCase(), subscriptionId).then((result) => {
     let searchParams = new URLSearchParams(window.location.search);
-    searchParams.set('planId', newPlanId);
+    searchParams.set('planId', result.plan.nickname.toUpperCase());
     searchParams.set('planHasChanged', true);
     window.location.search = searchParams.toString();
   });
@@ -564,7 +576,8 @@ function getFormattedAmount(amount) {
 }
 
 function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+  let tempString = string.toLowerCase();
+  return tempString.charAt(0).toUpperCase() + tempString.slice(1);
 }
 
 function getDateStringFromUnixTimestamp(date) {
@@ -577,20 +590,9 @@ function getDateStringFromUnixTimestamp(date) {
 }
 
 // For demo purpose only
-function hasPlanChangedShowBanner() {
+function getCustomersPaymentMethod() {
   let params = new URLSearchParams(document.location.search.substring(1));
-  if (params.get('planHasChanged')) {
-    document.querySelector('#plan-changed-alert').classList.remove('hidden');
 
-    let currentPeriodEnd = params.get('currentPeriodEnd');
-    let planId = params.get('planId');
-    document.getElementById('plan-changing-to').innerText = planId;
-    document.getElementById(
-      'plan-changing-on'
-    ).innerHTML = getDateStringFromUnixTimestamp(currentPeriodEnd);
-    document.getElementById('subscription-status-text').innerText =
-      'Subscription changed';
-  }
   let paymentMethodId = params.get('paymentMethodId');
   if (paymentMethodId) {
     retrieveCustomerPaymentMethod(paymentMethodId).then(function (response) {
@@ -601,12 +603,12 @@ function hasPlanChangedShowBanner() {
 
       document.getElementById(
         'subscribed-plan'
-      ).innerText = capitalizeFirstLetter(params.get('planId').toLowerCase());
+      ).innerText = capitalizeFirstLetter(params.get('planId'));
     });
   }
 }
 
-hasPlanChangedShowBanner();
+getCustomersPaymentMethod();
 
 // Shows the cancellation response
 function subscriptionCancelled() {
@@ -692,33 +694,27 @@ function changePlanSelection(planId) {
 function changeLoadingState(isLoading) {
   if (isLoading) {
     document.querySelector('#button-text').classList.add('hidden');
+    document.querySelector('#loading').classList.remove('hidden');
     document.querySelector('#signup-form button').disabled = true;
-    document.querySelector('#loading').classList.add('loading');
   } else {
-    document.querySelector('#signup-form button').disabled = false;
-    document.querySelector('#loading').classList.remove('loading');
     document.querySelector('#button-text').classList.remove('hidden');
+    document.querySelector('#loading').classList.add('hidden');
+    document.querySelector('#signup-form button').disabled = false;
   }
 }
 
 // Show a spinner on subscription submission
 function changeLoadingStatePlans(isLoading) {
   if (isLoading) {
-    let buttons = document.querySelectorAll('#button-text');
-    let loading = document.querySelectorAll('#loading');
-    for (let i = 0; i < buttons.length; i++) {
-      buttons[i].classList.add('hidden');
-      loading[i].classList.add('loading');
-    }
+    document.querySelector('#button-text').classList.add('hidden');
+    document.querySelector('#loading').classList.remove('hidden');
+
     document.querySelector('#submit-basic').classList.add('invisible');
     document.querySelector('#submit-premium').classList.add('invisible');
     if (document.getElementById('confirm-plan-change-cancel')) {
       document
         .getElementById('confirm-plan-change-cancel')
         .classList.add('invisible');
-      // document
-      //   .getElementById('confirm-plan-change-submit')
-      //   .classList.add('invisible');
     }
   } else {
     let buttons = document.querySelectorAll('#button-text');
