@@ -83,7 +83,7 @@ def createSubscription():
             customer=data['customerId'],
             items=[
                 {
-                    'plan': os.getenv(data['planId'])
+                    'price': os.getenv(data['priceId'])
                 }
             ],
             expand=['latest_invoice.payment_intent'],
@@ -129,14 +129,13 @@ def retrieveUpcomingInvoice():
         invoice = stripe.Invoice.upcoming(
             customer=data['customerId'],
             subscription=data['subscriptionId'],
-            subscription_trial_end=data['subscription_trial_end'],
             subscription_items=[
                 {
                     'id': subscription['items']['data'][0].id,
                     'deleted': True
                 },
                 {
-                    'plan': os.getenv(data['newPlanId']),
+                    'price': os.getenv(data['newPriceId']),
                     'deleted': False
                 }
             ],
@@ -169,7 +168,7 @@ def updateSubscription():
             cancel_at_period_end=False,
             items=[{
                 'id': subscription['items']['data'][0].id,
-                'plan': os.getenv(data['newPlanId']),
+                'price': os.getenv(data['newPriceId']),
             }]
         )
         return jsonify(updatedSubscription)

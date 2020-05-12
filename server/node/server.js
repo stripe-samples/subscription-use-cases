@@ -61,7 +61,7 @@ app.post('/create-subscription', async (req, res) => {
   // Create the subscription
   const subscription = await stripe.subscriptions.create({
     customer: req.body.customerId,
-    items: [{ plan: process.env[req.body.planId] }],
+    items: [{ price: process.env[req.body.priceId] }],
     expand: ['latest_invoice.payment_intent'],
   });
 
@@ -108,7 +108,7 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
         deleted: true,
       },
       {
-        plan: process.env[req.body.newPlanId],
+        price: process.env[req.body.newPriceId],
         deleted: false,
       },
     ],
@@ -135,7 +135,7 @@ app.post('/update-subscription', async (req, res) => {
       items: [
         {
           id: subscription.items.data[0].id,
-          plan: process.env[req.body.newPlanId],
+          price: process.env[req.body.newPriceId],
         },
       ],
     }

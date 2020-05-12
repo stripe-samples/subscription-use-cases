@@ -1,6 +1,6 @@
-let stripe, customer, plan, card;
+let stripe, customer, price, card;
 
-let planInfo = {
+let priceInfo = {
   basic: {
     amount: '500',
     name: 'Basic',
@@ -63,7 +63,7 @@ function stripeElements(publishableKey) {
       createCustomer().then((result) => {
         customer = result.customer;
 
-        window.location.href = '/plans.html?customerId=' + customer.id;
+        window.location.href = '/prices.html?customerId=' + customer.id;
       });
     });
   }
@@ -72,7 +72,7 @@ function stripeElements(publishableKey) {
   if (paymentForm) {
     paymentForm.addEventListener('submit', function (evt) {
       evt.preventDefault();
-      changeLoadingStatePlans(true);
+      changeLoadingStateprices(true);
 
       // If a previous payment was attempted, get the lastest invoice
       const latestInvoicePaymentIntentStatus = localStorage.getItem(
@@ -97,7 +97,7 @@ function stripeElements(publishableKey) {
 }
 
 function displayError(event) {
-  changeLoadingStatePlans(false);
+  changeLoadingStateprices(false);
   let displayError = document.getElementById('card-element-errors');
   if (event.error) {
     displayError.textContent = event.error.message;
@@ -112,7 +112,7 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
   // Set up payment method for recurring usage
   let billingName = document.querySelector('#name').value;
 
-  let planId = document.getElementById('planId').innerHTML.toUpperCase();
+  let priceId = document.getElementById('priceId').innerHTML.toUpperCase();
 
   stripe
     .createPaymentMethod({
@@ -132,33 +132,33 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
             customerId,
             result.paymentMethod.id,
             invoiceId,
-            planId
+            priceId
           );
         } else {
           // Create the subscription
-          createSubscription(customerId, result.paymentMethod.id, planId);
+          createSubscription(customerId, result.paymentMethod.id, priceId);
         }
       }
     });
 }
 
-function goToPaymentPage(planId) {
+function goToPaymentPage(priceId) {
   // Show the payment screen
   document.querySelector('#payment-form').classList.remove('hidden');
 
   document.getElementById('total-due-now').innerText = getFormattedAmount(
-    planInfo[planId].amount
+    priceInfo[priceId].amount
   );
 
-  // Add the plan selected
-  document.getElementById('plan-selected').innerHTML =
+  // Add the price selected
+  document.getElementById('price-selected').innerHTML =
     '→ Subscribing to ' +
-    '<span id="planId" class="font-bold">' +
-    planInfo[planId].name +
+    '<span id="priceId" class="font-bold">' +
+    priceInfo[priceId].name +
     '</span>';
 
-  // Show which plan the user selected
-  if (planId === 'premium') {
+  // Show which price the user selected
+  if (priceId === 'premium') {
     document.querySelector('#submit-premium-button-text').innerText =
       'Selected';
     document.querySelector('#submit-basic-button-text').innerText = 'Select';
@@ -167,70 +167,76 @@ function goToPaymentPage(planId) {
     document.querySelector('#submit-basic-button-text').innerText = 'Selected';
   }
 
-  // Update the border to show which plan is selected
-  changePlanSelection(planId);
+  // Update the border to show which price is selected
+  changePriceSelection(priceId);
 }
 
-function changePlan() {
-  demoChangePlan();
+function changePrice() {
+  demoChangePrice();
 }
 
-function switchPlans(newPlanIdSelected) {
+function switchPrices(newPriceIdSelected) {
   const params = new URLSearchParams(document.location.search.substring(1));
-  const currentSubscribedPlanId = params.get('planId');
+  const currentSubscribedpriceId = params.get('priceId');
   const customerId = params.get('customerId');
   const subscriptionId = params.get('subscriptionId');
-  // Update the border to show which plan is selected
-  changePlanSelection(newPlanIdSelected);
+  // Update the border to show which price is selected
+  changePriceSelection(newPriceIdSelected);
 
-  changeLoadingStatePlans(true);
+  changeLoadingStateprices(true);
 
   // Retrieve the upcoming invoice to display details about
-  // the plan change
-  retrieveUpcomingInvoice(customerId, subscriptionId, newPlanIdSelected).then(
+  // the price change
+  retrieveUpcomingInvoice(customerId, subscriptionId, newPriceIdSelected).then(
     (upcomingInvoice) => {
-      // Change the plan details for plan upgrade/downgrade
+      // Change the price details for price upgrade/downgrade
       // calculate if it's upgrade or downgrade
       document.getElementById(
-        'current-plan-subscribed'
-      ).innerHTML = capitalizeFirstLetter(currentSubscribedPlanId);
+        'current-price-subscribed'
+      ).innerHTML = capitalizeFirstLetter(currentSubscribedpriceId);
 
       document.getElementById(
-        'new-plan-selected'
-      ).innerText = capitalizeFirstLetter(newPlanIdSelected);
+        'new-price-selected'
+      ).innerText = capitalizeFirstLetter(newPriceIdSelected);
 
-      document.getElementById('new-plan-price-selected').innerText =
+      document.getElementById('new-price-price-selected').innerText =
         '$' + upcomingInvoice.amount_due / 100;
 
       let nextPaymentAttemptDateToDisplay = getDateStringFromUnixTimestamp(
         upcomingInvoice.next_payment_attempt
       );
       document.getElementById(
-        'new-plan-start-date'
+        'new-price-start-date'
       ).innerHTML = nextPaymentAttemptDateToDisplay;
 
-      changeLoadingStatePlans(false);
+      changeLoadingStateprices(false);
     }
   );
 
-  if (currentSubscribedPlanId != newPlanIdSelected) {
-    document.querySelector('#plan-change-form').classList.remove('hidden');
+  if (currentSubscribedpriceId != newPriceIdSelected) {
+    document.querySelector('#price-change-form').classList.remove('hidden');
   } else {
-    document.querySelector('#plan-change-form').classList.add('hidden');
+    document.querySelector('#price-change-form').classList.add('hidden');
   }
 }
 
-function confirmPlanChange() {
+function confirmPriceChange() {
   const params = new URLSearchParams(document.location.search.substring(1));
   const subscriptionId = params.get('subscriptionId');
-  let newPlanId = document.getElementById('new-plan-selected').innerHTML;
+  let newPriceId = document.getElementById('new-price-selected').innerHTML;
 
-  updateSubscription(newPlanId.toUpperCase(), subscriptionId).then((result) => {
-    let searchParams = new URLSearchParams(window.location.search);
-    searchParams.set('planId', result.plan.nickname.toUpperCase());
-    searchParams.set('planHasChanged', true);
-    window.location.search = searchParams.toString();
-  });
+  updateSubscription(newPriceId.toUpperCase(), subscriptionId).then(
+    (result) => {
+      console.log(result);
+      let searchParams = new URLSearchParams(window.location.search);
+      searchParams.set(
+        'priceId',
+        result.items.data[0].price.nickname.toUpperCase()
+      );
+      searchParams.set('priceHasChanged', true);
+      window.location.search = searchParams.toString();
+    }
+  );
 }
 
 function createCustomer() {
@@ -256,13 +262,13 @@ function createCustomer() {
 function handleCustomerActionRequired({
   subscription,
   invoice,
-  planId,
+  priceId,
   paymentMethodId,
   isRetry,
 }) {
   if (subscription && subscription.status === 'active') {
     // subscription is active, no customer actions required.
-    return { subscription, planId, paymentMethodId };
+    return { subscription, priceId, paymentMethodId };
   }
 
   // If it's a first payment attempt, the payment intent is on the subscription latest invoice.
@@ -292,7 +298,7 @@ function handleCustomerActionRequired({
             // listen to invoice.payment_succeeded. This webhook endpoint
             // returns an Invoice.
             return {
-              planId: planId,
+              priceId: priceId,
               subscription: subscription,
               invoice: invoice,
               paymentMethodId: paymentMethodId,
@@ -305,18 +311,18 @@ function handleCustomerActionRequired({
       });
   } else {
     // No customer action needed
-    return { subscription, planId, paymentMethodId };
+    return { subscription, priceId, paymentMethodId };
   }
 }
 
 function handlePaymentMethodRequired({
   subscription,
   paymentMethodId,
-  planId,
+  priceId,
 }) {
   if (subscription.status === 'active') {
     // subscription is active, no customer actions required.
-    return { subscription, planId, paymentMethodId };
+    return { subscription, priceId, paymentMethodId };
   } else if (
     subscription.latest_invoice.payment_intent.status ===
     'requires_payment_method'
@@ -331,7 +337,7 @@ function handlePaymentMethodRequired({
     );
     throw { error: { message: 'Your card was declined.' } };
   } else {
-    return { subscription, planId, paymentMethodId };
+    return { subscription, priceId, paymentMethodId };
   }
 }
 
@@ -344,10 +350,10 @@ function onSubscriptionComplete(result) {
   onSubscriptionSampleDemoComplete(result);
   // Call your backend to grant access to your service based on
   // the product your customer subscribed to.
-  // Get the product by using result.subscription.plan.product
+  // Get the product by using result.subscription.price.product
 }
 
-function createSubscription(customerId, paymentMethodId, planId) {
+function createSubscription(customerId, paymentMethodId, priceId) {
   return (
     fetch('/create-subscription', {
       method: 'post',
@@ -357,7 +363,7 @@ function createSubscription(customerId, paymentMethodId, planId) {
       body: JSON.stringify({
         customerId: customerId,
         paymentMethodId: paymentMethodId,
-        planId: planId,
+        priceId: priceId,
       }),
     })
       .then((response) => {
@@ -379,7 +385,7 @@ function createSubscription(customerId, paymentMethodId, planId) {
           // returned result to understand what object is returned.
           subscription: result,
           paymentMethodId: paymentMethodId,
-          planId: planId,
+          priceId: priceId,
         };
       })
       // Some payment methods require a customer to do additional
@@ -404,7 +410,7 @@ function retryInvoiceWithNewPaymentMethod(
   customerId,
   paymentMethodId,
   invoiceId,
-  planId
+  priceId
 ) {
   return (
     fetch('/retry-invoice', {
@@ -437,7 +443,7 @@ function retryInvoiceWithNewPaymentMethod(
           // returned result to understand what object is returned.
           invoice: result,
           paymentMethodId: paymentMethodId,
-          planId: planId,
+          priceId: priceId,
           isRetry: true,
         };
       })
@@ -455,7 +461,7 @@ function retryInvoiceWithNewPaymentMethod(
   );
 }
 
-function retrieveUpcomingInvoice(customerId, subscriptionId, newPlanId) {
+function retrieveUpcomingInvoice(customerId, subscriptionId, newPriceId) {
   return fetch('/retrieve-upcoming-invoice', {
     method: 'post',
     headers: {
@@ -464,7 +470,7 @@ function retrieveUpcomingInvoice(customerId, subscriptionId, newPlanId) {
     body: JSON.stringify({
       customerId: customerId,
       subscriptionId: subscriptionId,
-      newPlanId: newPlanId,
+      newPriceId: newPriceId,
     }),
   })
     .then((response) => {
@@ -476,7 +482,7 @@ function retrieveUpcomingInvoice(customerId, subscriptionId, newPlanId) {
 }
 
 function cancelSubscription() {
-  changeLoadingStatePlans(true);
+  changeLoadingStateprices(true);
   const params = new URLSearchParams(document.location.search.substring(1));
   const subscriptionId = params.get('subscriptionId');
 
@@ -497,7 +503,7 @@ function cancelSubscription() {
     });
 }
 
-function updateSubscription(planId, subscriptionId) {
+function updateSubscription(priceId, subscriptionId) {
   return fetch('/update-subscription', {
     method: 'post',
     headers: {
@@ -505,7 +511,7 @@ function updateSubscription(planId, subscriptionId) {
     },
     body: JSON.stringify({
       subscriptionId: subscriptionId,
-      newPlanId: planId,
+      newPriceId: priceId,
     }),
   })
     .then((response) => {
@@ -602,8 +608,8 @@ function getCustomersPaymentMethod() {
         response.card.last4;
 
       document.getElementById(
-        'subscribed-plan'
-      ).innerText = capitalizeFirstLetter(params.get('planId'));
+        'subscribed-price'
+      ).innerText = capitalizeFirstLetter(params.get('priceId'));
     });
   }
 }
@@ -618,7 +624,7 @@ function subscriptionCancelled() {
 
 /* Shows a success / error message when the payment is complete */
 function onSubscriptionSampleDemoComplete({
-  planId: planId,
+  priceId: priceId,
   subscription: subscription,
   paymentMethodId: paymentMethodId,
   invoice: invoice,
@@ -640,8 +646,8 @@ function onSubscriptionSampleDemoComplete({
   window.location.href =
     '/account.html?subscriptionId=' +
     subscriptionId +
-    '&planId=' +
-    planId +
+    '&priceId=' +
+    priceId +
     '&currentPeriodEnd=' +
     currentPeriodEnd +
     '&customerId=' +
@@ -650,29 +656,29 @@ function onSubscriptionSampleDemoComplete({
     paymentMethodId;
 }
 
-function demoChangePlan() {
+function demoChangePrice() {
   document.querySelector('#basic').classList.remove('border-pasha');
   document.querySelector('#premium').classList.remove('border-pasha');
-  document.querySelector('#plan-change-form').classList.add('hidden');
+  document.querySelector('#price-change-form').classList.add('hidden');
 
-  // Grab the PlanID from the URL
+  // Grab the priceId from the URL
   // This is meant for the demo, replace with a cache or database.
   const params = new URLSearchParams(document.location.search.substring(1));
-  const planId = params.get('planId').toLowerCase();
+  const priceId = params.get('priceId').toLowerCase();
 
-  // Show the change plan screen
-  document.querySelector('#plans-form').classList.remove('hidden');
+  // Show the change price screen
+  document.querySelector('#prices-form').classList.remove('hidden');
   document
-    .querySelector('#' + planId.toLowerCase())
+    .querySelector('#' + priceId.toLowerCase())
     .classList.add('border-pasha');
 
   let elements = document.querySelectorAll(
-    '#submit-' + planId + '-button-text'
+    '#submit-' + priceId + '-button-text'
   );
   for (let i = 0; i < elements.length; i++) {
     elements[0].childNodes[3].innerText = 'Current';
   }
-  if (planId === 'premium') {
+  if (priceId === 'premium') {
     document.getElementById('submit-premium').disabled = true;
     document.getElementById('submit-basic').disabled = false;
   } else {
@@ -681,12 +687,12 @@ function demoChangePlan() {
   }
 }
 
-// Changes the plan selected
-function changePlanSelection(planId) {
+// Changes the price selected
+function changePriceSelection(priceId) {
   document.querySelector('#basic').classList.remove('border-pasha');
   document.querySelector('#premium').classList.remove('border-pasha');
   document
-    .querySelector('#' + planId.toLowerCase())
+    .querySelector('#' + priceId.toLowerCase())
     .classList.add('border-pasha');
 }
 
@@ -704,16 +710,16 @@ function changeLoadingState(isLoading) {
 }
 
 // Show a spinner on subscription submission
-function changeLoadingStatePlans(isLoading) {
+function changeLoadingStateprices(isLoading) {
   if (isLoading) {
     document.querySelector('#button-text').classList.add('hidden');
     document.querySelector('#loading').classList.remove('hidden');
 
     document.querySelector('#submit-basic').classList.add('invisible');
     document.querySelector('#submit-premium').classList.add('invisible');
-    if (document.getElementById('confirm-plan-change-cancel')) {
+    if (document.getElementById('confirm-price-change-cancel')) {
       document
-        .getElementById('confirm-plan-change-cancel')
+        .getElementById('confirm-price-change-cancel')
         .classList.add('invisible');
     }
   } else {
@@ -725,12 +731,12 @@ function changeLoadingStatePlans(isLoading) {
     }
     document.querySelector('#submit-basic').classList.remove('invisible');
     document.querySelector('#submit-premium').classList.remove('invisible');
-    if (document.getElementById('confirm-plan-change-cancel')) {
+    if (document.getElementById('confirm-price-change-cancel')) {
       document
-        .getElementById('confirm-plan-change-cancel')
+        .getElementById('confirm-price-change-cancel')
         .classList.remove('invisible');
       document
-        .getElementById('confirm-plan-change-submit')
+        .getElementById('confirm-price-change-submit')
         .classList.remove('invisible');
     }
   }

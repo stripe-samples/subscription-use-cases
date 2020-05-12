@@ -51,8 +51,8 @@ public class Server {
         @SerializedName("customerId")
         String customerId;
 
-        @SerializedName("planId")
-        String planId;
+        @SerializedName("priceId")
+        String priceId;
 
         @SerializedName("paymentMethodId")
         String paymentMethodId;
@@ -61,8 +61,8 @@ public class Server {
             return customerId;
         }
 
-        public String getPlanId() {
-            return planId;
+        public String getPriceId() {
+            return priceId;
         }
 
         public String getPaymentMethodId() {
@@ -74,22 +74,22 @@ public class Server {
         @SerializedName("subscriptionId")
         String subscriptionId;
 
-        @SerializedName("planId")
-        String planId;
+        @SerializedName("priceId")
+        String priceId;
 
-        @SerializedName("newPlanId")
-        String newPlanId;
+        @SerializedName("newPriceId")
+        String newPriceId;
 
         public String getSubscriptionId() {
             return subscriptionId;
         }
 
-        public String getPlanId() {
-            return newPlanId;
+        public String getPriceId() {
+            return newPriceId;
         }
 
-        public String getNewPlanId() {
-            return newPlanId;
+        public String getNewPriceId() {
+            return newPriceId;
         }
     }
 
@@ -120,15 +120,15 @@ public class Server {
         @SerializedName("subscriptionId")
         String subscriptionId;
 
-        @SerializedName("newPlanId")
-        String newPlanId;
+        @SerializedName("newPriceId")
+        String newPriceId;
 
         public String getSubscriptionId() {
             return subscriptionId;
         }
 
-        public String getNewPlanId() {
-            return newPlanId;
+        public String getNewPriceId() {
+            return newPriceId;
         }
     }
 
@@ -148,8 +148,8 @@ public class Server {
         @SerializedName("subscriptionId")
         String subscriptionId;
 
-        @SerializedName("newPlanId")
-        String newPlanId;
+        @SerializedName("newPriceId")
+        String newPriceId;
 
         @SerializedName("subscription_trial_end")
         String subscription_trial_end;
@@ -162,8 +162,8 @@ public class Server {
             return subscriptionId;
         }
 
-        public String getNewPlanId() {
-            return newPlanId;
+        public String getNewPriceId() {
+            return newPriceId;
         }
 
         public String getSubscriptionTrialEnd() {
@@ -238,7 +238,7 @@ public class Server {
 
             // Create the subscription
             Map<String, Object> item = new HashMap<>();
-            item.put("plan", dotenv.get(postBody.getPlanId().toUpperCase()));
+            item.put("plan", dotenv.get(postBody.getPriceId().toUpperCase()));
             Map<String, Object> items = new HashMap<>();
             items.put("0", item);
             Map<String, Object> params = new HashMap<>();
@@ -306,7 +306,7 @@ public class Server {
             Map<String, Object> items = new HashMap<>();
             items.put("0", item);
             Map<String, Object> item2 = new HashMap<>();
-            item2.put("plan", dotenv.get(postBody.getNewPlanId().toUpperCase()));
+            item2.put("plan", dotenv.get(postBody.getNewPriceId().toUpperCase()));
             item2.put("deleted", false);
             items.put("1", item2);
             invoiceParams.put("subscription_items", items);
@@ -337,7 +337,7 @@ public class Server {
             SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
                     .addItem(SubscriptionUpdateParams.Item.builder()
                             .setId(subscription.getItems().getData().get(0).getId())
-                            .setPlan(dotenv.get(postBody.getNewPlanId().toUpperCase())).build())
+                            .setPlan(dotenv.get(postBody.getNewPriceId().toUpperCase())).build())
                     .setCancelAtPeriodEnd(false).build();
 
             subscription.update(params);

@@ -65,7 +65,7 @@ post '/create-subscription' do
     customer: data['customerId'],
     items: [
       {
-        plan: ENV[data['planId']]
+        price: ENV[data['priceId']]
       }
     ],
     expand: ['latest_invoice.payment_intent']
@@ -114,14 +114,13 @@ post '/retrieve-upcoming-invoice' do
   invoice = Stripe::Invoice.upcoming(
     customer: data['customerId'],
     subscription: data['subscriptionId'],
-    subscription_trial_end: data['subscription_trial_end'],
     subscription_items: [
       {
         id: subscription.items.data[0].id,
         deleted: true
       },
       {
-        plan: ENV[data['newPlanId']],
+        price: ENV[data['newPriceId']],
         deleted: false
       }
     ]
@@ -151,7 +150,7 @@ post '/update-subscription' do
     items: [
       {
         id: subscription.items.data[0].id,
-        plan: ENV[data['newPlanId']]
+        price: ENV[data['newPriceId']]
       }
     ]
   )

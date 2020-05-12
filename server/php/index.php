@@ -76,7 +76,7 @@ $app->post('/create-subscription', function (Request $request, Response $respons
     'customer' => $body->customerId,
     'items' => [
       [
-        'plan' => getenv($body->planId),
+        'price' => getenv($body->priceId),
       ],
     ],
     'expand' => ['latest_invoice.payment_intent'],
@@ -126,14 +126,13 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
     "customer" => $body->customerId,
     "subscription_prorate" => TRUE,
     "subscription" => $body->subscriptionId,
-    "subscription_trial_end" => $body->subscription_trial_end,
     "subscription_items" => [
       [
         'id' => $subscription->items->data[0]->id,
         'deleted' => TRUE
       ],
       [
-        'plan' => getenv($body->newPlanId),
+        'price' => getenv($body->newPriceId),
         'deleted' => FALSE
       ],
     ]
@@ -163,7 +162,7 @@ $app->post('/update-subscription', function (Request $request, Response $respons
     'items' => [
       [
         'id' => $subscription->items->data[0]->id,
-        'plan' => getenv($body->newPlanId),
+        'price' => getenv($body->newPriceId),
       ],
     ],
   ]);
@@ -210,7 +209,6 @@ $app->post('/stripe-webhook', function(Request $request, Response $response) {
     // Remove comment to see the various objects sent for this sample
     switch ($type) {
       case 'invoice.payment_succeeded':
-        // Used to provision services after the trial has ended.
         // The status of the invoice will show up as paid. Store the status in your
         // database to reference when a user accesses your service to avoid hitting rate
         // limits.
