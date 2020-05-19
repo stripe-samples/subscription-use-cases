@@ -635,7 +635,11 @@ function onSubscriptionSampleDemoComplete({
   if (subscription) {
     subscriptionId = subscription.id;
     currentPeriodEnd = subscription.current_period_end;
-    customerId = subscription.customer;
+    if (typeof subscription.customer === 'object') {
+      customerId = subscription.customer.id;
+    } else {
+      customerId = subscription.customer;
+    }
   } else {
     const params = new URLSearchParams(document.location.search.substring(1));
     subscriptionId = invoice.subscription;
