@@ -227,12 +227,8 @@ function confirmPriceChange() {
 
   updateSubscription(newPriceId.toUpperCase(), subscriptionId).then(
     (result) => {
-      console.log(result);
       let searchParams = new URLSearchParams(window.location.search);
-      searchParams.set(
-        'priceId',
-        result.items.data[0].price.nickname.toUpperCase()
-      );
+      searchParams.set('priceId', newPriceId.toUpperCase());
       searchParams.set('priceHasChanged', true);
       window.location.search = searchParams.toString();
     }
