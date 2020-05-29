@@ -72,7 +72,7 @@ function stripeElements(publishableKey) {
   if (paymentForm) {
     paymentForm.addEventListener('submit', function (evt) {
       evt.preventDefault();
-      changeLoadingStateprices(true);
+      changeLoadingStatePrices(true);
 
       // If a previous payment was attempted, get the lastest invoice
       const latestInvoicePaymentIntentStatus = localStorage.getItem(
@@ -97,7 +97,7 @@ function stripeElements(publishableKey) {
 }
 
 function displayError(event) {
-  changeLoadingStateprices(false);
+  changeLoadingStatePrices(false);
   let displayError = document.getElementById('card-element-errors');
   if (event.error) {
     displayError.textContent = event.error.message;
@@ -128,15 +128,19 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
       } else {
         if (isPaymentRetry) {
           // Update the payment method and retry invoice payment
-          retryInvoiceWithNewPaymentMethod(
-            customerId,
-            result.paymentMethod.id,
-            invoiceId,
-            priceId
-          );
+          retryInvoiceWithNewPaymentMethod({
+            customerId: customerId,
+            paymentMethodId: result.paymentMethod.id,
+            invoiceId: invoiceId,
+            priceId: priceId,
+          });
         } else {
           // Create the subscription
-          createSubscription(customerId, result.paymentMethod.id, priceId);
+          createSubscription({
+            customerId: customerId,
+            paymentMethodId: result.paymentMethod.id,
+            priceId: priceId,
+          });
         }
       }
     });
@@ -183,7 +187,7 @@ function switchPrices(newPriceIdSelected) {
   // Update the border to show which price is selected
   changePriceSelection(newPriceIdSelected);
 
-  changeLoadingStateprices(true);
+  changeLoadingStatePrices(true);
 
   // Retrieve the upcoming invoice to display details about
   // the price change
@@ -209,7 +213,7 @@ function switchPrices(newPriceIdSelected) {
         'new-price-start-date'
       ).innerHTML = nextPaymentAttemptDateToDisplay;
 
-      changeLoadingStateprices(false);
+      changeLoadingStatePrices(false);
     }
   );
 
@@ -301,9 +305,6 @@ function handleCustomerActionRequired({
             };
           }
         }
-      })
-      .catch((error) => {
-        displayError(error);
       });
   } else {
     // No customer action needed
@@ -349,7 +350,7 @@ function onSubscriptionComplete(result) {
   // Get the product by using result.subscription.price.product
 }
 
-function createSubscription(customerId, paymentMethodId, priceId) {
+function createSubscription({ customerId, paymentMethodId, priceId }) {
   return (
     fetch('/create-subscription', {
       method: 'post',
@@ -402,12 +403,12 @@ function createSubscription(customerId, paymentMethodId, priceId) {
   );
 }
 
-function retryInvoiceWithNewPaymentMethod(
+function retryInvoiceWithNewPaymentMethod({
   customerId,
   paymentMethodId,
   invoiceId,
-  priceId
-) {
+  priceId,
+}) {
   return (
     fetch('/retry-invoice', {
       method: 'post',
@@ -478,7 +479,7 @@ function retrieveUpcomingInvoice(customerId, subscriptionId, newPriceId) {
 }
 
 function cancelSubscription() {
-  changeLoadingStateprices(true);
+  changeLoadingStatePrices(true);
   const params = new URLSearchParams(document.location.search.substring(1));
   const subscriptionId = params.get('subscriptionId');
 
@@ -710,7 +711,8 @@ function changeLoadingState(isLoading) {
 }
 
 // Show a spinner on subscription submission
-function changeLoadingStateprices(isLoading) {
+function changeLoadingStatePrices(isLoading) {
+  console.log(isLoading);
   if (isLoading) {
     document.querySelector('#button-text').classList.add('hidden');
     document.querySelector('#loading').classList.remove('hidden');
@@ -723,12 +725,9 @@ function changeLoadingStateprices(isLoading) {
         .classList.add('invisible');
     }
   } else {
-    let buttons = document.querySelectorAll('#button-text');
-    let loading = document.querySelectorAll('#loading');
-    for (let i = 0; i < buttons.length; i++) {
-      buttons[i].classList.remove('hidden');
-      loading[i].classList.remove('loading');
-    }
+    document.querySelector('#button-text').classList.remove('hidden');
+    document.querySelector('#loading').classList.add('hidden');
+
     document.querySelector('#submit-basic').classList.remove('invisible');
     document.querySelector('#submit-premium').classList.remove('invisible');
     if (document.getElementById('confirm-price-change-cancel')) {
