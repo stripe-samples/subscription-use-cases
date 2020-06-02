@@ -3,9 +3,9 @@
   "configureDotEnv": true,
   "integrations": [
     {
-      "name": "main",
+      "name": "fixed-price-subscriptions",
       "clients": ["web"],
-      "servers": ["java", "node", "php", "python", "ruby"]
+      "servers": ["java", "node", "php", "python", "ruby", "go", "dotnet"]
     }
   ]
 }
