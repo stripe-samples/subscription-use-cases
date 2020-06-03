@@ -9,7 +9,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 app.use(express.static(process.env.STATIC_DIR));
 // Use JSON parser for all non-webhook routes.
 app.use((req, res, next) => {
-  if (req.originalUrl === '/stripe-events') {
+  if (req.originalUrl === '/stripe-webhook') {
     next();
   } else {
     bodyParser.json()(req, res, next);
