@@ -124,7 +124,7 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
     })
     .then((result) => {
       if (result.error) {
-        displayError(error);
+        displayError(result);
       } else {
         if (isPaymentRetry) {
           // Update the payment method and retry invoice payment
