@@ -10,8 +10,7 @@ In this repository there are three integrations: [fixed-price-subscriptions](./f
 :--- | :---: | :---: | :---: 
 **Define prices in: CLI, Dashboard, or API** Create a price with the Stripe: CLI, Dashboard, or API. | ✅  | ✅ | ✅
 **Charge users a fixed price on a recurring basis** Create a subscription with a fixed price recurring monthly/yearly/etc. | ✅  |  |
-**Charge users per seat on a recurring basis** Create a subscription that charges based on the amount of seats used. |   | ✅ |
-**Charge customers based on their usage.** Create a metered subscriptions so you can charge customers based on their usage. |  |  | ✅ |
+
 
 
 **Demo**
