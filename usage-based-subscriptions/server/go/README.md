@@ -1,4 +1,4 @@
-# Subscriptions with fixed price
+# Subscriptions with metered usage
 
 A [Go](https://golang.org) implementation
 

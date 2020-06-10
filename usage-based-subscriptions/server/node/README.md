@@ -1,4 +1,4 @@
-# Subscriptions with fixed price
+# Subscriptions with metered usage
 
 An [Express server](http://expressjs.com) implementation.
 
