@@ -1,5 +1,5 @@
 {
-  "name": "subscriptions-with-fixed-prices",
+  "name": "subscriptions-with-metered-usage,
   "version": "1.0.0",
   "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
   "main": "server.js",
@@ -16,7 +16,8 @@
     "express": "^4.17.1",
     "postcss-cli": "^7.1.1",
     "stripe": "^7.4.0",
-    "tailwindcss": "^1.4.5"
+    "tailwindcss": "^1.4.5",
+    "uuid": "^8.1.0"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^2.1.2"

@@ -14,7 +14,7 @@ import com.stripe.net.RequestOptions;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
-public class UsageReporter {
+public class ReportUsage {
     public static void main(String[] args) {
       // Set your secret key. Remember to switch to your live secret key in production!
       // See your keys here: https://dashboard.stripe.com/account/apikeys

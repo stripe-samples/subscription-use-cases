@@ -3,11 +3,13 @@
 """
 report_usage.py
 Stripe Recipe.
+This code can be run on interval for each active metered subscription.
+An example of an interval could be reporting usage once every 24 hours, or even once a minute.
 Python 3.6 or newer required.
 """
 
-# This code can be run on interval for each active metered subscription
-# An example of an interval could be reporting usage once every 24 hours, or even once a minute.
+import time
+import uuid
 import stripe
 
 # Setup Stripe python client library
