@@ -8,14 +8,16 @@ An example of an interval could be reporting usage once every 24 hours, or even 
 Python 3.6 or newer required.
 """
 
+import os
 import time
 import uuid
 import stripe
+from dotenv import load_dotenv, find_dotenv
 
 # Setup Stripe python client library
 load_dotenv(find_dotenv())
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
-stripe.api_version = os.getenv('STRIPE_API_VERSION')
+#stripe.api_version = os.getenv('STRIPE_API_VERSION')
 
 def report_usage():
     # Important: your own business logic is needed here before the next step.
@@ -27,10 +29,10 @@ def report_usage():
 
     timestamp = int(time.time())
     # The idempotency key allows you to retry this usage record call if it fails (for example, a network timeout)
-    idempotency_key = uuid.uuid4()
+    idempotency_key = str(uuid.uuid4())
 
     try:
-        stripe.SubscriptionItem.create_usage_record(
+         stripe.SubscriptionItem.create_usage_record(
             subscription_item_id,
             quantity=usage_quantity,
             timestamp=timestamp,
@@ -38,7 +40,7 @@ def report_usage():
             idempotency_key=idempotency_key
         )
     except stripe.error.StripeError as e:
-        print('usage report failed for item ID %s with idempotency key %s: %s' % (subscription_item_id, idempotency_key, e.error.message))
+        print('usage report failed for item ID %s with idempotency key %s: %s' % (subscription_item_id, idempotency_key, e))
 
 if __name__ == '__main__':
     report_usage()

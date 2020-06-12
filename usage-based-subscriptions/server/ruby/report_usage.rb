@@ -22,7 +22,7 @@ usage_quantity = 100
 
 timestamp = Time.now.to_i
 # The idempotency key allows you to retry this usage record call if it fails (for example, a network timeout)
-idempotency_key = securerandom.uuid
+idempotency_key = SecureRandom.uuid()
 
 begin
   Stripe::SubscriptionItem.create_usage_record(

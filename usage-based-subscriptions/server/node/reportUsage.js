@@ -1,6 +1,6 @@
 // This code can be run on interval for each active metered subscription
 // An example of an interval could be reporting usage once every 24 hours, or even once a minute.
-const uuid = require('uuid/v4');
+const { v4: uuid } = require('uuid');
 require('dotenv').config({ path: './.env' });
 // Set your secret key. Remember to switch to your live secret key in production!
 // See your keys here: https://dashboard.stripe.com/account/apikeys
@@ -18,19 +18,20 @@ const usageQuantity = 100;
 const idempotencyKey = uuid();
 const timestamp = parseInt(Date.now() / 1000);
 
-try {
-  await stripe.subscriptionItems.createUsageRecord(
-    subscriptionItemID,
-    {
-      quantity: usageQuantity,
-      timestamp: timestamp,
-      action: 'increment',
-    },
-    {
-      idempotencyKey
-    }
-  );
-} catch (error) {
-  console.error(`usage report failed for item ID ${subscriptionItemID} wuith idempotency key ${idempotencyKey}: ${error.toString()}`);
-}
-
+(async function reportUsage() {
+  try {
+    await stripe.subscriptionItems.createUsageRecord(
+      subscriptionItemID,
+      {
+        quantity: usageQuantity,
+        timestamp: timestamp,
+        action: 'increment',
+      },
+      {
+        idempotencyKey
+      }
+    );
+  } catch (error) {
+    console.error(`usage report failed for item ID ${subscriptionItemID} wuith idempotency key ${idempotencyKey}: ${error.toString()}`);
+  }
+})();
