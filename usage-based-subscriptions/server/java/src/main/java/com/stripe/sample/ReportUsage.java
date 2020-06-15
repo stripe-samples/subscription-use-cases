@@ -1,7 +1,7 @@
 package com.stripe.sample;
 
-// This code can be run on interval for each active metered subscription
-// An example of an interval could be reporting usage once every 24 hours, or even once a minute.
+// This code can be run on an interval (e.g., every 24 hours) for each active
+// metered subscription.
 
 import java.time.Instant;
 import java.util.UUID;
@@ -21,15 +21,18 @@ public class ReportUsage {
       Dotenv dotenv = Dotenv.load();
       Stripe.apiKey = dotenv.get("STRIPE_SECRET_KEY");
 
-      // Important: your own business logic is needed here before the next step.
-      // Here is where to pull a record of a customer from your own database.
-      // Extract the customer's Stripe Subscription Item ID and usage for today from your database record in preparation for reporting to Stripe.
+      // You need to write some of your own business logic before creating the
+      // usage record. Pull a record of a customer from your database
+      // and extract the customer's Stripe Subscription Item ID and
+      // usage for the day. If you aren't storing subscription item IDs,
+      // you can retrieve the subscription and check for subscription items
+      // https://stripe.com/docs/api/subscriptions/object#subscription_object-items.
       String subscriptionItemID = "";
-      // The usage number you've been keeping track of in your own database for the last 24 hours (or the interval you have set for your needs)
+      // The usage number you've been keeping track of in your own database for the last 24 hours.
       long usageQuantity = 100;
 
       long timestamp = Instant.now().getEpochSecond();
-      // The idempotency key allows you to retry this usage record call if it fails (for example, a network timeout)
+      // The idempotency key allows you to retry this usage record call if it fails.
       String idempotencyKey = UUID.randomUUID().toString();
 
       try {
