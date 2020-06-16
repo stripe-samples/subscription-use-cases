@@ -1,0 +1,11 @@
+{
+  "name": "subscription-with-fixed-price",
+  "configureDotEnv": true,
+  "integrations": [
+    {
+      "name": "main",
+      "clients": ["web"],
+      "servers": ["java", "node", "php", "python", "ruby"]
+    }
+  ]
+}
