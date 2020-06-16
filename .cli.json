@@ -6,6 +6,11 @@
       "name": "fixed-price-subscriptions",
       "clients": ["web"],
       "servers": ["java", "node", "php", "python", "ruby", "go", "dotnet"]
+    },
+        {
+      "name": "usage-based-subscriptions",
+      "clients": ["web"],
+      "servers": ["java", "node", "php", "python", "ruby"]
     }
   ]
 }
