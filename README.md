@@ -5,6 +5,7 @@ This sample shows how to create a customer and subscribe them to a plan with
 
 |     | [fixed-price-subscriptions](./fixed-price-subscriptions) | [usage-based-subscriptions](./usage-based-subscriptions) | |
 :--- | :---: | :---: | :---:
+Demo  | See a hosted version of the [sample](https://xt7b9.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/fixed-price-subscriptions)  | See a hosted version of the [sample](https://l2sny.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/stripe-sample-usage-based-subscriptions-l2sny) |
 **Define prices in: CLI, Dashboard, or API** Create a price with the Stripe: CLI, Dashboard, or API. | ✅  |  |
 **Charge users a fixed price on a recurring basis** Create a subscription with a fixed price recurring monthly/yearly/etc. | ✅  |  |
 **Charge users per seat on a recurring basis** Create a subscription that charges based on the amount of seats used. |   |  |
