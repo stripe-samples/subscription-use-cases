@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Subscription prices</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A demo of Stripe Billing" />
+
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/global.css" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/script.js" defer></script>
+  </head>
+
+  <body class="antialiased p-6">
+    <nav class="flex items-center justify-between flex-wrap">
+      <svg width="79px" height="24px" viewBox="0 0 79 24">
+        <image
+          onclick="window.location.href='/'"
+          xlink:href="https://storage.googleapis.com/stripe-sample-images/logo-pasha.svg"
+        />
+      </svg>
+      <div>
+        <button
+          class="bg-white hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-pasha focus:bg-white focus:text-pasha font-light py-2 px-4 rounded"
+          type="button"
+          onclick="window.location.href='/'"
+        >
+          Sign out
+        </button>
+      </div>
+    </nav>
+    <div id="subscription-cancelled" class="hidden">
+      <div class="flex flex-wrap font-bold text-pasha text-xl mt-6 mb-2">
+        Subscription canceled
+      </div>
+      <div>
+        <button
+          class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded"
+          type="button"
+          onclick="window.location.href='/'"
+        >
+          Restart demo
+        </button>
+      </div>
+    </div>
+    <div id="subscription-settings">
+      <div class="flex flex-wrap justify-center mt-4">
+        <div class="md:w-2/5 w-full inline-block rounded-md p-4">
+          <div
+            id="subscription-status-text"
+            class="text-center font-bold text-pasha text-2xl"
+          >
+            Account settings
+          </div>
+          <div class="mt-4 border rounded p-4">
+            <div class="font-bold text-xl mb-2">
+              Account
+            </div>
+            <div class="flex justify-between text-gray-600 text-xl">
+              <div>Current price</div>
+              <div
+                class="font-bold text-xl"
+                id="subscribed-price"
+                class="mb-2"
+              ></div>
+            </div>
+
+            <div class="flex justify-between">
+              <div class="text-xl text-gray-600">
+                Credit card
+              </div>
+              <span
+                id="credit-card-last-four"
+                class="font-bold text-xl text-gray-600"
+              ></span>
+            </div>
+
+            <div
+              class="flex justify-between mt-2 mb-2 text-gray-900 font-bold text-xl cursor-pointer"
+              onClick="changePrice()"
+            >
+              <span>Change pricing plan <span>→</span></span>
+            </div>
+            <div
+              class="flex justify-between mt-2 mb-2 text-gray-900 font-bold text-xl cursor-pointer"
+              onClick="cancelSubscription()"
+            >
+              <span>Cancel subscription <span>→</span></span>
+            </div>
+          </div>
+
+          <div id="prices-form" class="w-full mr-4 md:mb-8 hidden">
+            <div class="text-center text-pasha font-bold text-2xl mt-4 mb-6">
+              Change pricing plan
+            </div>
+
+            <div class="flex justify-between mb-8">
+              <div
+                id="basic"
+                class="w-1/2 rounded overflow-hidden border rounded-md p-2 mr-4 md:mr-8"
+              >
+                <div class="px-2 py-2">
+                  <div class="text-gray-500 text-xl mb-2 font-medium">
+                    Basic
+                  </div>
+                  <p class="text-pasha text-2xl font-extrabold">
+                    $15.00
+                  </p>
+                  <div class="flex-wrap">
+                    <div class="leading-none text-gray-500 text-xs font-medium mb-2">
+                      Per month flat fee for up to 2,000 emails
+                    </div>
+
+                    <p class="text-pasha text-2xl">
+                     +  $.001
+                    </p>
+
+                    <div class="leading-none text-gray-500 text-xs font-medium">
+                      Per excess email above 2,000
+                    </div>
+                    <div
+                      class="leading-none text-gray-500 text-xs font-medium mt-4"
+                    >
+                      Billed monthly
+                    </div>
+                  </div>
+
+                  <div class="flex justify-center mt-6">
+                    <button
+                      id="submit-basic"
+                      onClick="switchPrices('BASIC')"
+                      class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                      type="submit"
+                    >
+                      <div
+                        id="submit-basic-button-text"
+                        class="w-auto -mx-2 md:mx-0"
+                      >
+                        <div id="loading" class=""></div>
+                        <span id="button-text">Select</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                id="premium"
+                class="w-1/2 rounded overflow-hidden border rounded-md p-2"
+              >
+                <div class="px-2 py-2">
+                  <div class="text-gray-500 text-xl mb-2 font-medium">
+                    Premium
+                  </div>
+                  <p class="text-pasha text-2xl font-extrabold">
+                    $75.00
+                  </p>
+                  <div class="flex-wrap">
+                    <div class="leading-none text-gray-500 text-xs font-medium mb-2">
+                      Per month flat fee for up to 10,000 emails
+                    </div>
+                    <p class="text-pasha text-2xl">
+                     +  $.00075
+                    </p>
+
+                    <div class="leading-none text-gray-500 text-xs font-medium">
+                      Per excess email above 10,000
+                    </div>
+                    <div
+                      class="leading-none text-gray-500 text-xs font-medium mt-4"
+                    >
+                      Billed monthly
+                    </div>
+                  </div>
+                  <div class="flex justify-center mt-6">
+                    <button
+                      id="submit-premium"
+                      onClick="switchPrices('PREMIUM')"
+                      class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                      type="submit"
+                    >
+                      <div
+                        id="submit-premium-button-text"
+                        class="w-auto -mx-2 md:mx-0"
+                      >
+                        <div id="loading" class=""></div>
+                        <span id="button-text">Select</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="price-change-form" class="flex justify-center">
+              <div
+                class="w-full rounded overflow-hidden border rounded-md p-4 mb-4"
+              >
+                <div class="flex justify-between text-gray-600 text-m">
+                  <div>Current price</div>
+                  <div
+                    class="font-bold text-m"
+                    id="current-price-subscribed"
+                    class="mb-2"
+                  ></div>
+                </div>
+
+                <div class="flex justify-between text-gray-600 text-m">
+                  <div>New price</div>
+                  <div
+                    class="font-bold text-m"
+                    id="new-price-selected"
+                    class="mb-2"
+                  ></div>
+                </div>
+
+                <div>
+                  <p class="mt-4 mb-4 text-gray-600">
+                    You will be charged
+                    <span id="new-price-price-selected"></span>
+                    on <span id="new-price-start-date"></span>
+                  </p>
+                  <button
+                    id="confirm-price-change-submit"
+                    onClick="confirmPriceChange()"
+                    class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                    type="submit"
+                  >
+                    <div class="w-auto -mx-2 md:mx-0">
+                      <div id="loading" class=""></div>
+                      <span id="button-text">Confirm change</span>
+                    </div>
+                  </button>
+                  <button
+                    id="confirm-price-change-cancel"
+                    onClick="cancelChangePrice()"
+                    class="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                    type="submit"
+                  >
+                    <div class="w-auto -mx-2 md:mx-0">
+                      <div id="loading" class=""></div>
+                      <span id="button-text">Cancel</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="transition transform fixed bottom-0 inset-x-0 px-2 pb-4 sm:px-0 sm:pb-6"
+    >
+      <a
+        href="https://github.com/stripe-samples"
+        class="flex items-center justify-between rounded-lg shadow-lg pl-6 pr-4 py-3 bg-white sm:hidden"
+      >
+        <p class="text-pasha">
+          <strong class="font-medium">
+            View
+          </strong>
+          Stripe sample code
+        </p>
+        <span
+          class="flex items-center justify-center px-3 py-2 border text-base leading-6 font-medium rounded-md text-gray-900 bg-white hover:text-gray-600 focus:outline-none focus:shadow-outline transition ease-in-out duration-150"
+        >
+          →
+        </span>
+      </a>
+      <div class="hidden sm:block max-w-8xl mx-auto px-4 lg:px-6">
+        <div class="py-3 pl-6 pr-3 rounded-lg bg-white shadow-lg">
+          <div class="flex items-center justify-between flex-wrap">
+            <div class="w-full flex-1 flex items-center sm:w-0">
+              <p class="text-white truncate">
+                <strong class="font-medium text-pasha md:hidden">
+                  This is a Stripe Sample
+                </strong>
+                <strong class="hidden md:inline font-medium text-pasha">
+                  This is a Stripe Sample
+                </strong>
+                <span class="lg:hidden text-pasha">
+                  with Metered Usage Subscriptions with Cards. View code on
+                  GitHub.
+                </span>
+                <!-- <span class="hidden md:inline lg:hidden">
+                    to all of the components in Tailwind UI
+                  </span> -->
+                <span class="hidden lg:inline text-pasha">
+                  with Metered Usage Subscriptions with Cards. View code on
+                  GitHub.
+                </span>
+              </p>
+            </div>
+            <div class="flex-shrink-0">
+              <div class="rounded-md shadow-sm">
+                <a
+                  href="https://stripe.com/docs/billing"
+                  class="flex items-center justify-center px-4 py-2 border text-sm leading-5 font-medium rounded text-pasha bg-white hover:text-gray-600 focus:outline-none focus:shadow-outline transition ease-in-out duration-150"
+                >
+                  View the guide →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <footer class="h-24"></footer>
+</html>

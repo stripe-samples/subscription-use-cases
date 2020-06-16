@@ -1,18 +1,13 @@
-# Set up subscriptions with Stripe Billing
+# Subscriptions with metered usage
 
-This sample shows how to create a customer and subscribe them to a plan with
-[Stripe Billing](https://stripe.com/billing). You can find step by step directions in the billing [overview](https://stripe.com/docs/billing) documentation page.
+Create a subscription for an online service with metered usage options, and work with Stripe Elements to host a payment form on your servers.
+This sample shows how to create a customer, set up a card for recurring use, and subscribe them to a subscription plan with
+[Stripe Billing](https://stripe.com/billing).
 
-|     | [fixed-price-subscriptions](./fixed-price-subscriptions) | [usage-based-subscriptions](./usage-based-subscriptions) | |
-:--- | :---: | :---: | :---:
-**Define prices in: CLI, Dashboard, or API** Create a price with the Stripe: CLI, Dashboard, or API. | ✅  |  |
-**Charge users a fixed price on a recurring basis** Create a subscription with a fixed price recurring monthly/yearly/etc. | ✅  |  |
-**Charge users per seat on a recurring basis** Create a subscription that charges based on the amount of seats used. |   |  |
-**Charge customers based on their usage.** Create a metered subscriptions so you can charge customers based on their usage. |  | ✅ |  |
 
 **Demo**
 
-See a hosted version of the [sample](https://627ht.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-with-fixed-price)
+See a hosted version of the [sample](https://2ow1q.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/great-wood-2ow1q)
 
 The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
 
@@ -20,7 +15,7 @@ Use the `4000000000003220` test card number to trigger a 3D Secure challenge flo
 
 Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
-<img src="subscription-with-fixed-price.png" alt="Preview of recipe" style="max-width:25%;">
+<img src="subscription-with-metered-usage.png" alt="Preview of recipe" style="max-width:25%;">
 
 ### Features:
 
@@ -36,26 +31,14 @@ This sample includes [5 server implementations](server/) in our most popular lan
 
 **1. Clone and configure the sample**
 
-The Stripe CLI is the fastest way to clone and configure a sample to run locally.
-
-**Using the Stripe CLI**
-
-If you haven't already installed the CLI, follow the [installation steps](https://github.com/stripe/stripe-cli#installation) in the project README. The CLI is useful for cloning samples and locally testing webhooks and Stripe integrations.
-
-In your terminal shell, run the Stripe CLI command to clone the sample:
-
 ```
-stripe samples create subscriptions-with-fixed-price
+git clone git@github.com:stripe-samples/subscription-use-cases.git
 ```
 
-The CLI will walk you through picking your integration type, server and client languages, and configuring your `.env` config file with your Stripe API keys.
-
-**Installing and cloning manually**
-
-If you do not want to use the Stripe CLI, you can manually clone and configure the sample:
+Change into this directory to start configuring the sample:
 
 ```
-git clone git@github.com:stripe-samples/subscription-with-fixed-price.git
+cd subscription-uses-cases/usage-based-subscriptions
 ```
 
 Copy the `.env.example` file into a file named `.env` in the folder of the server you want to use. For example:

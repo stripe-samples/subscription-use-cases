@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Subscription prices</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A demo of Stripe Billing" />
+
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/global.css" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/script.js" defer></script>
+  </head>
+
+  <body class="antialiased p-6">
+    <nav class="flex items-center justify-between flex-wrap">
+      <svg width="79px" height="24px" viewBox="0 0 79 24">
+        <image
+          onclick="resetDemo()"
+          xlink:href="https://storage.googleapis.com/stripe-sample-images/logo-pasha.svg"
+        />
+      </svg>
+      <div>
+        <button
+          class="bg-white hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-pasha focus:bg-white focus:text-pasha font-light py-2 px-4 rounded"
+          type="button"
+          onclick="resetDemo()"
+        >
+          Sign out
+        </button>
+      </div>
+    </nav>
+    <div id="prices-and-payment" class="flex flex-wrap justify-center">
+      <div id="prices-form" class="md:w-1/3 w-full mr-4 md:mb-8">
+        <div class="text-center text-pasha font-bold text-2xl mt-4 mb-6">
+          Subscribe to a plan
+        </div>
+
+        <div class="flex justify-between mb-8">
+          <div
+            id="basic"
+            class="w-1/2 rounded overflow-hidden border rounded-md p-2 mr-4 md:mr-8"
+          >
+            <div class="px-2 py-2">
+              <div class="text-gray-500 text-xl mb-2 font-medium">
+                Basic
+              </div>
+              <p class="text-pasha text-2xl font-extrabold">
+                $5.00
+              </p>
+              <div class="flex-wrap">
+                <div class="leading-none text-gray-500 text-xs font-medium">
+                  Per month flat fee for up to 2,000 emails
+                </div>
+                <div
+                  class="leading-none text-gray-500 text-xs mt-4 font-medium mt-1"
+                >
+                  <p class="text-pasha text-2xl mb-2">
+                   +  $.001
+                  </p>
+                </div>
+                <div class="leading-none text-gray-500 text-xs font-medium">
+                  Per excess email above 2,000
+                </div>
+                <div
+                  class="leading-none text-gray-500 text-xs font-medium mt-4"
+                >
+                  Billed monthly
+                </div>
+              </div>
+
+              <div class="flex justify-center mt-6">
+                <button
+                  id="submit-basic"
+                  onClick="goToPaymentPage('basic')"
+                  class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                  type="submit"
+                >
+                  <div
+                    id="submit-basic-button-text"
+                    class="w-auto -mx-2 md:mx-0"
+                  >
+                    Select
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            id="premium"
+            class="w-1/2 rounded overflow-hidden border rounded-md p-2"
+          >
+            <div class="px-2 py-2">
+              <div class="text-gray-500 text-xl mb-2 font-medium">
+                Premium
+              </div>
+              <p class="text-pasha text-2xl font-extrabold">
+                $75.00
+              </p>
+              <div class="flex-wrap">
+                <div class="leading-none text-gray-500 text-xs font-medium">
+                  Per month flat fee for up to 10,000 emails
+                </div>
+                <div
+                  class="leading-none text-gray-500 text-xs mt-4 font-medium mt-1"
+                >
+                  <p class="text-pasha text-2xl mb-2">
+                    + $.00075
+                  </p>
+                </div>
+                <div class="leading-none text-gray-500 text-xs font-medium">
+                  Per excess email above 10,000
+                </div>
+                <div
+                  class="leading-none text-gray-500 text-xs font-medium mt-4"
+                >
+                  Billed monthly
+                </div>
+              </div>
+              <div class="flex justify-center mt-6">
+                <button
+                  id="submit-premium"
+                  onClick="goToPaymentPage('premium')"
+                  class="bg-pasha hover:bg-white outline-none hover:text-pasha hover:border hover:border-black text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-lg"
+                  type="submit"
+                >
+                  <div
+                    id="submit-premium-button-text"
+                    class="w-auto -mx-2 md:mx-0"
+                  >
+                    Select
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="payment-form" class="flex justify-center hidden">
+          <div class="w-full inline-block border p-4 rounded-md">
+            <div class="font-bold text-xl mb-2">
+              Enter your card details. </br>Your subscription will start now.
+            </div>
+            <p class="text-gray-700 text-base">
+              → Total due now <span id="total-due-now">$0.00</span>
+            </p>
+            <p id="price-selected" class="text-gray-700 text-base mb-4"></p>
+
+            <div class="w-full">
+              <div class="flex flex-wrap -mx-3 mb-2">
+                <div class="w-full px-3 md:mb-0">
+                  <label
+                    class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
+                    for="grid-first-name"
+                  >
+                    Full name
+                  </label>
+                  <input
+                    class="appearance-none block w-full bg-gray-200 border rounded-md py-3 px-2 mb-3 leading-tight focus:outline-none focus:bg-white"
+                    id="name"
+                    type="text"
+                    placeholder="First and last name"
+                    required
+                  />
+                </div>
+              </div>
+              <form id="payment-form">
+                <div class="flex flex-wrap -mx-3 mb-3">
+                  <div class="w-full px-3 mb-0">
+                    <label
+                      class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
+                      for="grid-first-name"
+                    >
+                      Card
+                    </label>
+                    <div
+                      class="appearance-none block w-full bg-gray-200 text-gray-700 border rounded-md py-3 px-2 leading-tight focus:outline-none focus:bg-white"
+                      id="card-element"
+                    ></div>
+                    <div
+                      id="card-element-errors"
+                      class="text-gray-700 text-base mt-2"
+                      role="alert"
+                    ></div>
+                  </div>
+                </div>
+                <button
+                  id="submit-premium"
+                  class="w-full bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded-md"
+                  type="submit"
+                >
+                  <div class="">
+                    <div id="loading" class="hidden">Subscribing...</div>
+                    <span id="button-text" class="">Subscribe</span>
+                  </div>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="transition transform fixed bottom-0 inset-x-0 px-2 pb-4 sm:px-0 sm:pb-6"
+      >
+        <a
+          href="https://github.com/stripe-samples"
+          class="flex items-center justify-between rounded-lg shadow-lg pl-6 pr-4 py-3 bg-white sm:hidden"
+        >
+          <p class="text-pasha">
+            <strong class="font-medium">
+              View
+            </strong>
+            Stripe sample code
+          </p>
+          <span
+            class="flex items-center justify-center px-3 py-2 border text-base leading-6 font-medium rounded-md text-gray-900 bg-white hover:text-gray-600 focus:outline-none focus:shadow-outline transition ease-in-out duration-150"
+          >
+            →
+          </span>
+        </a>
+        <div class="hidden sm:block max-w-8xl mx-auto px-4 lg:px-6">
+          <div class="py-3 pl-6 pr-3 rounded-lg bg-white shadow-lg">
+            <div class="flex items-center justify-between flex-wrap">
+              <div class="w-full flex-1 flex items-center sm:w-0">
+                <p class="text-white truncate">
+                  <strong class="font-medium text-pasha md:hidden">
+                    This is a Stripe Sample
+                  </strong>
+                  <strong class="hidden md:inline font-medium text-pasha">
+                    This is a Stripe Sample
+                  </strong>
+                  <span class="lg:hidden text-pasha">
+                    with Fixed Price Subscriptions with Cards. View code on
+                    GitHub.
+                  </span>
+                  <!-- <span class="hidden md:inline lg:hidden">
+                    to all of the components in Tailwind UI
+                  </span> -->
+                  <span class="hidden lg:inline text-pasha">
+                    with Fixed Price Subscriptions with Cards. View code on
+                    GitHub.
+                  </span>
+                </p>
+              </div>
+              <div class="flex-shrink-0">
+                <div class="rounded-md shadow-sm">
+                  <a
+                    href="https://stripe.com/docs/billing"
+                    class="flex items-center justify-center px-4 py-2 border text-sm leading-5 font-medium rounded text-pasha bg-white hover:text-gray-600 focus:outline-none focus:shadow-outline transition ease-in-out duration-150"
+                  >
+                    View the guide →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <footer class="h-24"></footer>
+</html>

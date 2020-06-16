@@ -1,0 +1,59 @@
+/* purgecss start ignore */
+@tailwind base;
+
+.pasha-image-stack {
+  display: grid;
+  grid-template-columns: auto auto;
+}
+
+.pasha-image-stack img {
+  border-radius: var(--radius);
+  background-color: var(--gray-border);
+  box-shadow: 0 7px 14px 0 rgba(50, 50, 93, 0.1),
+    0 3px 6px 0 rgba(0, 0, 0, 0.07);
+  transition: all 0.8s ease;
+  opacity: 0;
+}
+
+.pasha-image-stack img:nth-child(1) {
+  transform: translate(12px, -12px);
+  opacity: 1;
+}
+.pasha-image-stack img:nth-child(2) {
+  transform: translate(-24px, 16px);
+  opacity: 1;
+}
+.pasha-image-stack img:nth-child(3) {
+  transform: translate(68px, -100px);
+  opacity: 1;
+}
+
+.loading {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  border-top-color: #ed5f74;
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+
+::placeholder {
+  color: 'rgba(0,0,0,0.4)';
+  font-size: '16px';
+}
+
+@keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+@-webkit-keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@tailwind components;
+/* purgecss end ignore */
+@tailwind utilities;
