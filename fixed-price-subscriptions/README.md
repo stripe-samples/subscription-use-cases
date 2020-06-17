@@ -23,7 +23,7 @@ Read more about test cards on Stripe at https://stripe.com/docs/testing.
 - 🔒Save the payment method details to a customer
 - 🚫Handle payment failures
 - 💰Subscribe the customer to a subscription plan
-- ➕Upgrade and downgrade on plans
+- ➕Upgrade and downgrade on prices
 
 ## How to run locally
 
@@ -40,7 +40,7 @@ If you haven't already installed the CLI, follow the [installation steps](https:
 In your terminal shell, run the Stripe CLI command to clone the sample:
 
 ```
-stripe samples create subscriptions-with-fixed-price
+stripe samples create subscription-use-cases
 ```
 
 The CLI will walk you through picking your integration type, server and client languages, and configuring your `.env` config file with your Stripe API keys.
@@ -50,7 +50,7 @@ The CLI will walk you through picking your integration type, server and client l
 If you do not want to use the Stripe CLI, you can manually clone and configure the sample:
 
 ```
-git clone git@github.com:stripe-samples/subscription-with-fixed-price.git
+git clone git@github.com:stripe-samples/subscription-use-cases.git
 ```
 
 Copy the `.env.example` file into a file named `.env` in the folder of the server you want to use. For example:
@@ -70,9 +70,9 @@ STRIPE_SECRET_KEY=<replace-with-your-secret-key>
 
 **2. Create Products and Plans on Stripe**
 
-This sample requires a [Plan](https://stripe.com/docs/api/plans/object) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
+This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
 
-You can create Products and Plans [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/plans/create). Create a Plan to run this sample and add it to your `.env`.
+You can create Products and Prices [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
 
 **3. Follow the server instructions on how to run:**
 
@@ -113,3 +113,4 @@ A: We are always looking for new recipe ideas, please email dev-samples@stripe.c
 ## Author(s)
 
 - [@ctrudeau-stripe](https://twitter.com/trudeaucj)
+- [@suz-stripe](https://twitter.com/noopkat)
