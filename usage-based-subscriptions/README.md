@@ -31,6 +31,22 @@ This sample includes [5 server implementations](server/) in our most popular lan
 
 **1. Clone and configure the sample**
 
+The Stripe CLI is the fastest way to clone and configure a sample to run locally.
+
+**Using the Stripe CLI**
+
+If you haven't already installed the CLI, follow the [installation steps](https://github.com/stripe/stripe-cli#installation) in the project README. The CLI is useful for cloning samples and locally testing webhooks and Stripe integrations.
+
+In your terminal shell, run the Stripe CLI command to clone the sample:
+
+```
+stripe samples create subscription-use-cases
+```
+
+The CLI will walk you through picking your integration type, server and client languages, and configuring your `.env` config file with your Stripe API keys.
+
+**Installing and cloning manually**
+
 ```
 git clone git@github.com:stripe-samples/subscription-use-cases.git
 ```
@@ -56,11 +72,11 @@ STRIPE_SECRET_KEY=<replace-with-your-secret-key>
 
 `STATIC_DIR` tells the server where the client files are located and does not need to be modified unless you move the server files.
 
-**2. Create Products and Plans on Stripe**
+**2. Create Products and Prices on Stripe**
 
-This sample requires a [Plan](https://stripe.com/docs/api/plans/object) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
+This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Prices are objects on Stripe that you use to model a subscription.
 
-You can create Products and Plans [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/plans/create). Create a Plan to run this sample and add it to your `.env`.
+You can create Products and Plans [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
 
 **3. Follow the server instructions on how to run:**
 
