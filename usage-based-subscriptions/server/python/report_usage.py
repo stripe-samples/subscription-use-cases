@@ -44,7 +44,7 @@ def report_usage():
             idempotency_key=idempotency_key
         )
     except stripe.error.StripeError as e:
-        print('usage report failed for item ID %s with idempotency key %s: %s' % (subscription_item_id, idempotency_key, e))
+        print('Usage report failed for item ID %s with idempotency key %s: %s' % (subscription_item_id, idempotency_key, e))
 
 if __name__ == '__main__':
     report_usage()

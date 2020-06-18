@@ -40,6 +40,6 @@ begin
     }
   )
 rescue Stripe::StripeError => e
-  puts "usage report failed for item ID #{subscription_item_id} with idempotency key #{idempotency_key}: #{e.error.message}"
+  puts "Usage report failed for item ID #{subscription_item_id} with idempotency key #{idempotency_key}: #{e.error.message}"
 end
 

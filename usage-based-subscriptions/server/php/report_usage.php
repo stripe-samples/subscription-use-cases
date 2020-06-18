@@ -43,5 +43,5 @@ try {
         ],
     );
 } catch (\Stripe\Exception\ApiErrorException $e) {
-    echo "usage report failed for item ID $subscription_item_id wuith idempotency key $idempotency_key: $error.toString()";
+    echo "Usage report failed for item ID $subscription_item_id with idempotency key $idempotency_key: $error.toString()";
 }
