@@ -40,7 +40,7 @@ def report_usage():
             subscription_item_id,
             quantity=usage_quantity,
             timestamp=timestamp,
-            action='increment',
+            action='set',
             idempotency_key=idempotency_key
         )
     except stripe.error.StripeError as e:

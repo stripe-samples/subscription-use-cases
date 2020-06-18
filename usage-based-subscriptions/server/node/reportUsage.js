@@ -28,7 +28,7 @@ const timestamp = parseInt(Date.now() / 1000);
       {
         quantity: usageQuantity,
         timestamp: timestamp,
-        action: 'increment',
+        action: 'set',
       },
       {
         idempotencyKey
