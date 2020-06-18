@@ -51,7 +51,7 @@ public class ReportUsage {
         UsageRecord.createOnSubscriptionItem(subscriptionItemID, params, options);
 
       } catch (StripeException e) {
-        System.out.println("usage report failed for item ID " + subscriptionItemID + " with idempotency key " + idempotencyKey + ": " + e.getMessage());
+        System.out.println("Usage report failed for item ID " + subscriptionItemID + " with idempotency key " + idempotencyKey + ": " + e.getMessage());
       }
     }
 }

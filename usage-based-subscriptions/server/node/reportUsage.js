@@ -35,6 +35,6 @@ const timestamp = parseInt(Date.now() / 1000);
       }
     );
   } catch (error) {
-    console.error(`usage report failed for item ID ${subscriptionItemID} wuith idempotency key ${idempotencyKey}: ${error.toString()}`);
+    console.error(`Usage report failed for item ID ${subscriptionItemID} with idempotency key ${idempotencyKey}: ${error.toString()}`);
   }
 })();
