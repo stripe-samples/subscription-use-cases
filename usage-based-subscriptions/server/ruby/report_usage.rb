@@ -34,7 +34,7 @@ begin
     {
       quantity: usage_quantity,
       timestamp: timestamp,
-      action: 'increment'
+      action: 'set'
     }, {
       idempotency_key: idempotency_key
     }

@@ -23,6 +23,7 @@ $subscription_item_id = '';
 // The usage number you've been keeping track of in your database for
 // the last 24 hours.
 $usage_quantity = 100;
+$action = 'set';
 
 $date = date_create();
 $timestamp = date_timestamp_get($date);
@@ -35,6 +36,7 @@ try {
         [
             'quantity' => $usage_quantity,
             'timestamp' => $timestamp,
+            'action' -> $action
         ],
         [
             'idempotency_key' => $idempotency_key,

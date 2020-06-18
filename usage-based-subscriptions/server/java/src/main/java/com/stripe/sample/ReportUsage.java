@@ -40,7 +40,7 @@ public class ReportUsage {
         UsageRecordCreateOnSubscriptionItemParams.builder()
           .setQuantity(usageQuantity)
           .setTimestamp(timestamp)
-          .setAction(UsageRecordCreateOnSubscriptionItemParams.Action.INCREMENT)
+          .setAction(UsageRecordCreateOnSubscriptionItemParams.Action.SET)
           .build();
 
         RequestOptions options = RequestOptions
