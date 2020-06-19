@@ -21,8 +21,14 @@ $container['logger'] = function ($c) {
   $logger->pushHandler(new Monolog\Handler\StreamHandler(__DIR__ . '/logs/app.log', \Monolog\Logger::DEBUG));
   return $logger;
 };
+
+/* Initialize the Stripe client */
+$container['stripe'] = function ($c) {
+  $stripe = new \Stripe\StripeClient(getenv('STRIPE_SECRET_KEY'));
+  return $stripe;
+};
+
 $app->add(function ($request, $response, $next) {
-    Stripe::setApiKey(getenv('STRIPE_SECRET_KEY'));
     return $next($request, $response);
 });
 
@@ -37,23 +43,53 @@ $app->get('/config', function (Request $request, Response $response, array $args
   return $response->withJson(['publishableKey' => $pub_key]);
 });
 
-$app->post('/create-customer', function (Request $request, Response $response, array $args) {  
+# Returns information about the subscription and payment method used to display on the account page.
+$app->post('/retrieve-subscription-information', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
   
-  // Create a new customer object
-  $customer = \Stripe\Customer::create([
+  $stripe = $this->stripe;
+
+  $subscriptionId = $body->subscriptionId;
+  $subscription = $stripe->subscriptions->retrieve(
+    $subscriptionId,
+    [
+      'expand' => ['latest_invoice', 
+        'customer.invoice_settings.default_payment_method', 
+        'plan.product']
+    ]);
+
+  $upcomingInvoice = $stripe->invoices->upcoming(['subscription' => $subscriptionId]);
+
+  return $response->withJson([
+    'card' => $subscription->customer->invoice_settings->default_payment_method->card,
+    'product_description' => $subscription->plan->product->name,
+    'current_price' => $subscription->plan->id,
+    'current_quantity' => $subscription->items->data[0]->quantity,
+    'latest_invoice' => $subscription->latest_invoice,
+    'upcoming_invoice' => $upcomingInvoice
+  ]);
+});
+
+$app->post('/create-customer', function (Request $request, Response $response, array $args) {  
+  $body = json_decode($request->getBody());
+
+  $stripe = $this->stripe;
+
+  $customer = $stripe->customers->create([
     'email' => $body->email
   ]);
 
   return $response->withJson(['customer' => $customer]);
 });
 
+# Create a subscription.  This method first attaches the provided payment method to a customer object
+# and then creates a subscription for that customer using the supplied price and quantity parameters. 
 $app->post('/create-subscription', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
-  
   try {
-    $payment_method = \Stripe\PaymentMethod::retrieve(
+    $payment_method = $stripe->paymentMethods->retrieve(
       $body->paymentMethodId
     );
     $payment_method->attach([
@@ -65,21 +101,22 @@ $app->post('/create-subscription', function (Request $request, Response $respons
   
     
   // Set the default payment method on the customer
-  \Stripe\Customer::update($body->customerId, [
+  $stripe->customers->update($body->customerId, [
     'invoice_settings' => [
       'default_payment_method' => $body->paymentMethodId
     ]
   ]);
   
   // Create the subscription
-  $subscription = \Stripe\Subscription::create([
+  $subscription = $stripe->subscriptions->create([
     'customer' => $body->customerId,
     'items' => [
       [
         'price' => getenv($body->priceId),
+        'quantity' => $body->quantity
       ],
     ],
-    'expand' => ['latest_invoice.payment_intent'],
+    'expand' => ['latest_invoice.payment_intent', 'plan.product'],
   ]);
 
   return $response->withJson($subscription);
@@ -87,9 +124,10 @@ $app->post('/create-subscription', function (Request $request, Response $respons
 
 $app->post('/retry-invoice', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
   try {
-    $payment_method = \Stripe\PaymentMethod::retrieve(
+    $payment_method = $stripe->paymentMethods->retrieve(
       $body->paymentMethodId
     );
     $payment_method->attach([
@@ -101,15 +139,14 @@ $app->post('/retry-invoice', function (Request $request, Response $response, arr
   
     
   // Set the default payment method on the customer
-  \Stripe\Customer::update($body->customerId, [
+  $stripe->customers->update($body->customerId, [
     'invoice_settings' => [
       'default_payment_method' => $body->paymentMethodId
     ]
   ]);
 
-  $invoice = \Stripe\Invoice::retrieve([
-    'id' => $body->invoiceId,
-    'expand' => ['payment_intent'],
+  $invoice = $stripe->invoices->retrieve($body->invoiceId, [
+    'expand' => ['payment_intent']
   ]);
 
   return $response->withJson($invoice);
@@ -117,34 +154,106 @@ $app->post('/retry-invoice', function (Request $request, Response $response, arr
 
 $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
-  $subscription = \Stripe\Subscription::retrieve(
-    $body->subscriptionId
-  );
+  $new_price = getenv(strtoupper($body->newPriceId));
+  $params = [];
+  $params["customer"] = $body->customerId;
 
-  $invoice = \Stripe\Invoice::upcoming([
-    "customer" => $body->customerId,
-    "subscription_prorate" => TRUE,
-    "subscription" => $body->subscriptionId,
-    "subscription_items" => [
+  $subscriptionId = $body->subscriptionId;
+
+
+  if ($subscriptionId != null)
+  {
+    $subscription = $stripe->subscriptions->retrieve($subscriptionId);
+    $params["subscription"] = $subscriptionId;
+
+    #compare the current price to the new price, and only create a new subscription if they are different
+    #otherwise, just add seats to the existing subscription
+    # subscription.plan.id would also work
+
+    $current_price = $subscription->items->data[0]->price->id;
+
+    if ($current_price == $new_price)
+    {
+      $params["subscription_items"] = [
+        [
+          "id" => $subscription->items->data[0]->id,
+          "quantity" => $body->quantity
+        ]
+      ];
+    }
+    else
+    {
+      $params["subscription_items"] = [
+        [
+          "id" => $subscription->items->data[0]->id,
+          "deleted" => true
+        ],
+        [
+          "price" => $new_price,
+          "quantity" => $body->quantity
+        ]
+      ];
+    }
+  }
+  else
+  {
+    $params["subscription_items"] = [
       [
-        'id' => $subscription->items->data[0]->id,
-        'deleted' => TRUE
-      ],
-      [
-        'price' => getenv($body->newPriceId),
-        'deleted' => FALSE
-      ],
-    ]
-  ]);
+        "price" => $new_price,
+        "quantity" => $body->quantity
+      ]
+    ];
+  }
 
-  return $response->withJson($invoice);
+  $invoice = $stripe->invoices->upcoming($params);
+  
+  #in the case where we are returning the upcoming invoice for a subscription change, calculate what the 
+  #invoice totals would be for the invoice we'll charge immediately when they confirm the change, and 
+  #also return the amount for the next period's invoice. 
+
+  $responseParams = [];
+
+  if ($subscription != null) {
+    $current_period_end = $subscription->current_period_end;
+    $immediate_total = 0;
+    $next_invoice_sum = 0;
+
+    foreach ($invoice->lines->data as $ii) 
+    {
+      if ($ii->period->end ==  $current_period_end)
+      {
+        $immediate_total += $ii->amount;
+      }
+      else
+      {
+        $next_invoice_sum += $ii->amount;
+      }
+    }
+
+    $responseParams = [
+      'immediate_total' => $immediate_total,
+      'next_invoice_sum' => $next_invoice_sum,
+      'invoice' => $invoice
+    ];
+  }
+  else
+  {
+    $responseParams = [
+      'invoice' => $invoice
+    ];
+  }
+
+  return $response->withJson($responseParams);
 });
 
 $app->post('/cancel-subscription', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
 
-  $subscription = \Stripe\Subscription::retrieve(
+  $stripe = $this->stripe;
+
+  $subscription = $stripe->subscriptions->retrieve(
     $body->subscriptionId
   );
   $subscription->delete();
@@ -155,40 +264,70 @@ $app->post('/cancel-subscription', function (Request $request, Response $respons
 $app->post('/update-subscription', function (Request $request, Response $response, array $args) {  
   $body = json_decode($request->getBody());
 
-  $subscription = \Stripe\Subscription::retrieve($body->subscriptionId);
+
+  $stripe = $this->stripe;
+
+  $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
+  $current_price = $subscription->items->data[0]->price->id;
+  $new_price = getenv(strtoupper($body->newPriceId));
+  $quantity = $body->quantity;
   
-  $updatedSubscription = \Stripe\Subscription::update($body->subscriptionId, [
-    'cancel_at_period_end' => false,
-    'items' => [
-      [
-        'id' => $subscription->items->data[0]->id,
-        'price' => getenv($body->newPriceId),
+  if ($current_price == $new_price)
+  {
+    $this->logger->addInfo("updating quantity of existing item");
+    $updatedSubscription = $stripe->subscriptions->update(
+      $body->subscriptionId, [
+      'items' => [
+        [
+          'id' => $subscription->items->data[0]->id,
+          'quantity' => $quantity
+        ],
       ],
-    ],
+     'expand' => ['plan.product']]);
+  }
+  else
+  {
+    $updatedSubscription = $stripe->subscriptions->update(
+      $body->subscriptionId, [
+      'items' => [
+        [
+          'id' => $subscription->items->data[0]->id,
+          'deleted' => true
+        ],
+        [
+          'price' => $new_price,
+          'quantity' => $quantity
+        ],
+      ],
+      'expand' => ['plan.product']]);
+  }
+  
+  #invoice and charge the customer immediately for the payment representing any balance that the customer accrued
+  #as a result of the change.  For example, if the user added seats for this month, this would charge the proration amount for those
+  # extra seats for the remaining part of the month.
+  
+  $invoice = $stripe->invoices->create([
+    'customer' => $subscription->customer,
+    'subscription' => $subscription->id, 
+    'description' => "Change to ". $quantity . " seat(s) on the ". $updatedSubscription->plan->product->name . " plan"
   ]);
+  
+  $invoice = $invoice->pay();
 
-  return $response->withJson($updatedSubscription);
-});
-
-$app->post('/retrieve-customer-payment-method', function (Request $request, Response $response, array $args) {  
-  $body = json_decode($request->getBody());
-
-  $paymentMethod = \Stripe\PaymentMethod::retrieve(
-    $body->paymentMethodId
-  );
-
-  return $response->withJson($paymentMethod);
+  return $response->withJson(['subscription' => $updatedSubscription]);
 });
 
 
 $app->post('/stripe-webhook', function(Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
+    $stripe = $this->stripe;
+
     // Parse the message body (and check the signature if possible)
     $webhookSecret = getenv('STRIPE_WEBHOOK_SECRET');
     if ($webhookSecret) {
       try {
-        $event = \Stripe\Webhook::constructEvent(
+        $event = $stripe->webhooks->constructEvent(
           $request->getBody(),
           $request->getHeaderLine('stripe-signature'),
           $webhookSecret
