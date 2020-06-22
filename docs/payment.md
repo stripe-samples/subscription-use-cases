@@ -1,0 +1,2 @@
+# Collect payment information
+
