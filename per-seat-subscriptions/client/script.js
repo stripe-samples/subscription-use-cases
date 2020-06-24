@@ -665,7 +665,7 @@ function showSubscriptionInformation() {
       accountInfo.subscriptionId = subscriptionId;
       accountInfo.priceId = currentPrice;
       accountInfo.quantity = currentQuantity;
-      accountInfo.customer = latestInvoice.customerId;
+      accountInfo.customerId = latestInvoice.customer;
     });
   }
 }

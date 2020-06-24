@@ -1,4 +1,4 @@
-# Subscriptions with fixed price
+# Subscriptions with per seat pricing
 
 A [Sinatra](http://sinatrarb.com/) implementation.
 

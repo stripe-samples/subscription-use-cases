@@ -27,7 +27,7 @@ get '/config' do
   }.to_json
 end
 
-#Returns information about the subscription and payment method used to display on the account page.
+# Returns information about the subscription and payment method used to display on the account page.
 post '/retrieve-subscription-information' do
   content_type 'application/json'
   data = JSON.parse request.body.read
@@ -66,6 +66,8 @@ post '/create-customer' do
   }.to_json
 end
 
+# Create a subscription.  This method first attaches the provided payment method to a customer object
+# and then creates a subscription for that customer using the supplied price and quantity parameters. 
 post '/create-subscription' do
   content_type 'application/json'
   data = JSON.parse request.body.read
@@ -135,9 +137,9 @@ end
 post '/retrieve-upcoming-invoice' do
   content_type 'application/json'
   data = JSON.parse request.body.read
-  puts "getting upcoming invoice #{data}"
 
   new_price = ENV[data['newPriceId'].upcase]
+  quantity = data['quantity']
 
   params = {}
   params[:customer] = data['customerId']
@@ -158,7 +160,7 @@ post '/retrieve-upcoming-invoice' do
       params[:subscription_items] = [
         {
           id: subscription.items.data[0].id,
-          quantity: data['quantity']
+          quantity: quantity
         }
       ]
 
@@ -170,7 +172,7 @@ post '/retrieve-upcoming-invoice' do
         },
         {
           price: new_price,
-          quantity: data['quantity']
+          quantity: quantity
         }
       ]
      end
@@ -178,7 +180,7 @@ post '/retrieve-upcoming-invoice' do
     params[:subscription_items] = [
       {
         price: new_price,
-        quantity: data['quantity']
+        quantity: quantity
       }
     ]
   end
@@ -186,7 +188,10 @@ post '/retrieve-upcoming-invoice' do
   invoice = Stripe::Invoice.upcoming(params)
 
   response = {}
-  #calculate the totals for display (do we even need to pass the invoice back?)
+
+  #in the case where we are returning the upcoming invoice for a subscription change, calculate what the 
+  #invoice totals would be for the invoice we'll charge immediately when they confirm the change, and 
+  #also return the amount for the next period's invoice. 
   if !subscription.nil? 
     current_period_end = subscription.current_period_end
     immediate_total = 0
@@ -205,9 +210,9 @@ post '/retrieve-upcoming-invoice' do
       invoice: invoice
     }
   else
-  response = {
-    invoice:invoice
-  }
+    response = {
+      invoice:invoice
+    }
   end
   
   response.to_json
@@ -227,14 +232,12 @@ end
 post '/update-subscription' do
   content_type 'application/json'
   data = JSON.parse request.body.read
-  puts "update subscription #{data}"
 
   subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
   current_price = subscription.items.data[0].price.id;
   new_price = ENV[data['newPriceId']]
   quantity = data['quantity']
 
-  params
   if current_price == new_price
     updated_subscription = Stripe::Subscription.update(
       data['subscriptionId'],
@@ -266,18 +269,15 @@ post '/update-subscription' do
   #invoice and charge the customer immediately for the payment representing any balance that the customer accrued
   #as a result of the change.  For example, if the user added seats for this month, this would charge the proration amount for those
   # extra seats for the remaining part of the month.
-  #If we enable this, then we also need to change how we display the 'upcoming invoice' before confirming the payment since by default
-  #that will include the proration items that this invoice generation would pay.
 
   invoice = Stripe::Invoice.pay(Stripe::Invoice.create({
     customer: subscription.customer,
     subscription: subscription.id, 
-    description: "Change to #{data['quantity']} seat(s) on the #{updated_subscription.plan.product.name} plan"
+    description: "Change to #{quantity} seat(s) on the #{updated_subscription.plan.product.name} plan"
   }).id)
 
   {
     subscription: updated_subscription,
-    #invoice: invoice
   }.to_json
 
 end

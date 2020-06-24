@@ -27,6 +27,31 @@ app.get('/config', async (req, res) => {
   });
 });
 
+app.post('/retrieve-subscription-information', async (req, res) => {
+  const subscriptionId = req.body.subscriptionId;
+  console.log("subscription id is " + subscriptionId + " type is " + typeof subscriptionId);
+
+  const subscription = await stripe.subscriptions.retrieve(
+    subscriptionId,
+    {
+      expand: ['latest_invoice', 'customer.invoice_settings.default_payment_method', 'plan.product'],
+    }
+  );
+
+  const upcoming_invoice = await stripe.invoices.retrieveUpcoming(
+    {subscription: subscriptionId}
+  );
+
+  res.send({
+    card: subscription.customer.invoice_settings.default_payment_method.card,
+    product_description: subscription.plan.product.name,
+    current_price: subscription.plan.id,
+    current_quantity: subscription.items.data[0].quantity,
+    latest_invoice: subscription.latest_invoice,
+    upcoming_invoice: upcoming_invoice
+  });
+});
+
 app.post('/create-customer', async (req, res) => {
   // Create a new customer object
   const customer = await stripe.customers.create({
@@ -61,8 +86,8 @@ app.post('/create-subscription', async (req, res) => {
   // Create the subscription
   const subscription = await stripe.subscriptions.create({
     customer: req.body.customerId,
-    items: [{ price: process.env[req.body.priceId] }],
-    expand: ['latest_invoice.payment_intent'],
+    items: [{ price: process.env[req.body.priceId], quantity: req.body.quantity }],
+    expand: ['latest_invoice.payment_intent', 'plan.product'],
   });
 
   res.send(subscription);
@@ -94,26 +119,91 @@ app.post('/retry-invoice', async (req, res) => {
 });
 
 app.post('/retrieve-upcoming-invoice', async (req, res) => {
-  const subscription = await stripe.subscriptions.retrieve(
-    req.body.subscriptionId
-  );
+  const new_price = process.env[req.body.newPriceId.toUpperCase()];
+  const quantity = req.body.quantity;
+  const subscriptionId = req.body.subscriptionId;
 
-  const invoice = await stripe.invoices.retrieveUpcoming({
-    subscription_prorate: true,
-    customer: req.body.customerId,
-    subscription: req.body.subscriptionId,
-    subscription_items: [
+  var params = {};
+  params['customer'] = req.body.customerId;
+  var subscription;
+
+  if (subscriptionId != null)
+  {
+    params['subscription'] = subscriptionId;
+    subscription = await stripe.subscriptions.retrieve(
+      subscriptionId
+    );
+
+    const current_price = subscription.items.data[0].price.id;
+
+    if (current_price == new_price)
+    {
+      params['subscription_items'] = [
+        {
+          id: subscription.items.data[0].id,
+          quantity: quantity
+        }
+      ]
+    }
+    else {
+      params['subscription_items'] = [
+        {
+          id: subscription.items.data[0].id,
+          deleted: true
+        },
+        {
+          price: new_price,
+          quantity: quantity
+        }
+      ];
+    }
+  }
+  else
+  {
+    params['subscription_items'] = [
       {
-        id: subscription.items.data[0].id,
-        deleted: true,
-      },
+        price: new_price,
+        quantity: quantity
+      }
+    ];
+  }
+  console.log("params are " + JSON.stringify(params));
+
+  const invoice = await stripe.invoices.retrieveUpcoming(params);
+
+  response = {};
+
+  if (subscriptionId != null)
+  {
+    const current_period_end = subscription.current_period_end;
+    var immediate_total = 0;
+    var next_invoice_sum = 0;
+
+    invoice.lines.data.forEach(ii => {
+      if (ii.period.end ==  current_period_end)
       {
-        price: process.env[req.body.newPriceId],
-        deleted: false,
-      },
-    ],
-  });
-  res.send(invoice);
+        immediate_total += ii.amount;
+      }
+      else
+      {
+        next_invoice_sum += ii.amount;
+      }
+    });
+
+    response = {
+      immediate_total: immediate_total,
+      next_invoice_sum: next_invoice_sum,
+      invoice: invoice
+    };
+  }
+  else
+  {
+    response = {
+      invoice:invoice
+    };
+  }
+
+  res.send(response);
 });
 
 app.post('/cancel-subscription', async (req, res) => {
@@ -125,32 +215,61 @@ app.post('/cancel-subscription', async (req, res) => {
 });
 
 app.post('/update-subscription', async (req, res) => {
+
+  const subscriptionId = req.body.subscriptionId;
+
   const subscription = await stripe.subscriptions.retrieve(
-    req.body.subscriptionId
-  );
-  const updatedSubscription = await stripe.subscriptions.update(
-    req.body.subscriptionId,
-    {
-      cancel_at_period_end: false,
-      items: [
-        {
-          id: subscription.items.data[0].id,
-          price: process.env[req.body.newPriceId],
-        },
-      ],
-    }
+    subscriptionId
   );
 
+  const current_price = subscription.items.data[0].price.id;
+  const new_price = process.env[req.body.newPriceId.toUpperCase()];
+  const quantity = req.body.quantity;
+  var updatedSubscription;
+
+  if (current_price == new_price){
+    updatedSubscription = await stripe.subscriptions.update(
+      subscriptionId,
+      {
+        items: [
+          {
+            id: subscription.items.data[0].id,
+            quantity:quantity
+          },
+        ],
+      }
+    );
+  }
+  else {
+    updatedSubscription = await stripe.subscriptions.update(
+      subscriptionId,
+      {
+        items: [
+          {
+            id: subscription.items.data[0].id,
+            deleted: true
+          },
+          {
+            price: new_price,
+            quantity: quantity
+          }
+        ],
+        expand: ['plan.product']
+      }
+    );
+  }
+
+  var invoice = await stripe.invoices.create({
+    customer: subscription.customer,
+    subscription: subscription.id,
+    description: "Change to " + quantity + " seat(s) on the " +
+      updatedSubscription.plan.product.name + " plan"
+  });
+
+  invoice = await stripe.invoices.pay(invoice.id);
   res.send(updatedSubscription);
 });
 
-app.post('/retrieve-customer-payment-method', async (req, res) => {
-  const paymentMethod = await stripe.paymentMethods.retrieve(
-    req.body.paymentMethodId
-  );
-
-  res.send(paymentMethod);
-});
 // Webhook handler for asynchronous events.
 app.post(
   '/stripe-webhook',
