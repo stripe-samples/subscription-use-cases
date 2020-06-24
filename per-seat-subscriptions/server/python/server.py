@@ -35,6 +35,29 @@ def get_config():
         publishableKey=os.getenv('STRIPE_PUBLISHABLE_KEY'),
     )
 
+@app.route('/retrieve-subscription-information', methods=['POST'])
+def retrieve_subscription_information():
+    data = json.loads(request.data)
+    subscriptionId = data['subscriptionId']
+
+    try:
+        subscription = stripe.Subscription.retrieve(
+          subscriptionId,
+          expand=['latest_invoice', 'customer.invoice_settings.default_payment_method', 'plan.product']
+        )
+
+        upcoming_invoice = stripe.Invoice.upcoming(subscription=subscriptionId)
+
+        return jsonify(
+            card=subscription.customer.invoice_settings.default_payment_method.card,
+            product_description=subscription.plan.product.name,
+            current_price=subscription.plan.id,
+            current_quantity=subscription['items']['data'][0].quantity,
+            latest_invoice=subscription.latest_invoice,
+            upcoming_invoice=upcoming_invoice
+        )
+    except Exception as e:
+        return jsonify(error=str(e)), 403
 
 @app.route('/create-customer', methods=['POST'])
 def create_customer():
@@ -48,14 +71,8 @@ def create_customer():
         # At this point, associate the ID of the Customer object with your
         # own internal representation of a customer, if you have one.
 
-        # Create a SetupIntent to set up our payment methods recurring usage
-        setup_intent = stripe.SetupIntent.create(
-            payment_method_types=['card'],
-            customer=customer.id
-        )
         return jsonify(
             customer=customer,
-            setupIntent=setup_intent
         )
     except Exception as e:
         return jsonify(error=str(e)), 403
@@ -83,10 +100,11 @@ def createSubscription():
             customer=data['customerId'],
             items=[
                 {
-                    'price': os.getenv(data['priceId'])
+                    'price': os.getenv(data['priceId'].upper()),
+                    'quantity': data['quantity']
                 }
             ],
-            expand=['latest_invoice.payment_intent'],
+            expand=['latest_invoice.payment_intent', 'plan.product'],
         )
         return jsonify(subscription)
     except Exception as e:
@@ -122,25 +140,73 @@ def retrySubscription():
 def retrieveUpcomingInvoice():
     data = json.loads(request.data)
     try:
-        # Retrieve the subscription
-        subscription = stripe.Subscription.retrieve(data['subscriptionId'])
+        new_price = os.getenv(data['newPriceId'].upper())
+        quantity = data['quantity']
+        subscriptionId = data['subscriptionId']
 
-        # Retrive the Invoice
-        invoice = stripe.Invoice.upcoming(
-            customer=data['customerId'],
-            subscription=data['subscriptionId'],
-            subscription_items=[
+        params = dict(
+          customer=data['customerId']
+        )
+
+        if subscriptionId != None:
+            # Retrieve the subscription
+            subscription = stripe.Subscription.retrieve(data['subscriptionId'])
+            params["subscription"] = subscriptionId
+            current_price = subscription['items']['data'][0].price.id;
+
+            if current_price == new_price:
+               params["subscription_items"] = [
                 {
-                    'id': subscription['items']['data'][0].id,
-                    'deleted': True
+                  "id":subscription['items']['data'][0].id,
+                  "quantity":quantity
+                }]
+
+            else:
+                params["subscription_items"] = [
+                {
+                  "id": subscription['items']['data'][0].id,
+                  "deleted": True
                 },
                 {
-                    'price': os.getenv(data['newPriceId']),
-                    'deleted': False
+                  "price": new_price,
+                  "quantity": quantity
                 }
-            ],
-        )
-        return jsonify(invoice)
+              ]
+
+        else:
+            params["subscription_items"] = [
+              {
+                "price": new_price,
+                "quantity": quantity
+              }
+            ] 
+
+        # Retrive the Invoice
+        invoice = stripe.Invoice.upcoming(**params)
+        response = {}
+        
+        if data['subscriptionId'] != None: 
+            current_period_end = subscription.current_period_end
+            immediate_total = 0
+            next_invoice_sum = 0
+
+            for ii in invoice.lines.data: 
+                if ii.period.end == current_period_end :
+                    immediate_total += ii.amount
+                else:
+                    next_invoice_sum += ii.amount
+            
+            response = {
+                'immediate_total': immediate_total,
+                'next_invoice_sum': next_invoice_sum,
+                'invoice': invoice
+            }
+        else:   
+            response = {
+                'invoice': invoice
+            }
+
+        return jsonify(response)
     except Exception as e:
         return jsonify(error=str(e)), 403
 
@@ -161,29 +227,45 @@ def cancelSubscription():
 def updateSubscription():
     data = json.loads(request.data)
     try:
-        subscription = stripe.Subscription.retrieve(data['subscriptionId'])
+        new_price = os.getenv(data['newPriceId'].upper())
+        quantity = data['quantity']
+        subscriptionId = data['subscriptionId']
+        subscription = stripe.Subscription.retrieve(subscriptionId)
+        current_price = subscription['items']['data'][0].price.id;
 
-        updatedSubscription = stripe.Subscription.modify(
-            data['subscriptionId'],
-            cancel_at_period_end=False,
-            items=[{
-                'id': subscription['items']['data'][0].id,
-                'price': os.getenv(data['newPriceId']),
-            }]
+        if current_price == new_price :
+            updatedSubscription = stripe.Subscription.modify(
+                subscriptionId,
+                items=[{
+                    'id': subscription['items']['data'][0].id,
+                    'quantity': quantity,
+                }],
+                expand=['plan.product']
+            )
+
+        else:
+            updatedSubscription = stripe.Subscription.modify(
+                subscriptionId,
+                items=[{
+                    'id': subscription['items']['data'][0].id,
+                    'deleted': True,
+                },
+                {
+                    'price': new_price,
+                    'quantity':quantity
+                }],
+                expand=['plan.product']
+            )
+
+        invoice = stripe.Invoice.create(
+            customer=subscription.customer,
+            subscription=subscriptionId,
+            description="Change to " + quantity + " seat(s) on the " + updatedSubscription.plan.product.name + " plan"
         )
+
+        invoice = stripe.Invoice.pay(invoice.id)
+
         return jsonify(updatedSubscription)
-    except Exception as e:
-        return jsonify(error=str(e)), 403
-
-
-@app.route('/retrieve-customer-payment-method', methods=['POST'])
-def retrieveCustomerPaymentMethod():
-    data = json.loads(request.data)
-    try:
-        paymentMethod = stripe.PaymentMethod.retrieve(
-            data['paymentMethodId'],
-        )
-        return jsonify(paymentMethod)
     except Exception as e:
         return jsonify(error=str(e)), 403
 
