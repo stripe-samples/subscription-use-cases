@@ -6,23 +6,39 @@ import static spark.Spark.post;
 import static spark.Spark.staticFiles;
 
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.annotations.SerializedName;
 import com.stripe.Stripe;
 import com.stripe.exception.CardException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Customer;
+
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
+import com.stripe.model.InvoiceLineItem;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.StripeObject;
+import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
+import com.stripe.param.InvoiceCreateParams;
+import com.stripe.param.InvoiceUpcomingParams;
+import com.stripe.param.InvoiceUpcomingParams.Builder;
+import com.stripe.param.InvoiceRetrieveParams;
 import com.stripe.param.PaymentMethodAttachParams;
+import com.stripe.param.SubscriptionCreateParams;
+import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import com.stripe.model.Subscription;
 import com.stripe.net.Webhook;
@@ -57,6 +73,9 @@ public class Server {
         @SerializedName("paymentMethodId")
         String paymentMethodId;
 
+        @SerializedName("quantity")
+        Long quantity;
+
         public String getCustomerId() {
             return customerId;
         }
@@ -68,28 +87,9 @@ public class Server {
         public String getPaymentMethodId() {
             return paymentMethodId;
         }
-    }
 
-    static class PostBody {
-        @SerializedName("subscriptionId")
-        String subscriptionId;
-
-        @SerializedName("priceId")
-        String priceId;
-
-        @SerializedName("newPriceId")
-        String newPriceId;
-
-        public String getSubscriptionId() {
-            return subscriptionId;
-        }
-
-        public String getPriceId() {
-            return newPriceId;
-        }
-
-        public String getNewPriceId() {
-            return newPriceId;
+        public Long getQuantity() {
+            return quantity;
         }
     }
 
@@ -123,6 +123,9 @@ public class Server {
         @SerializedName("newPriceId")
         String newPriceId;
 
+        @SerializedName("quantity")
+        Long quantity;
+
         public String getSubscriptionId() {
             return subscriptionId;
         }
@@ -130,9 +133,14 @@ public class Server {
         public String getNewPriceId() {
             return newPriceId;
         }
+
+        public Long getQuantity() {
+            return quantity;
+        }
     }
 
-    static class CancelPostBody {
+    /* Generic Post class if only the subscription id was passed */
+    static class SubscriptionPostBody {
         @SerializedName("subscriptionId")
         String subscriptionId;
 
@@ -154,6 +162,9 @@ public class Server {
         @SerializedName("subscription_trial_end")
         String subscription_trial_end;
 
+        @SerializedName("quantity")
+        Long quantity;
+
         public String getCustomerId() {
             return customerId;
         }
@@ -169,14 +180,9 @@ public class Server {
         public String getSubscriptionTrialEnd() {
             return subscription_trial_end;
         }
-    }
 
-    static class PaymentMethodBody {
-        @SerializedName("paymentMethodId")
-        String paymentMethodId;
-
-        public String getPaymentMethodId() {
-            return paymentMethodId;
+        public Long getQuantity() {
+            return quantity;
         }
     }
 
@@ -195,19 +201,58 @@ public class Server {
             return gson.toJson(responseData);
         });
 
+        post("/retrieve-subscription-information", (request, response) -> {
+            SubscriptionPostBody postBody = gson.fromJson(request.body(), SubscriptionPostBody.class);
+
+            SubscriptionRetrieveParams subParams =
+              SubscriptionRetrieveParams.builder()
+                .addAllExpand(Arrays.asList(
+                  "latest_invoice", "customer.invoice_settings.default_payment_method", "plan.product"))
+                .build();
+
+            Subscription subscription = Subscription.retrieve(
+              postBody.getSubscriptionId(),
+              subParams,
+              null
+            );
+
+            InvoiceUpcomingParams invoiceParams =
+              InvoiceUpcomingParams.builder()
+                .setSubscription(subscription.getId())
+                .build();
+
+            Invoice upcomingInvoice = Invoice.upcoming(invoiceParams);
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("card", subscription.getCustomerObject().getInvoiceSettings().getDefaultPaymentMethodObject().getCard());
+            responseData.put("product_description", subscription.getPlan().getProductObject().getName());
+            responseData.put("current_price", subscription.getPlan().getId());
+            responseData.put("current_quantity", subscription.getItems().getData().get(0).getQuantity());
+            responseData.put("latest_invoice", subscription.getLatestInvoiceObject());
+            responseData.put("upcoming_invoice", upcomingInvoice);
+
+            //we use StripeObject.PRETTY_PRINT_GSON.toJson() so that we get the JSON our client is expecting on the polymorphic
+            //parameters that can either be object ids or the object themselves. If we tried to generate the JSON without call this,
+            //for example, by calling gson.toJson(responseData) we will see something like "customer":{"id":"cus_XXX"} instead of
+            //"customer":"cus_XXX".
+            //If you only need to return 1 object, you can use the built in serializers, i.e. Subscription.retrieve("sub_XXX").toJson()
+            return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
+        });
+
         post("/create-customer", (request, response) -> {
             response.type("application/json");
 
             CreateCustomerBody postBody = gson.fromJson(request.body(), CreateCustomerBody.class);
-            // Create a new customer object
-            Map<String, Object> customerParams = new HashMap<String, Object>();
-            customerParams.put("name", postBody.getName());
-            customerParams.put("email", postBody.getEmail());
+            CustomerCreateParams customerParams =
+                CustomerCreateParams.builder()
+                    .setEmail(postBody.getEmail())
+                    .build();
+
             Customer customer = Customer.create(customerParams);
 
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("customer", customer);
-            return gson.toJson(responseData);
+            return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
         });
 
         post("/create-subscription", (request, response) -> {
@@ -219,7 +264,11 @@ public class Server {
             try {
                 // Set the default payment method on the customer
                 PaymentMethod pm = PaymentMethod.retrieve(postBody.getPaymentMethodId());
-                pm.attach(PaymentMethodAttachParams.builder().setCustomer(customer.getId()).build());
+                pm.attach(
+                  PaymentMethodAttachParams.builder()
+                    .setCustomer(customer.getId())
+                    .build());
+
             } catch (CardException e) {
                 // Since it's a decline, CardException will be caught
                 Map<String, String> responseErrorMessage = new HashMap<>();
@@ -230,26 +279,29 @@ public class Server {
                 return gson.toJson(responseError);
             }
 
-            Map<String, Object> customerParams = new HashMap<String, Object>();
-            Map<String, String> invoiceSettings = new HashMap<String, String>();
-            invoiceSettings.put("default_payment_method", postBody.getPaymentMethodId());
-            customerParams.put("invoice_settings", invoiceSettings);
-            customer.update(customerParams);
+            CustomerUpdateParams customerUpdateParams =
+              CustomerUpdateParams.builder()
+                .setInvoiceSettings(CustomerUpdateParams.InvoiceSettings.builder()
+                .setDefaultPaymentMethod(postBody.getPaymentMethodId())
+                .build())
+              .build();
 
-            // Create the subscription
-            Map<String, Object> item = new HashMap<>();
-            item.put("plan", dotenv.get(postBody.getPriceId().toUpperCase()));
-            Map<String, Object> items = new HashMap<>();
-            items.put("0", item);
-            Map<String, Object> params = new HashMap<>();
-            params.put("customer", postBody.getCustomerId());
-            params.put("items", items);
+            customer.update(customerUpdateParams);
 
-            List<String> expandList = new ArrayList<>();
-            expandList.add("latest_invoice.payment_intent");
-            params.put("expand", expandList);
+            SubscriptionCreateParams subCreateParams =
+              SubscriptionCreateParams.builder()
+                .addItem(
+                  SubscriptionCreateParams.Item.builder()
+                    .setPrice(dotenv.get(postBody.getPriceId().toUpperCase()))
+                    .setQuantity(postBody.getQuantity())
+                  .build()
+                )
+                .setCustomer(customer.getId())
+                .addAllExpand(Arrays.asList(
+                  "latest_invoice.payment_intent", "plan.product"))
+              .build();
 
-            Subscription subscription = Subscription.create(params);
+            Subscription subscription = Subscription.create(subCreateParams);
 
             return subscription.toJson();
         });
@@ -263,7 +315,10 @@ public class Server {
             try {
                 // Set the default payment method on the customer
                 PaymentMethod pm = PaymentMethod.retrieve(postBody.getPaymentMethodId());
-                pm.attach(PaymentMethodAttachParams.builder().setCustomer(customer.getId()).build());
+                pm.attach(PaymentMethodAttachParams.builder()
+                  .setCustomer(customer.getId())
+                  .build());
+
             } catch (CardException e) {
                 // Since it's a decline, CardException will be caught
                 Map<String, String> responseErrorMessage = new HashMap<>();
@@ -273,17 +328,20 @@ public class Server {
                 return gson.toJson(responseError);
             }
 
-            Map<String, Object> customerParams = new HashMap<String, Object>();
-            Map<String, String> invoiceSettings = new HashMap<String, String>();
-            invoiceSettings.put("default_payment_method", postBody.getPaymentMethodId());
-            customerParams.put("invoice_settings", invoiceSettings);
-            customer.update(customerParams);
+            CustomerUpdateParams customerUpdateParams =
+              CustomerUpdateParams.builder()
+                .setInvoiceSettings(CustomerUpdateParams.InvoiceSettings.builder()
+                .setDefaultPaymentMethod(postBody.getPaymentMethodId())
+                .build())
+              .build();
 
-            List<String> expandList = new ArrayList<>();
-            expandList.add("payment_intent");
+            customer.update(customerUpdateParams);
 
-            Map<String, Object> params = new HashMap<>();
-            params.put("expand", expandList);
+            InvoiceRetrieveParams params =
+              InvoiceRetrieveParams.builder()
+                .addAllExpand(Arrays.asList(
+                  "payment_intent"))
+                .build();
 
             Invoice invoice = Invoice.retrieve(postBody.getInvoiceId(), params, null);
 
@@ -293,33 +351,88 @@ public class Server {
         post("/retrieve-upcoming-invoice", (request, response) -> {
             response.type("application/json");
             UpcomingInvoicePostBody postBody = gson.fromJson(request.body(), UpcomingInvoicePostBody.class);
+            String newPrice = dotenv.get(postBody.getNewPriceId().toUpperCase());
+            Long quantity = postBody.getQuantity();
 
-            Subscription subscription = Subscription.retrieve(postBody.getSubscriptionId());
+            InvoiceUpcomingParams.Builder invoiceParamsBuilder = new InvoiceUpcomingParams.Builder();
+            invoiceParamsBuilder.setCustomer(postBody.getCustomerId());
+            String subscriptionId = postBody.getSubscriptionId();
+            Subscription subscription = null;
 
-            Map<String, Object> invoiceParams = new HashMap<>();
-            invoiceParams.put("customer", postBody.getCustomerId());
-            invoiceParams.put("subscription", postBody.getSubscriptionId());
-            invoiceParams.put("subscription_prorate", true);
-            Map<String, Object> item = new HashMap<>();
-            item.put("id", subscription.getItems().getData().get(0).getId());
-            item.put("deleted", true);
-            Map<String, Object> items = new HashMap<>();
-            items.put("0", item);
-            Map<String, Object> item2 = new HashMap<>();
-            item2.put("plan", dotenv.get(postBody.getNewPriceId().toUpperCase()));
-            item2.put("deleted", false);
-            items.put("1", item2);
-            invoiceParams.put("subscription_items", items);
+            if (subscriptionId != null)
+            {
+              invoiceParamsBuilder.setSubscription(subscriptionId);
 
-            Invoice invoice = Invoice.upcoming(invoiceParams);
+              subscription = Subscription.retrieve(subscriptionId);
+              String currentPrice = subscription.getItems().getData().get(0).getPrice().getId();
 
-            return invoice.toJson();
+              if (currentPrice.equals(newPrice))
+              {
+                 invoiceParamsBuilder.addSubscriptionItem(
+                    InvoiceUpcomingParams.SubscriptionItem.builder()
+                      .setId(subscription.getItems().getData().get(0).getId())
+                      .setQuantity(quantity)
+                      .build()
+                    );
+              }
+              else
+              {
+                invoiceParamsBuilder.addSubscriptionItem(
+                  InvoiceUpcomingParams.SubscriptionItem.builder()
+                    .setId(subscription.getItems().getData().get(0).getId())
+                    .setDeleted(true)
+                    .build()
+                );
+                invoiceParamsBuilder.addSubscriptionItem(
+                  InvoiceUpcomingParams.SubscriptionItem.builder()
+                    .setPrice(newPrice)
+                    .setQuantity(quantity)
+                    .build()
+                );
+              }
+            }
+            else
+            {
+              invoiceParamsBuilder.addSubscriptionItem(
+                InvoiceUpcomingParams.SubscriptionItem.builder()
+                  .setPrice(newPrice)
+                  .setQuantity(quantity)
+                  .build()
+                );
+            }
+
+            Invoice invoice = Invoice.upcoming(invoiceParamsBuilder.build());
+            Map<String, Object> responseData = new HashMap<>();
+
+            /*  in the case where we are returning the upcoming invoice for a subscription change, calculate what
+             * the invoice totals would be for the invoice we'll charge immediately when they confirm the change,
+             * and also return the amount for the next period's invoice.
+             */
+            if (subscription != null)
+            {
+               Long currentPeriodEnd = subscription.getCurrentPeriodEnd();
+               Long immediateTotal = 0L;
+               Long nextInvoiceSum = 0L;
+
+               for(InvoiceLineItem ii : invoice.getLines().autoPagingIterable())
+               {
+                 if (ii.getPeriod().getEnd().equals(currentPeriodEnd))
+                    immediateTotal += ii.getAmount();
+                 else
+                    nextInvoiceSum = ii.getAmount();
+               }
+               responseData.put("immediate_total", immediateTotal);
+               responseData.put("next_invoice_sum", nextInvoiceSum);
+            }
+
+            responseData.put("invoice", invoice);
+            return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
         });
 
         post("/cancel-subscription", (request, response) -> {
             response.type("application/json");
             // Set the default payment method on the customer
-            CancelPostBody postBody = gson.fromJson(request.body(), CancelPostBody.class);
+            SubscriptionPostBody postBody = gson.fromJson(request.body(), SubscriptionPostBody.class);
 
             Subscription subscription = Subscription.retrieve(postBody.getSubscriptionId());
 
@@ -333,24 +446,52 @@ public class Server {
             UpdatePostBody postBody = gson.fromJson(request.body(), UpdatePostBody.class);
 
             Subscription subscription = Subscription.retrieve(postBody.getSubscriptionId());
+            String newPrice = dotenv.get(postBody.getNewPriceId().toUpperCase());
+            Long quantity = postBody.getQuantity();
+            String currentPrice = subscription.getItems().getData().get(0).getPrice().getId();
 
-            SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
-                    .addItem(SubscriptionUpdateParams.Item.builder()
-                            .setId(subscription.getItems().getData().get(0).getId())
-                            .setPlan(dotenv.get(postBody.getNewPriceId().toUpperCase())).build())
-                    .setCancelAtPeriodEnd(false).build();
+            SubscriptionUpdateParams.Builder updateParamsBuilder = new SubscriptionUpdateParams.Builder();
 
-            subscription.update(params);
+            if (currentPrice.equals(newPrice))
+            {
+              updateParamsBuilder.addItem(
+                SubscriptionUpdateParams.Item.builder()
+                  .setId(subscription.getItems().getData().get(0).getId())
+                  .setQuantity(quantity)
+                  .build()
+                );
+            }
+            else
+            {
+                updateParamsBuilder.addItem(
+                  SubscriptionUpdateParams.Item.builder()
+                    .setId(subscription.getItems().getData().get(0).getId())
+                    .setDeleted(true)
+                  .build()
+                );
+
+                updateParamsBuilder.addItem(
+                  SubscriptionUpdateParams.Item.builder()
+                    .setPrice(newPrice)
+                    .setQuantity(quantity)
+                  .build()
+                );
+            }
+
+            subscription = subscription.update(updateParamsBuilder.addAllExpand(Arrays.asList("plan.product")).build());
+
+            String planName = subscription.getPlan().getProductObject().getName();
+            Invoice invoice = Invoice.create(
+              InvoiceCreateParams.builder()
+                .setCustomer(subscription.getCustomer())
+                .setSubscription(subscription.getId())
+                .setDescription("Change to " + quantity.toString() + " seat(s) on the the " + planName + " plan")
+                .build()
+            );
+
+            invoice = invoice.pay();
+
             return subscription.toJson();
-        });
-
-        post("/retrieve-customer-payment-method", (request, response) -> {
-            response.type("application/json");
-            // Set the default payment method on the customer
-            PaymentMethodBody paymentMethodBody = gson.fromJson(request.body(), PaymentMethodBody.class);
-
-            PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodBody.getPaymentMethodId());
-            return paymentMethod.toJson();
         });
 
         post("/stripe-webhook", (request, response) -> {
