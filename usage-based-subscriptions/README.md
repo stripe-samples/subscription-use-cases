@@ -1,19 +1,13 @@
-# Set up subscriptions with Stripe Billing
+# Subscriptions with metered usage
 
-This sample shows how to create a customer and subscribe them to a plan with
-[Stripe Billing](https://stripe.com/billing). You can find step by step directions in the billing [overview](https://stripe.com/docs/billing) documentation page.
+Create a subscription for an online service with metered usage options, and work with Stripe Elements to host a payment form on your servers.
+This sample shows how to create a customer, set up a card for recurring use, and subscribe them to a subscription plan with
+[Stripe Billing](https://stripe.com/billing).
 
-|     | [fixed-price-subscriptions](./fixed-price-subscriptions) | [usage-based-subscriptions](./usage-based-subscriptions) | |
-:--- | :---: | :---: | :---:
-**Demo**  | See a hosted version of the [sample](https://xt7b9.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/fixed-price-subscriptions)  | See a hosted version of the [sample](https://l2sny.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/stripe-sample-usage-based-subscriptions-l2sny) |
-**Define prices in: CLI, Dashboard, or API** Create a price with the Stripe: CLI, Dashboard, or API. | ✅  |  |
-**Charge users a fixed price on a recurring basis** Create a subscription with a fixed price recurring monthly/yearly/etc. | ✅  |  |
-**Charge users per seat on a recurring basis** Create a subscription that charges based on the amount of seats used. |   |  |
-**Charge customers based on their usage.** Create a metered subscriptions so you can charge customers based on their usage. |  | ✅ |  |
 
 **Demo**
 
-See a hosted version of the [sample](https://xt7b9.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/fixed-price-subscriptions)
+See a hosted version of the [sample](https://l2sny.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/stripe-sample-usage-based-subscriptions-l2sny)
 
 The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
 
@@ -21,7 +15,7 @@ Use the `4000000000003220` test card number to trigger a 3D Secure challenge flo
 
 Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
-<img src="./fixed-price-subscriptions/subscription-with-fixed-price.png" alt="Preview of recipe" style="max-width:25%;">
+<img src="subscription-with-metered-usage.png" alt="Preview of recipe" style="max-width:25%;">
 
 ### Features:
 
@@ -53,10 +47,14 @@ The CLI will walk you through picking your integration type, server and client l
 
 **Installing and cloning manually**
 
-If you do not want to use the Stripe CLI, you can manually clone and configure the sample:
-
 ```
 git clone git@github.com:stripe-samples/subscription-use-cases.git
+```
+
+Change into this directory to start configuring the sample:
+
+```
+cd subscription-uses-cases/usage-based-subscriptions
 ```
 
 Copy the `.env.example` file into a file named `.env` in the folder of the server you want to use. For example:
@@ -74,11 +72,11 @@ STRIPE_SECRET_KEY=<replace-with-your-secret-key>
 
 `STATIC_DIR` tells the server where the client files are located and does not need to be modified unless you move the server files.
 
-**2. Create Products and Plans on Stripe**
+**2. Create Products and Prices on Stripe**
 
-This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
+This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Prices are objects on Stripe that you use to model a subscription.
 
-You can create Products and Prices [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
+You can create Products and Plans [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
 
 **3. Follow the server instructions on how to run:**
 

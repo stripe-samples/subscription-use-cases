@@ -6,6 +6,11 @@
       "name": "per-seat-subscriptions",
       "clients": ["web"],
       "servers": ["java", "node", "php", "python", "ruby"]
+    },
+    {
+      "name": "usage-based-subscriptions",
+      "clients": ["web"],
+      "servers": ["java", "node", "php", "python", "ruby","go", "dotnet"]
     }
   ]
 }
