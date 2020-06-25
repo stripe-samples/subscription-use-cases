@@ -1,11 +1,11 @@
 {
-  "name": "subscription-with-fixed-price",
+  "name": "subscription-with-per-seat-prices",
   "configureDotEnv": true,
   "integrations": [
     {
-      "name": "fixed-price-subscriptions",
+      "name": "per-seat-subscriptions",
       "clients": ["web"],
-      "servers": ["java", "node", "php", "python", "ruby", "go", "dotnet"]
+      "servers": ["java", "node", "php", "python", "ruby"]
     }
   ]
 }

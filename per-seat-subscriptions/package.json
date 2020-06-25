@@ -1,7 +1,7 @@
 {
-  "name": "stripe-subscription-with-fixed-price",
+  "name": "stripe-subscription-with-per-seat-pricing",
   "version": "1.0.0",
-  "description": "How to create a fixed price monthly subscription and sign up form.",
+  "description": "How to create a monthly subscription with per seat pricing.",
   "main": "server.js",
   "scripts": {
     "start": "node server/node/server.js",

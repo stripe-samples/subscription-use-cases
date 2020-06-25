@@ -1,6 +1,6 @@
-# Subscriptions with fixed price
+# Subscriptions with per seat pricing
 
-Create a subscription for an online service with fixed-price options, and work with Stripe Elements to host a payment form on your servers.
+Create a subscription for an online service with  per seat price options, and work with Stripe Elements to host a payment form on your servers.
 This sample shows how to create a customer, set up a card for recurring use, and subscribe them to a subscription plan with
 [Stripe Billing](https://stripe.com/billing).
 
