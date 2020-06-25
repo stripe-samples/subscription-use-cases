@@ -7,7 +7,7 @@ This sample shows how to create a customer, set up a card for recurring use, and
 
 **Demo**
 
-See a hosted version of the [sample](https://2ow1q.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/great-wood-2ow1q)
+See a hosted version of the [sample](https://fqizg.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/per-seat-subscriptions)
 
 The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
 
