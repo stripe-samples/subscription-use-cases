@@ -1,4 +1,4 @@
-# Subscriptions with fixed price
+# Subscriptions with per seat pricing
 
 An [Express server](http://expressjs.com) implementation.
 
