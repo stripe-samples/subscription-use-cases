@@ -30,3 +30,6 @@ target/
 
 # Typescript
 dist
+
+# React
+build

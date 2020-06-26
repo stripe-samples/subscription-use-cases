@@ -4,7 +4,8 @@
   "description": "How to create a fixed price monthly subscription and sign up form.",
   "main": "server.js",
   "scripts": {
-    "start": "node server/node/server.js",
+    "startVanillajs": "node server/node/server.js",
+    "startReact": "",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "stripe-demos",

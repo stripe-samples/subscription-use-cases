@@ -4,7 +4,6 @@ Create a subscription for an online service with fixed-price options, and work w
 This sample shows how to create a customer, set up a card for recurring use, and subscribe them to a subscription plan with
 [Stripe Billing](https://stripe.com/billing).
 
-
 **Demo**
 
 See a hosted version of the [sample](https://xt7b9.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/fixed-price-subscriptions)
@@ -27,7 +26,7 @@ Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
 ## How to run locally
 
-This sample includes [5 server implementations](server/) in our most popular languages. Follow the steps below to run one of the servers locally.
+This sample includes [7 server implementations](server/) in our most popular languages. Follow the steps below to run one of the servers locally. This example also includes VanillaJS (no view frameworks) and a React example implementation. Follow the instructions below to get them running.
 
 **1. Clone and configure the sample**
 
@@ -68,6 +67,20 @@ STRIPE_SECRET_KEY=<replace-with-your-secret-key>
 
 `STATIC_DIR` tells the server where the client files are located and does not need to be modified unless you move the server files.
 
+**[Optional] Run react frontend client**
+
+Copy the `.env.example` file into a file named `.env` in the folder of the server you want to use. For example:
+
+```
+cp .env.example client/react/.env
+```
+
+You will need to take the Stripe publishable key and set only one variable for the React server.
+
+```
+REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
+```
+
 **2. Create Products and Plans on Stripe**
 
 This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
@@ -82,6 +95,14 @@ Pick the server language you want and follow the instructions in the server fold
 cd server/node # there's a README in this folder with instructions
 npm install
 npm start
+```
+
+** To run the React client & the node server**
+
+```
+cd server/node # there's a README in this folder with instructions
+npm install
+npm startReact
 ```
 
 **4. [Optional] Run a webhook locally:**
