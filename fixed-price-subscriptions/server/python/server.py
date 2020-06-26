@@ -208,7 +208,7 @@ def webhook_received():
 
     data_object = data['object']
 
-    if event_type == 'invoice.payment_succeeded':
+    if event_type == 'invoice.paid':
         # Used to provision services after the trial has ended.
         # The status of the invoice will show up as paid. Store the status in your
         # database to reference when a user accesses your service to avoid hitting rate

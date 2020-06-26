@@ -182,7 +182,7 @@ app.post(
     // https://stripe.com/docs/billing/webhooks
     // Remove comment to see the various objects sent for this sample
     switch (event.type) {
-      case 'invoice.payment_succeeded':
+      case 'invoice.paid':
         // Used to provision services after the trial has ended.
         // The status of the invoice will show up as paid. Store the status in your
         // database to reference when a user accesses your service to avoid hitting rate limits.
