@@ -6,6 +6,7 @@
   "scripts": {
     "startVanillajs": "node server/node/server.js",
     "startReact": "",
+    "start": "node server/node/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "stripe-demos",
