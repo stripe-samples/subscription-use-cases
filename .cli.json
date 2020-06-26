@@ -11,6 +11,11 @@
       "name": "usage-based-subscriptions",
       "clients": ["web"],
       "servers": ["java", "node", "php", "python", "ruby","go", "dotnet"]
+    },
+    {
+      "name": "fixed-price-subscriptions",
+      "clients": ["vanillajs", "react"],
+      "servers": ["java", "node", "php", "python", "ruby","go", "dotnet"]
     }
   ]
 }
