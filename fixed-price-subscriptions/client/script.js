@@ -295,8 +295,7 @@ function handleCustomerActionRequired({
           if (result.paymentIntent.status === 'succeeded') {
             // There's a risk of the customer closing the window before callback
             // execution. To handle this case, set up a webhook endpoint and
-            // listen to invoice.payment_succeeded. This webhook endpoint
-            // returns an Invoice.
+            // listen to invoice.paid. This webhook endpoint returns an Invoice.
             return {
               priceId: priceId,
               subscription: subscription,
