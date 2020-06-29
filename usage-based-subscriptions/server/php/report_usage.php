@@ -11,7 +11,7 @@ $dotenv->load();
 
 // Set your secret key. Remember to switch to your live secret key in production!
 // See your keys here: https://dashboard.stripe.com/account/apikeys
-Stripe::setApiKey(getenv('STRIPE_SECRET_KEY'));
+$stripe = new \Stripe\StripeClient(getenv('STRIPE_SECRET_KEY'));
 
 // You need to write some of your own business logic before creating the
 // usage record. Pull a record of a customer from your database
@@ -31,7 +31,7 @@ $timestamp = date_timestamp_get($date);
 $idempotency_key = Uuid::uuid4()->toString();
 
 try {
-    \Stripe\SubscriptionItem::createUsageRecord(
+    $stripe->subscriptionItems->createUsageRecord(
         $subscription_item_id,
         [
             'quantity' => $usage_quantity,
