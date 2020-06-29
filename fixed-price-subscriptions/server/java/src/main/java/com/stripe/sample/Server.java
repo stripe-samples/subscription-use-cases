@@ -318,8 +318,8 @@ public class Server {
                 .addSubscriptionItem(
                   InvoiceUpcomingParams.SubscriptionItem.builder()
                     .setId(subscription.getItems().getData().get(0).getId())
-                      .setDeleted(true)
-                      .build())
+                    .setDeleted(true)
+                    .build())
                 .addSubscriptionItem(
                   InvoiceUpcomingParams.SubscriptionItem.builder()
                     .setPrice(dotenv.get(postBody.getNewPriceId().toUpperCase()))
