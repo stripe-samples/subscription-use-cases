@@ -711,7 +711,6 @@ function changeLoadingState(isLoading) {
 
 // Show a spinner on subscription submission
 function changeLoadingStatePrices(isLoading) {
-  console.log(isLoading);
   if (isLoading) {
     document.querySelector('#button-text').classList.add('hidden');
     document.querySelector('#loading').classList.remove('hidden');
