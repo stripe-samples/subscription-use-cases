@@ -50,7 +50,6 @@ def create_customer():
 
         return jsonify(
             customer=customer,
-            setupIntent=setup_intent
         )
     except Exception as e:
         return jsonify(error=str(e)), 403
@@ -86,6 +85,7 @@ def createSubscription():
         return jsonify(subscription)
     except Exception as e:
         return jsonify(error={'message': str(e)}), 200
+
 
 @app.route('/retry-invoice', methods=['POST'])
 def retrySubscription():
