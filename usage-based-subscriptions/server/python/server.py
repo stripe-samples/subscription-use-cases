@@ -47,15 +47,8 @@ def create_customer():
         )
         # At this point, associate the ID of the Customer object with your
         # own internal representation of a customer, if you have one.
-
-        # Create a SetupIntent to set up our payment methods recurring usage
-        setup_intent = stripe.SetupIntent.create(
-            payment_method_types=['card'],
-            customer=customer.id
-        )
         return jsonify(
             customer=customer,
-            setupIntent=setup_intent
         )
     except Exception as e:
         return jsonify(error=str(e)), 403
