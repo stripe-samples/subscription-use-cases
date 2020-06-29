@@ -15,7 +15,7 @@ mvn package
 2. Run the application
 
 ```
-java -cp target/subscriptions-with-fixed-price-1.0.0-SNAPSHOT-jar-with-dependencies.jar com.stripe.sample.Server
+java -cp target/subscriptions-with-metered-usage-1.0.0-SNAPSHOT-jar-with-dependencies.jar com.stripe.sample.Server
 ```
 
 3. Go to `localhost:4242` in your browser to see the demo
