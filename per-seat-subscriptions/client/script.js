@@ -445,7 +445,6 @@ function createSubscription(customerId, paymentMethodId, priceId, quantity) {
           subscription: result,
           paymentMethodId: paymentMethodId,
           priceId: priceId,
-          foo: 'bar',
         };
       })
       // Some payment methods require a customer to do additional
