@@ -216,7 +216,13 @@ public class Server {
 
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("customer", customer);
-            return gson.toJson(responseData);
+     
+            //we use StripeObject.PRETTY_PRINT_GSON.toJson() so that we get the JSON our client is expecting on the polymorphic
+            //parameters that can either be object ids or the object themselves. If we tried to generate the JSON without call this,
+            //for example, by calling gson.toJson(responseData) we will see something like "customer":{"id":"cus_XXX"} instead of
+            //"customer":"cus_XXX".
+            //If you only need to return 1 object, you can use the built in serializers, i.e. Subscription.retrieve("sub_XXX").toJson()
+            return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
         });
 
         post("/create-subscription", (request, response) -> {
