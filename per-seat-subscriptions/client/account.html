@@ -58,7 +58,7 @@
               Account
             </div>
             <div class="text-xl text-gray-600">
-                Subscription summary
+              Subscription summary
             </div>
             <div class="flex justify-between text-gray-600">
               <div id="subscription-details"></div>
@@ -67,7 +67,7 @@
               <div class="text-gray-600" id="last-payment-summary"></div>
             </div>
             <div>
-               <div id="next-payment-summary" class="text-gray-600"></div>
+              <div id="next-payment-summary" class="text-gray-600"></div>
             </div>
             <div class="flex justify-between">
               <div class="text-xl text-gray-600">
@@ -120,10 +120,25 @@
                       Billed monthly
                     </div>
                   </div>
-                  <div class="quantity-setter">
-                    <button class="increment-btn increment-subtract">-</button>
-                       <input type="number" class="quantity-input" id="quantity-input-basic" min="1" value="1" />
-                    <button class="increment-btn increment-add">+</button>
+                  <div class="flex justify-center mt-3">
+                    <button
+                      class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg"
+                      disabled
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      class="quantity-input w-8 appearance-none text-center"
+                      id="quantity-input-basic"
+                      min="1"
+                      value="1"
+                    />
+                    <button
+                      class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg"
+                    >
+                      +
+                    </button>
                   </div>
                   <div class="flex justify-center mt-6">
                     <button
@@ -161,16 +176,31 @@
                     <div class="leading-none text-gray-500 text-xs font-medium">
                       Billed monthly
                     </div>
-                    <div class="leading-none text-gray-500 text-xs font-medium mt-1">
+                    <div
+                      class="leading-none text-gray-500 text-xs font-medium mt-1"
+                    >
                       Discounted pricing for 6 or more seats
                     </div>
                   </div>
-                  <div class="quantity-setter">
-                    <button class="increment-btn increment-subtract">
-                    -
+                  <div class="flex justify-center mt-3">
+                    <button
+                      class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg"
+                      disabled
+                    >
+                      -
                     </button>
-                       <input type="number" class="quantity-input" id="quantity-input-premium" min="1" value="1" />
-                    <button class="increment-btn increment-add">+</button>
+                    <input
+                      type="number"
+                      class="quantity-input w-8 appearance-none text-center"
+                      id="quantity-input-premium"
+                      min="1"
+                      value="1"
+                    />
+                    <button
+                      class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg"
+                    >
+                      +
+                    </button>
                   </div>
                   <div class="flex justify-center mt-6">
                     <button
@@ -194,7 +224,7 @@
             <div id="price-change-form" class="flex justify-center">
               <div
                 class="w-full rounded overflow-hidden border rounded-md p-4 mb-4"
-              > 
+              >
                 <div class="flex justify-between text-gray-600 text-m">
                   <div id="change-summary">
                     <span id="quantity-change"></span>
