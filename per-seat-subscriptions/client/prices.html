@@ -49,25 +49,35 @@
                 $5.00
               </p>
               <div class="flex-wrap">
-                <div
-                  class="leading-5 text-gray-500 text-xs font-medium mt-1"
-                >
+                <div class="leading-5 text-gray-500 text-xs font-medium mt-1">
                   Billed monthly
                 </div>
-                <div
-                  class="leading-5 text-gray-500 text-xs font-medium mt-1"
-                >
-                  $5 per seat </br>
-                   
+                <div class="leading-5 text-gray-500 text-xs font-medium mt-1">
+                  $5 per seat
+                </div>
+                <div class="mb-2"></div>
+                <div class="flex justify-center mt-12">
+                  <button
+                    class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg"
+                    disabled
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    class="quantity-input w-8 appearance-none text-center"
+                    id="quantity-input-basic"
+                    min="1"
+                    value="1"
+                  />
+                  <button
+                    class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
-              <div class="flex justify-center mt-8">
-                <button class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg" disabled>
-                -
-                </button>
-                   <input type="number" class="quantity-input w-8 appearance-none text-center" id="quantity-input-basic" min="1" value="1" />
-                <button class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg">+</button>
-              </div>
+
               <div class="flex justify-center mt-6">
                 <button
                   id="submit-basic"
@@ -97,24 +107,34 @@
                 $15.00
               </p>
               <div class="flex-wrap">
-                <div
-                  class="leading-5 text-gray-500 text-xs font-medium mt-1"
-                >
+                <div class="leading-5 text-gray-500 text-xs font-medium mt-1">
                   Billed monthly
                 </div>
-                <div
-                  class="text-gray-500 text-xs font-medium mt-1 leading-5"
-                >
-                  $10 per seat up to 5 </br>
-                  $6 per seat above 5
+                <div class="text-gray-500 text-xs font-medium mt-1 leading-5">
+                  $15 per seat up to 5 <br />
+                  $10 per seat above 5 <br />
+                  $5 per seat above 15
                 </div>
               </div>
-              <div class="flex justify-center mt-3">
-                <button class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg" disabled>
-                -
+              <div class="flex justify-center mt-2">
+                <button
+                  class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg"
+                  disabled
+                >
+                  -
                 </button>
-                   <input type="number" class="quantity-input w-8 appearance-none text-center" id="quantity-input-premium" min="1" value="1" />
-                <button class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg">+</button>
+                <input
+                  type="number"
+                  class="quantity-input w-8 appearance-none text-center"
+                  id="quantity-input-premium"
+                  min="1"
+                  value="1"
+                />
+                <button
+                  class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg"
+                >
+                  +
+                </button>
               </div>
               <div class="flex justify-center mt-6">
                 <button
@@ -140,12 +160,13 @@
             <span id="subscription-quantity" hidden></span>
 
             <div class="font-bold text-xl mb-2">
-              Enter your card details. </br>Your subscription will start now.
+              Enter your card details. <br />Your subscription will start now.
             </div>
-            <p class="text-gray-700 text-base">
-              → Subscription: <span id="description"></span>
-            </p>
             <p class="text-gray-700 text-base mb-2">
+              → Subscription: <br />
+              <span id="description"></span>
+            </p>
+            <p class="text-gray-700 text-base mb-2 mt-2">
               → Total due now: <span id="total-due-now">$0.00</span>
             </p>
             <div class="w-full">
