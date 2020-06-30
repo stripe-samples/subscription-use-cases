@@ -2,7 +2,7 @@ let stripe, customer, price, card;
 
 let priceInfo = {
   basic: {
-    amount: '1500',
+    amount: '500',
     name: 'Basic',
     interval: 'monthly',
     currency: 'USD',
