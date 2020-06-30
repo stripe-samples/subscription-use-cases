@@ -300,9 +300,6 @@ function handleCustomerActionRequired({
             };
           }
         }
-      })
-      .catch((error) => {
-        displayError(error);
       });
   } else {
     // No customer action needed

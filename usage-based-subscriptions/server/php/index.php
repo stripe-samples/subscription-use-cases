@@ -21,10 +21,12 @@ $container['logger'] = function ($c) {
   $logger->pushHandler(new Monolog\Handler\StreamHandler(__DIR__ . '/logs/app.log', \Monolog\Logger::DEBUG));
   return $logger;
 };
-$app->add(function ($request, $response, $next) {
-    Stripe::setApiKey(getenv('STRIPE_SECRET_KEY'));
-    return $next($request, $response);
-});
+
+/* Initialize the Stripe client */
+$container['stripe'] = function ($c) {
+  $stripe = new \Stripe\StripeClient(getenv('STRIPE_SECRET_KEY'));
+  return $stripe;
+};
 
 $app->get('/', function (Request $request, Response $response, array $args) {
   // Display checkout page
@@ -39,9 +41,10 @@ $app->get('/config', function (Request $request, Response $response, array $args
 
 $app->post('/create-customer', function (Request $request, Response $response, array $args) {
   $body = json_decode($request->getBody());
-
+  $stripe = $this->stripe;
+  
   // Create a new customer object
-  $customer = \Stripe\Customer::create([
+  $customer = $stripe->customers->create([
     'email' => $body->email
   ]);
 
@@ -50,10 +53,11 @@ $app->post('/create-customer', function (Request $request, Response $response, a
 
 $app->post('/create-subscription', function (Request $request, Response $response, array $args) {
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
 
   try {
-    $payment_method = \Stripe\PaymentMethod::retrieve(
+    $payment_method = $stripe->paymentMethods->retrieve(
       $body->paymentMethodId
     );
     $payment_method->attach([
@@ -62,17 +66,17 @@ $app->post('/create-subscription', function (Request $request, Response $respons
   } catch (Exception $e) {
     return $response->withJson($e->jsonBody);
   }
-
-
+  
+    
   // Set the default payment method on the customer
-  \Stripe\Customer::update($body->customerId, [
+  $stripe->customers->update($body->customerId, [
     'invoice_settings' => [
       'default_payment_method' => $body->paymentMethodId
     ]
   ]);
 
   // Create the subscription
-  $subscription = \Stripe\Subscription::create([
+  $subscription = $stripe->subscriptions->create([
     'customer' => $body->customerId,
     'items' => [
       [
@@ -87,9 +91,10 @@ $app->post('/create-subscription', function (Request $request, Response $respons
 
 $app->post('/retry-invoice', function (Request $request, Response $response, array $args) {
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
   try {
-    $payment_method = \Stripe\PaymentMethod::retrieve(
+    $payment_method = $stripe->paymentMethods->retrieve(
       $body->paymentMethodId
     );
     $payment_method->attach([
@@ -101,14 +106,13 @@ $app->post('/retry-invoice', function (Request $request, Response $response, arr
 
 
   // Set the default payment method on the customer
-  \Stripe\Customer::update($body->customerId, [
+  $stripe->customers->update($body->customerId, [
     'invoice_settings' => [
       'default_payment_method' => $body->paymentMethodId
     ]
   ]);
 
-  $invoice = \Stripe\Invoice::retrieve([
-    'id' => $body->invoiceId,
+  $invoice = $stripe->invoices->retrieve($body->invoiceId, [
     'expand' => ['payment_intent'],
   ]);
 
@@ -117,12 +121,13 @@ $app->post('/retry-invoice', function (Request $request, Response $response, arr
 
 $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $response, array $args) {
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
-  $subscription = \Stripe\Subscription::retrieve(
+  $subscription = $stripe->subscriptions->retrieve(
     $body->subscriptionId
   );
 
-  $invoice = \Stripe\Invoice::upcoming([
+  $invoice = $stripe->invoices->upcoming([
     "customer" => $body->customerId,
     "subscription_prorate" => TRUE,
     "subscription" => $body->subscriptionId,
@@ -144,8 +149,9 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
 
 $app->post('/cancel-subscription', function (Request $request, Response $response, array $args) {
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
-  $subscription = \Stripe\Subscription::retrieve(
+  $subscription = $stripe->subscriptions->retrieve(
     $body->subscriptionId
   );
   $subscription->delete();
@@ -155,11 +161,11 @@ $app->post('/cancel-subscription', function (Request $request, Response $respons
 
 $app->post('/update-subscription', function (Request $request, Response $response, array $args) {
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
-  $subscription = \Stripe\Subscription::retrieve($body->subscriptionId);
+  $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
 
-  $updatedSubscription = \Stripe\Subscription::update($body->subscriptionId, [
-    'cancel_at_period_end' => false,
+  $updatedSubscription = $stripe->subscriptions->update($body->subscriptionId, [
     'items' => [
       [
         'id' => $subscription->items->data[0]->id,
@@ -173,8 +179,9 @@ $app->post('/update-subscription', function (Request $request, Response $respons
 
 $app->post('/retrieve-customer-payment-method', function (Request $request, Response $response, array $args) {
   $body = json_decode($request->getBody());
+  $stripe = $this->stripe;
 
-  $paymentMethod = \Stripe\PaymentMethod::retrieve(
+  $paymentMethod = $stripe->paymentMethods->retrieve(
     $body->paymentMethodId
   );
 
@@ -185,11 +192,13 @@ $app->post('/retrieve-customer-payment-method', function (Request $request, Resp
 $app->post('/stripe-webhook', function(Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
+    $stripe = $this->stripe;
+    
     // Parse the message body (and check the signature if possible)
     $webhookSecret = getenv('STRIPE_WEBHOOK_SECRET');
     if ($webhookSecret) {
       try {
-        $event = \Stripe\Webhook::constructEvent(
+        $event = $stripe->webhooks->constructEvent(
           $request->getBody(),
           $request->getHeaderLine('stripe-signature'),
           $webhookSecret

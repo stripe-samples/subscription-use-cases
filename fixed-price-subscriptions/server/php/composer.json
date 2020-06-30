@@ -5,7 +5,7 @@
   "require": {
     "slim/slim": "^3.12",
     "vlucas/phpdotenv": "^3.4",
-    "stripe/stripe-php": "^6.40",
+    "stripe/stripe-php": "^7.37.1",
     "monolog/monolog": "^1.17"
   },
   "scripts": {
