@@ -15,9 +15,7 @@ let priceInfo = {
   },
 };
 
-var accountInfo = {
-
-}
+var accountInfo = {};
 
 function stripeElements(publishableKey) {
   stripe = Stripe(publishableKey);
@@ -118,7 +116,9 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
 
   let priceId = document.getElementById('priceId').innerHTML.toUpperCase();
 
-  let quantity = parseInt(document.getElementById('subscription-quantity').innerText);
+  let quantity = parseInt(
+    document.getElementById('subscription-quantity').innerText
+  );
 
   stripe
     .createPaymentMethod({
@@ -142,39 +142,44 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
           );
         } else {
           // Create the subscription
-          createSubscription(customerId, result.paymentMethod.id, priceId, quantity);
+          createSubscription(
+            customerId,
+            result.paymentMethod.id,
+            priceId,
+            quantity
+          );
         }
       }
     });
 }
 
 function goToPaymentPage(evt) {
-
   button = evt.currentTarget;
-  
+
   const params = new URLSearchParams(document.location.search.substring(1));
   const customerId = params.get('customerId');
 
   priceId = button.dataset.plan;
- 
-  quantity = document.getElementById("quantity-input-" + priceId).value
-  
+
+  quantity = document.getElementById('quantity-input-' + priceId).value;
+
   retrieveUpcomingInvoice(customerId, null, priceId, quantity).then(
     (response) => {
-      invoice = response.invoice
+      invoice = response.invoice;
       document.getElementById('total-due-now').innerText = getFormattedAmount(
         invoice.total
       );
 
       // Add the price selected, hidden spans but we might move them to a js hash depending on how we change pulling price info
-      //FIXME: are we still using either of these? 
+      //FIXME: are we still using either of these?
       document.getElementById('priceId').innerHTML = priceInfo[priceId].name;
       document.getElementById('subscription-quantity').innerText = quantity;
 
       description = '';
-      invoice.lines.data.forEach(
-        (line) => {
-          description +=`${line.description}:${getFormattedAmount(line.amount)} <br/>`;
+      invoice.lines.data.forEach((line) => {
+        description += `${line.description}: ${getFormattedAmount(
+          line.amount
+        )} <br/>`;
       });
       document.getElementById('description').innerHTML = description;
 
@@ -182,19 +187,22 @@ function goToPaymentPage(evt) {
       if (priceId === 'premium') {
         document.querySelector('#submit-premium-button-text').innerText =
           'Selected';
-        document.querySelector('#submit-basic-button-text').innerText = 'Select';
+        document.querySelector('#submit-basic-button-text').innerText =
+          'Select';
       } else {
-        document.querySelector('#submit-premium-button-text').innerText = 'Select';
-        document.querySelector('#submit-basic-button-text').innerText = 'Selected';
+        document.querySelector('#submit-premium-button-text').innerText =
+          'Select';
+        document.querySelector('#submit-basic-button-text').innerText =
+          'Selected';
       }
-    });
+    }
+  );
   // Update the border to show which price is selected
   changePriceSelection(priceId);
 
   // Show the payment screen
   document.querySelector('#payment-form').classList.remove('hidden');
 }
-
 
 function changePrice() {
   demoChangePrice();
@@ -208,7 +216,9 @@ function switchPrices(newPriceIdSelected) {
   const subscriptionId = accountInfo.subscriptionId;
   const currentQuantity = accountInfo.quantity;
 
-  newQuantity = document.getElementById("quantity-input-" + newPriceIdSelected.toLowerCase()).value;
+  newQuantity = document.getElementById(
+    'quantity-input-' + newPriceIdSelected.toLowerCase()
+  ).value;
 
   //update account info to store the new quantity and/or new price to be submitted
   accountInfo.newQuantity = newQuantity;
@@ -221,53 +231,74 @@ function switchPrices(newPriceIdSelected) {
 
   // Retrieve the upcoming invoice to display details about
   // the price change
-  retrieveUpcomingInvoice(customerId, subscriptionId, newPriceIdSelected, newQuantity).then(
-    (response) => {
-      upcomingInvoice = response.invoice;
-      immediateTotal = response.immediate_total;
-      nextInvoiceTotal = response.next_invoice_sum;
+  retrieveUpcomingInvoice(
+    customerId,
+    subscriptionId,
+    newPriceIdSelected,
+    newQuantity
+  ).then((response) => {
+    upcomingInvoice = response.invoice;
+    immediateTotal = response.immediate_total;
+    nextInvoiceTotal = response.next_invoice_sum;
 
-      var changeSummaryDiv = document.getElementById("change-summary");
+    var changeSummaryDiv = document.getElementById('change-summary');
 
-      var description = "";
+    var description = '';
 
-      if (parseInt(newQuantity) >= currentQuantity)
-      {
-        description += `You added <b> ${newQuantity-currentQuantity}</b> additional seat(s),`;
-      } 
-      else
-      {
-        description += `You removed <b> ${currentQuantity - newQuantity}</b> seat(s)`;
-      }
+    if (parseInt(newQuantity) >= currentQuantity) {
+      description += `You added <b> ${
+        newQuantity - currentQuantity
+      }</b> additional seat(s),`;
+    } else {
+      description += `You removed <b> ${
+        currentQuantity - newQuantity
+      }</b> seat(s)`;
+    }
 
-      description += ` bringing you to a total of <b> ${newQuantity} </b> seat(s) on the <b>${newPriceIdSelected}</b> plan.<br/>`;
-        document.getElementById('quantity-change').innerHTML = description;
+    description += ` bringing you to a total of <b> ${newQuantity} </b> seat(s) on the <b>${newPriceIdSelected}</b> plan.<br/>`;
+    document.getElementById('quantity-change').innerHTML = description;
 
-      if (immediateTotal > 0)
-      {
-        document.getElementById('immediate-total').innerHTML = `You will be charged <b> ${getFormattedAmount(immediateTotal)} </b> today.`;  
-        document.getElementById('next-payment').innerHTML = `<br/> Your next payment of <b>${getFormattedAmount(nextInvoiceTotal)} </b> will be due <b>${getDateStringFromUnixTimestamp(upcomingInvoice.next_payment_attempt)} </b>`;
-      }
-      else
-      {
-        document.getElementById('immediate-total').innerHTML = `There's nothing due today. <br> You have a credit of <b>${getFormattedAmount(immediateTotal)}</b> that will be applied to ` +
-          `your next invoice of <b>${getFormattedAmount(nextInvoiceTotal)} </b>, due on <b>${getDateStringFromUnixTimestamp(upcomingInvoice.next_payment_attempt)}.`;
-      }
+    if (immediateTotal > 0) {
+      document.getElementById(
+        'immediate-total'
+      ).innerHTML = `You will be charged <b> ${getFormattedAmount(
+        immediateTotal
+      )} </b> today.`;
+      document.getElementById(
+        'next-payment'
+      ).innerHTML = `<br/> Your next payment of <b>${getFormattedAmount(
+        nextInvoiceTotal
+      )} </b> will be due <b>${getDateStringFromUnixTimestamp(
+        upcomingInvoice.next_payment_attempt
+      )} </b>`;
+    } else {
+      document.getElementById('immediate-total').innerHTML =
+        `There's nothing due today. <br> You have a credit of <b>${getFormattedAmount(
+          immediateTotal
+        )}</b> that will be applied to ` +
+        `your next invoice of <b>${getFormattedAmount(
+          nextInvoiceTotal
+        )} </b>, due on <b>${getDateStringFromUnixTimestamp(
+          upcomingInvoice.next_payment_attempt
+        )}.`;
+    }
 
-      //changeLoadingStateprices(false);
-      document.querySelector('#price-change-form').classList.remove('hidden');
-    });
+    //changeLoadingStateprices(false);
+    document.querySelector('#price-change-form').classList.remove('hidden');
+  });
 }
 
 function confirmPriceChange() {
-  updateSubscription(accountInfo.newPriceId.toUpperCase(), accountInfo.subscriptionId, accountInfo.newQuantity).then(
-    (result) => {
-      let searchParams = new URLSearchParams(window.location.search);
-      searchParams.set('priceId', accountInfo.newPriceId.toUpperCase());
-      searchParams.set('priceHasChanged', true);
-      window.location.search = searchParams.toString();
-    }
-  );
+  updateSubscription(
+    accountInfo.newPriceId.toUpperCase(),
+    accountInfo.subscriptionId,
+    accountInfo.newQuantity
+  ).then((result) => {
+    let searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('priceId', accountInfo.newPriceId.toUpperCase());
+    searchParams.set('priceHasChanged', true);
+    window.location.search = searchParams.toString();
+  });
 }
 
 function createCustomer() {
@@ -391,7 +422,7 @@ function createSubscription(customerId, paymentMethodId, priceId, quantity) {
         customerId: customerId,
         paymentMethodId: paymentMethodId,
         priceId: priceId,
-        quantity: quantity
+        quantity: quantity,
       }),
     })
       .then((response) => {
@@ -414,7 +445,6 @@ function createSubscription(customerId, paymentMethodId, priceId, quantity) {
           subscription: result,
           paymentMethodId: paymentMethodId,
           priceId: priceId,
-          foo: 'bar'
         };
       })
       // Some payment methods require a customer to do additional
@@ -490,7 +520,12 @@ function retryInvoiceWithNewPaymentMethod(
   );
 }
 
-function retrieveUpcomingInvoice(customerId, subscriptionId, newPriceId, quantity) {
+function retrieveUpcomingInvoice(
+  customerId,
+  subscriptionId,
+  newPriceId,
+  quantity
+) {
   return fetch('/retrieve-upcoming-invoice', {
     method: 'post',
     headers: {
@@ -500,7 +535,7 @@ function retrieveUpcomingInvoice(customerId, subscriptionId, newPriceId, quantit
       customerId: customerId,
       subscriptionId: subscriptionId,
       newPriceId: newPriceId,
-      quantity: quantity
+      quantity: quantity,
     }),
   })
     .then((response) => {
@@ -542,7 +577,7 @@ function updateSubscription(priceId, subscriptionId, quantity) {
     body: JSON.stringify({
       subscriptionId: subscriptionId,
       newPriceId: priceId,
-      quantity: quantity
+      quantity: quantity,
     }),
   })
     .then((response) => {
@@ -560,7 +595,7 @@ function getSubscriptionInformation(subscriptionId) {
       'Content-type': 'application/json',
     },
     body: JSON.stringify({
-      subscriptionId: subscriptionId
+      subscriptionId: subscriptionId,
     }),
   })
     .then((response) => {
@@ -644,17 +679,25 @@ function showSubscriptionInformation() {
       currentPrice = response.current_price;
       currentQuantity = response.current_quantity;
 
-      document.getElementById('subscription-details').innerHTML = `You are subscribed to <b>${currentQuantity}</b> seat(s) on the <b>${productDescription}</b> plan.<br/>`;
-      
-      description = `Your last payment was <b>${getFormattedAmount(latestInvoice.amount_paid)}</b>.`;
-      if (latestInvoice.description)
-      {
+      document.getElementById(
+        'subscription-details'
+      ).innerHTML = `You are subscribed to <b>${currentQuantity}</b> seat(s) on the <b>${productDescription}</b> plan.<br/>`;
+
+      description = `Your last payment was <b>${getFormattedAmount(
+        latestInvoice.amount_paid
+      )}</b>.`;
+      if (latestInvoice.description) {
         description += `Details: ${latestInvoice.description}`;
       }
 
       document.getElementById('last-payment-summary').innerHTML = description;
-      document.getElementById('next-payment-summary').innerHTML = 
-        `Your next payment of <b>${getFormattedAmount(upcomingInvoice.amount_due)} </b> will be due <b>${getDateStringFromUnixTimestamp(upcomingInvoice.next_payment_attempt)} </b>`;
+      document.getElementById(
+        'next-payment-summary'
+      ).innerHTML = `Your next payment of <b>${getFormattedAmount(
+        upcomingInvoice.amount_due
+      )} </b> will be due <b>${getDateStringFromUnixTimestamp(
+        upcomingInvoice.next_payment_attempt
+      )} </b>`;
 
       document.getElementById('credit-card-last-four').innerText =
         capitalizeFirstLetter(response.card.brand) +
@@ -668,7 +711,6 @@ function showSubscriptionInformation() {
     });
   }
 }
-
 
 // Shows the cancellation response
 function subscriptionCancelled() {
@@ -693,14 +735,10 @@ function onSubscriptionSampleDemoComplete({
   }
 
   window.location.href =
-    '/account.html?subscriptionId=' +
-    subscriptionId +
-    '&priceId=' +
-    priceId;
+    '/account.html?subscriptionId=' + subscriptionId + '&priceId=' + priceId;
 }
 
-function initAccountPage()
-{
+function initAccountPage() {
   showSubscriptionInformation();
   addQuantityListeners();
 }
@@ -716,7 +754,7 @@ function demoChangePrice() {
   const priceId = params.get('priceId').toLowerCase();
 
   document.querySelector('#prices-form').classList.remove('hidden');
-  containerDiv = document.querySelector('#' + priceId.toLowerCase()); 
+  containerDiv = document.querySelector('#' + priceId.toLowerCase());
   containerDiv.classList.add('border-pasha');
 
   let elements = containerDiv.querySelectorAll(
@@ -726,12 +764,12 @@ function demoChangePrice() {
     elements[0].childNodes[3].innerText = 'Update Seats';
   }
 
-  quantityInput = containerDiv.getElementsByClassName("quantity-input")[0];
+  quantityInput = containerDiv.getElementsByClassName('quantity-input')[0];
   quantityInput.value = accountInfo.quantity;
 }
 
 // Changes the price selected
-//FIXME: I'm not seeing any update occurring here, or even the style referenced.  Can we remove this? 
+//FIXME: I'm not seeing any update occurring here, or even the style referenced.  Can we remove this?
 function changePriceSelection(priceId) {
   document.querySelector('#basic').classList.remove('border-pasha');
   document.querySelector('#premium').classList.remove('border-pasha');
@@ -756,13 +794,10 @@ function changeLoadingState(isLoading) {
 // Show a spinner on subscription submission
 function changeLoadingStateprices(isLoading) {
   if (isLoading) {
-
     //document.querySelector('#button-text').classList.add('hidden');
     //document.querySelector('#loading').classList.remove('hidden');
-
     //document.querySelector('#submit-basic').classList.add('invisible');
     //document.querySelector('#submit-premium').classList.add('invisible');
-
     /*if (document.getElementById('confirm-price-change-cancel')) {
       document
         .getElementById('confirm-price-change-cancel')
@@ -803,57 +838,58 @@ function resetDemo() {
 var MIN_SUBS = 1;
 var MAX_SUBS = 100;
 
-function updateQuantity(evt)
-{
-   if (evt && evt.type === 'keypress' && evt.keyCode !== 13) {
-     return;
-   }
+function updateQuantity(evt) {
+  if (evt && evt.type === 'keypress' && evt.keyCode !== 13) {
+    return;
+  }
 
-   button = evt.target;
-   containingDiv = button.parentElement;
-   var inputEl = containingDiv.getElementsByTagName("input")[0];
-   var isAdding = button.classList.contains("increment-add");
-   var currentQuantity = parseInt(inputEl.value);
+  button = evt.target;
+  containingDiv = button.parentElement;
+  var inputEl = containingDiv.getElementsByTagName('input')[0];
+  var isAdding = button.classList.contains('increment-add');
+  var currentQuantity = parseInt(inputEl.value);
 
-   Array.from(containingDiv.getElementsByTagName("button")).forEach(
+  Array.from(containingDiv.getElementsByTagName('button')).forEach(
     (element) => {
-     element.disabled = false;
-   });
- 
-   // Calculate new quantity
+      element.disabled = false;
+    }
+  );
 
-   var quantity = evt
-     ? isAdding
-       ? currentQuantity +  1
-       : currentQuantity - 1
-     : currentQuantity;
-   // Update number input with new value.
-   inputEl.value = quantity;
+  // Calculate new quantity
 
-   // Disable the button if the customers hits the max or min
-   if (quantity === MIN_SUBS) {
-     containingDiv.getElementsByClassName('increment-subtract')[0].disabled = true;
-   }
-   if (quantity === MAX_SUBS) {
-     containingDiv.getElementsByClassName('increment-add')[0].disabled = true;
+  var quantity = evt
+    ? isAdding
+      ? currentQuantity + 1
+      : currentQuantity - 1
+    : currentQuantity;
+  // Update number input with new value.
+  inputEl.value = quantity;
+
+  // Disable the button if the customers hits the max or min
+  if (quantity === MIN_SUBS) {
+    containingDiv.getElementsByClassName(
+      'increment-subtract'
+    )[0].disabled = true;
+  }
+  if (quantity === MAX_SUBS) {
+    containingDiv.getElementsByClassName('increment-add')[0].disabled = true;
   }
 }
 
-function addQuantityListeners()
-{
+function addQuantityListeners() {
   Array.from(document.getElementsByClassName('quantity-input')).forEach(
-      (element) => {
-        element.addEventListener('change', function (evt) {
-          // Ensure customers only buy between 1 and 10 photos
-          if (evt.target.value < MIN_SUBS) {
-            evt.target.value = MIN_SUBS;
-          }
-          if (evt.target.value > MAX_SUBS) {
-            evt.target.value = MAX_SUBS;
-          }
-        });
-      }
-   );
+    (element) => {
+      element.addEventListener('change', function (evt) {
+        // Ensure customers only buy between 1 and 10 photos
+        if (evt.target.value < MIN_SUBS) {
+          evt.target.value = MIN_SUBS;
+        }
+        if (evt.target.value > MAX_SUBS) {
+          evt.target.value = MAX_SUBS;
+        }
+      });
+    }
+  );
 
   /* Attach method */
   Array.from(document.getElementsByClassName('increment-btn')).forEach(

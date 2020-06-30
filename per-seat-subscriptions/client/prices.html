@@ -50,22 +50,23 @@
               </p>
               <div class="flex-wrap">
                 <div
-                  class="leading-none text-gray-500 text-xs font-medium mt-1"
+                  class="leading-5 text-gray-500 text-xs font-medium mt-1"
                 >
                   Billed monthly
                 </div>
                 <div
-                  class="leading-none text-gray-500 text-xs font-medium mt-1"
+                  class="leading-5 text-gray-500 text-xs font-medium mt-1"
                 >
-                  Fixed per seat price
+                  $5 per seat </br>
+                   
                 </div>
               </div>
-              <div class="quantity-setter">
-                <button class="increment-btn increment-subtract" disabled>
+              <div class="flex justify-center mt-8">
+                <button class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg" disabled>
                 -
                 </button>
-                   <input type="number" class="quantity-input" id="quantity-input-basic" min="1" value="1" />
-                <button class="increment-btn increment-add">+</button>
+                   <input type="number" class="quantity-input w-8 appearance-none text-center" id="quantity-input-basic" min="1" value="1" />
+                <button class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg">+</button>
               </div>
               <div class="flex justify-center mt-6">
                 <button
@@ -97,22 +98,23 @@
               </p>
               <div class="flex-wrap">
                 <div
-                  class="leading-none text-gray-500 text-xs font-medium mt-1"
+                  class="leading-5 text-gray-500 text-xs font-medium mt-1"
                 >
                   Billed monthly
                 </div>
                 <div
-                  class="leading-none text-gray-500 text-xs font-medium mt-1"
+                  class="text-gray-500 text-xs font-medium mt-1 leading-5"
                 >
-                  Discounted pricing for 6 or more seats
+                  $10 per seat up to 5 </br>
+                  $6 per seat above 5
                 </div>
               </div>
-              <div class="quantity-setter">
-                <button class="increment-btn increment-subtract" disabled>
+              <div class="flex justify-center mt-3">
+                <button class="increment-btn text-white increment-subtract bg-pasha py-2 px-4 rounded-lg" disabled>
                 -
                 </button>
-                   <input type="number" class="quantity-input" id="quantity-input-premium" min="1" value="1" />
-                <button class="increment-btn increment-add">+</button>
+                   <input type="number" class="quantity-input w-8 appearance-none text-center" id="quantity-input-premium" min="1" value="1" />
+                <button class="increment-btn text-white increment-add bg-pasha py-2 px-4 rounded-lg">+</button>
               </div>
               <div class="flex justify-center mt-6">
                 <button
@@ -143,7 +145,7 @@
             <p class="text-gray-700 text-base">
               → Subscription: <span id="description"></span>
             </p>
-            <p class="text-gray-700 text-base">
+            <p class="text-gray-700 text-base mb-2">
               → Total due now: <span id="total-due-now">$0.00</span>
             </p>
             <div class="w-full">
