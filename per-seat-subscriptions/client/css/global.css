@@ -1,19 +1,5 @@
 /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
 
-/* Variables */
-:root {
-  --accent-color: #ed5f74;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: none;
-}
-
-button {
-  color: white;
-}
-
 /* Document
    ========================================================================== */
 
@@ -390,7 +376,7 @@ pre {
 }
 
 button {
-  /* background-color: transparent; */
+  background-color: transparent;
   background-image: none;
   padding: 0;
 }
@@ -492,10 +478,6 @@ img {
 
 textarea {
   resize: vertical;
-}
-
-input::-webkit-input-placeholder, textarea::-webkit-input-placeholder {
-  color: #a0aec0;
 }
 
 input::-moz-placeholder, textarea::-moz-placeholder {
@@ -648,11 +630,6 @@ video {
   -webkit-animation: spin 1s ease-in-out infinite;
 }
 
-::-webkit-input-placeholder {
-  color: 'rgba(0,0,0,0.4)';
-  font-size: '16px';
-}
-
 ::-moz-placeholder {
   color: 'rgba(0,0,0,0.4)';
   font-size: '16px';
@@ -671,6 +648,12 @@ video {
 ::placeholder {
   color: 'rgba(0,0,0,0.4)';
   font-size: '16px';
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 @keyframes spin {
@@ -936,6 +919,10 @@ video {
   margin-bottom: 0.5rem;
 }
 
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
 .mb-3 {
   margin-bottom: 0.75rem;
 }
@@ -958,6 +945,10 @@ video {
 
 .mb-6 {
   margin-bottom: 1.5rem;
+}
+
+.mt-8 {
+  margin-top: 2rem;
 }
 
 .mb-8 {
@@ -1139,6 +1130,10 @@ video {
   white-space: nowrap;
 }
 
+.w-8 {
+  width: 2rem;
+}
+
 .w-auto {
   width: auto;
 }
@@ -1173,37 +1168,6 @@ video {
 .duration-150 {
   transition-duration: 150ms;
 }
-
-.quantity-setter {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-  line-height: 1.15;
-}
-
-.quantity-setter input {
-  border-radius: 0;
-  border-width:1px;
-  height:44px;
-  width: 50px;
-  padding: 0;
-  text-align: center;
-  line-height: 1.15;
-
-}
-
-.quantity-setter .increment-btn {
-  margin-top: 0;
-  border-radius: 0;
-  border: 1px solid var(--accent-color);
-  background: var(--accent-color);
-  color: white;
-  padding: 12px 16px 12px 16px;
-  display:block;
-  transition: all 0.2s ease;
-  line-height: 1.15;
-}
-
 
 @media (min-width: 640px) {
   .sm\:block {
