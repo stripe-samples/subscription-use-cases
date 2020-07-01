@@ -158,7 +158,7 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
 
   $new_price = getenv(strtoupper($body->newPriceId));
   $params = [];
-  $params["customer"] = $body->customerId;
+  $params['customer'] = $body->customerId;
 
   $subscriptionId = $body->subscriptionId;
 
@@ -166,7 +166,7 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
   if ($subscriptionId != null)
   {
     $subscription = $stripe->subscriptions->retrieve($subscriptionId);
-    $params["subscription"] = $subscriptionId;
+    $params['subscription'] = $subscriptionId;
 
     #compare the current price to the new price, and only create a new subscription if they are different
     #otherwise, just add seats to the existing subscription
@@ -176,33 +176,33 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
 
     if ($current_price == $new_price)
     {
-      $params["subscription_items"] = [
+      $params['subscription_items'] = [
         [
-          "id" => $subscription->items->data[0]->id,
-          "quantity" => $body->quantity
+          'id' => $subscription->items->data[0]->id,
+          'quantity' => $body->quantity
         ]
       ];
     }
     else
     {
-      $params["subscription_items"] = [
+      $params['subscription_items'] = [
         [
-          "id" => $subscription->items->data[0]->id,
-          "deleted" => true
+          'id' => $subscription->items->data[0]->id,
+          'deleted' => true
         ],
         [
-          "price" => $new_price,
-          "quantity" => $body->quantity
+          'price' => $new_price,
+          'quantity' => $body->quantity
         ]
       ];
     }
   }
   else
   {
-    $params["subscription_items"] = [
+    $params['subscription_items'] = [
       [
-        "price" => $new_price,
-        "quantity" => $body->quantity
+        'price' => $new_price,
+        'quantity' => $body->quantity
       ]
     ];
   }
@@ -274,7 +274,7 @@ $app->post('/update-subscription', function (Request $request, Response $respons
   
   if ($current_price == $new_price)
   {
-    $this->logger->addInfo("updating quantity of existing item");
+    $this->logger->addInfo('updating quantity of existing item');
     $updatedSubscription = $stripe->subscriptions->update(
       $body->subscriptionId, [
       'items' => [
@@ -309,7 +309,7 @@ $app->post('/update-subscription', function (Request $request, Response $respons
   $invoice = $stripe->invoices->create([
     'customer' => $subscription->customer,
     'subscription' => $subscription->id, 
-    'description' => "Change to ". $quantity . " seat(s) on the ". $updatedSubscription->plan->product->name . " plan"
+    'description' => 'Change to '. $quantity . ' seat(s) on the '. $updatedSubscription->plan->product->name . ' plan'
   ]);
   
   $invoice = $invoice->pay();

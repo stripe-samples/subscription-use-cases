@@ -35,6 +35,7 @@ def get_config():
         publishableKey=os.getenv('STRIPE_PUBLISHABLE_KEY'),
     )
 
+
 @app.route('/retrieve-subscription-information', methods=['POST'])
 def retrieve_subscription_information():
     data = json.loads(request.data)
@@ -42,8 +43,9 @@ def retrieve_subscription_information():
 
     try:
         subscription = stripe.Subscription.retrieve(
-          subscriptionId,
-          expand=['latest_invoice', 'customer.invoice_settings.default_payment_method', 'plan.product']
+            subscriptionId,
+            expand=['latest_invoice',
+                    'customer.invoice_settings.default_payment_method', 'plan.product']
         )
 
         upcoming_invoice = stripe.Invoice.upcoming(subscription=subscriptionId)
@@ -58,6 +60,7 @@ def retrieve_subscription_information():
         )
     except Exception as e:
         return jsonify(error=str(e)), 403
+
 
 @app.route('/create-customer', methods=['POST'])
 def create_customer():
@@ -110,6 +113,7 @@ def createSubscription():
     except Exception as e:
         return jsonify(error={'message': str(e)}), 200
 
+
 @app.route('/retry-invoice', methods=['POST'])
 def retrySubscription():
     data = json.loads(request.data)
@@ -145,63 +149,63 @@ def retrieveUpcomingInvoice():
         subscriptionId = data['subscriptionId']
 
         params = dict(
-          customer=data['customerId']
+            customer=data['customerId']
         )
 
         if subscriptionId != None:
             # Retrieve the subscription
             subscription = stripe.Subscription.retrieve(data['subscriptionId'])
             params["subscription"] = subscriptionId
-            current_price = subscription['items']['data'][0].price.id;
+            current_price = subscription['items']['data'][0].price.id
 
             if current_price == new_price:
-               params["subscription_items"] = [
-                {
-                  "id":subscription['items']['data'][0].id,
-                  "quantity":quantity
-                }]
+                params["subscription_items"] = [
+                    {
+                        "id": subscription['items']['data'][0].id,
+                        "quantity":quantity
+                    }]
 
             else:
                 params["subscription_items"] = [
-                {
-                  "id": subscription['items']['data'][0].id,
-                  "deleted": True
-                },
-                {
-                  "price": new_price,
-                  "quantity": quantity
-                }
-              ]
+                    {
+                        "id": subscription['items']['data'][0].id,
+                        "deleted": True
+                    },
+                    {
+                        "price": new_price,
+                        "quantity": quantity
+                    }
+                ]
 
         else:
             params["subscription_items"] = [
-              {
-                "price": new_price,
-                "quantity": quantity
-              }
-            ] 
+                {
+                    "price": new_price,
+                    "quantity": quantity
+                }
+            ]
 
         # Retrive the Invoice
         invoice = stripe.Invoice.upcoming(**params)
         response = {}
-        
-        if data['subscriptionId'] != None: 
+
+        if data['subscriptionId'] != None:
             current_period_end = subscription.current_period_end
             immediate_total = 0
             next_invoice_sum = 0
 
-            for ii in invoice.lines.data: 
-                if ii.period.end == current_period_end :
+            for ii in invoice.lines.data:
+                if ii.period.end == current_period_end:
                     immediate_total += ii.amount
                 else:
                     next_invoice_sum += ii.amount
-            
+
             response = {
                 'immediate_total': immediate_total,
                 'next_invoice_sum': next_invoice_sum,
                 'invoice': invoice
             }
-        else:   
+        else:
             response = {
                 'invoice': invoice
             }
@@ -231,9 +235,9 @@ def updateSubscription():
         quantity = data['quantity']
         subscriptionId = data['subscriptionId']
         subscription = stripe.Subscription.retrieve(subscriptionId)
-        current_price = subscription['items']['data'][0].price.id;
+        current_price = subscription['items']['data'][0].price.id
 
-        if current_price == new_price :
+        if current_price == new_price:
             updatedSubscription = stripe.Subscription.modify(
                 subscriptionId,
                 items=[{
@@ -250,9 +254,9 @@ def updateSubscription():
                     'id': subscription['items']['data'][0].id,
                     'deleted': True,
                 },
-                {
+                    {
                     'price': new_price,
-                    'quantity':quantity
+                    'quantity': quantity
                 }],
                 expand=['plan.product']
             )
@@ -260,7 +264,8 @@ def updateSubscription():
         invoice = stripe.Invoice.create(
             customer=subscription.customer,
             subscription=subscriptionId,
-            description="Change to " + quantity + " seat(s) on the " + updatedSubscription.plan.product.name + " plan"
+            description="Change to " + quantity +
+            " seat(s) on the " + updatedSubscription.plan.product.name + " plan"
         )
 
         invoice = stripe.Invoice.pay(invoice.id)

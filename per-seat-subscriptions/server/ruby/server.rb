@@ -2,9 +2,8 @@
 
 require 'stripe'
 require 'sinatra'
-require "sinatra/reloader" if development?
+require 'sinatra/reloader' if development?
 require 'dotenv'
-
 
 # Replace if using a different env file or config
 Dotenv.load
@@ -34,10 +33,9 @@ post '/retrieve-subscription-information' do
 
   subscriptionId = data['subscriptionId']
   subscription = Stripe::Subscription.retrieve({
-      id: subscriptionId,
-      expand:['latest_invoice', 'customer.invoice_settings.default_payment_method', 'plan.product']
-    }
-  )
+                                                 id: subscriptionId,
+                                                 expand: ['latest_invoice', 'customer.invoice_settings.default_payment_method', 'plan.product']
+                                               })
 
   upcoming_invoice = Stripe::Invoice.upcoming(subscription: subscriptionId)
 
@@ -50,7 +48,6 @@ post '/retrieve-subscription-information' do
     upcoming_invoice: upcoming_invoice
   }.to_json
 end
-
 
 post '/create-customer' do
   content_type 'application/json'
@@ -67,7 +64,7 @@ post '/create-customer' do
 end
 
 # Create a subscription.  This method first attaches the provided payment method to a customer object
-# and then creates a subscription for that customer using the supplied price and quantity parameters. 
+# and then creates a subscription for that customer using the supplied price and quantity parameters.
 post '/create-subscription' do
   content_type 'application/json'
   data = JSON.parse request.body.read
@@ -100,7 +97,7 @@ post '/create-subscription' do
     ],
     expand: ['latest_invoice.payment_intent', 'plan.product']
   )
-  
+
   subscription.to_json
 end
 
@@ -133,7 +130,6 @@ post '/retry-invoice' do
   invoice.to_json
 end
 
-#
 post '/retrieve-upcoming-invoice' do
   content_type 'application/json'
   data = JSON.parse request.body.read
@@ -150,32 +146,32 @@ post '/retrieve-upcoming-invoice' do
     )
     params[:subscription] = data['subscriptionId']
 
-    #compare the current price to the new price, and only create a new subscription if they are different
-    #otherwise, just add seats to the existing subscription
+    # compare the current price to the new price, and only create a new subscription if they are different
+    # otherwise, just add seats to the existing subscription
     # subscription.plan.id would also work
 
-    current_price = subscription.items.data[0].price.id;
+    current_price = subscription.items.data[0].price.id
 
-    if current_price == new_price
-      params[:subscription_items] = [
-        {
-          id: subscription.items.data[0].id,
-          quantity: quantity
-        }
-      ]
+    params[:subscription_items] = if current_price == new_price
+                                    [
+                                      {
+                                        id: subscription.items.data[0].id,
+                                        quantity: quantity
+                                      }
+                                    ]
 
-    else
-      params[:subscription_items] = [
-        {
-          id: subscription.items.data[0].id,
-          deleted: true
-        },
-        {
-          price: new_price,
-          quantity: quantity
-        }
-      ]
-     end
+                                  else
+                                    [
+                                      {
+                                        id: subscription.items.data[0].id,
+                                        deleted: true
+                                      },
+                                      {
+                                        price: new_price,
+                                        quantity: quantity
+                                      }
+                                    ]
+                                   end
   else
     params[:subscription_items] = [
       {
@@ -189,15 +185,15 @@ post '/retrieve-upcoming-invoice' do
 
   response = {}
 
-  #in the case where we are returning the upcoming invoice for a subscription change, calculate what the 
-  #invoice totals would be for the invoice we'll charge immediately when they confirm the change, and 
-  #also return the amount for the next period's invoice. 
-  if !subscription.nil? 
+  # in the case where we are returning the upcoming invoice for a subscription change, calculate what the
+  # invoice totals would be for the invoice we'll charge immediately when they confirm the change, and
+  # also return the amount for the next period's invoice.
+  if !subscription.nil?
     current_period_end = subscription.current_period_end
     immediate_total = 0
     next_invoice_sum = 0
 
-    invoice.lines.data.each do | ii | 
+    invoice.lines.data.each do |ii|
       if ii.period.end ==  current_period_end
         immediate_total += ii.amount
       else
@@ -211,12 +207,11 @@ post '/retrieve-upcoming-invoice' do
     }
   else
     response = {
-      invoice:invoice
+      invoice: invoice
     }
   end
-  
+
   response.to_json
-  
 end
 
 post '/cancel-subscription' do
@@ -228,60 +223,58 @@ post '/cancel-subscription' do
   deleted_subscription.to_json
 end
 
-#The update may just involve updating the quantity of the subscription, or it may mean changing the price.
+# The update may just involve updating the quantity of the subscription, or it may mean changing the price.
 post '/update-subscription' do
   content_type 'application/json'
   data = JSON.parse request.body.read
 
   subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
-  current_price = subscription.items.data[0].price.id;
+  current_price = subscription.items.data[0].price.id
   new_price = ENV[data['newPriceId']]
   quantity = data['quantity']
 
-  if current_price == new_price
-    updated_subscription = Stripe::Subscription.update(
-      data['subscriptionId'],
-      items: [
-        {
-          id: subscription.items.data[0].id,
-          quantity: quantity
-        }
-      ], 
-      expand: ['plan.product']
-    )
-  else
-    updated_subscription = Stripe::Subscription.update(
-      data['subscriptionId'],
-      items: [
-        {
-          id: subscription.items.data[0].id,
-          deleted: true
-        },
-        {
-          price: new_price,
-          quantity: data['quantity']
-        }
-      ], 
-      expand: ['plan.product']
-    )
-  end
+  updated_subscription = if current_price == new_price
+                           Stripe::Subscription.update(
+                             data['subscriptionId'],
+                             items: [
+                               {
+                                 id: subscription.items.data[0].id,
+                                 quantity: quantity
+                               }
+                             ],
+                             expand: ['plan.product']
+                           )
+                         else
+                           Stripe::Subscription.update(
+                             data['subscriptionId'],
+                             items: [
+                               {
+                                 id: subscription.items.data[0].id,
+                                 deleted: true
+                               },
+                               {
+                                 price: new_price,
+                                 quantity: data['quantity']
+                               }
+                             ],
+                             expand: ['plan.product']
+                           )
+                         end
 
-  #invoice and charge the customer immediately for the payment representing any balance that the customer accrued
-  #as a result of the change.  For example, if the user added seats for this month, this would charge the proration amount for those
+  # invoice and charge the customer immediately for the payment representing any balance that the customer accrued
+  # as a result of the change.  For example, if the user added seats for this month, this would charge the proration amount for those
   # extra seats for the remaining part of the month.
 
   invoice = Stripe::Invoice.pay(Stripe::Invoice.create({
-    customer: subscription.customer,
-    subscription: subscription.id, 
-    description: "Change to #{quantity} seat(s) on the #{updated_subscription.plan.product.name} plan"
-  }).id)
+                                                         customer: subscription.customer,
+                                                         subscription: subscription.id,
+                                                         description: 'Change to #{quantity} seat(s) on the #{updated_subscription.plan.product.name} plan'
+                                                       }).id)
 
   {
-    subscription: updated_subscription,
+    subscription: updated_subscription
   }.to_json
-
 end
-
 
 post '/stripe-webhook' do
   # You can use webhooks to receive information about asynchronous payment events.
