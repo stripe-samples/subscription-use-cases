@@ -220,15 +220,15 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
     $immediate_total = 0;
     $next_invoice_sum = 0;
 
-    foreach ($invoice->lines->data as $ii) 
+    foreach ($invoice->lines->data as $invoiceLineItem) 
     {
-      if ($ii->period->end ==  $current_period_end)
+      if ($invoiceLineItem->period->end ==  $current_period_end)
       {
-        $immediate_total += $ii->amount;
+        $immediate_total += $invoiceLineItem->amount;
       }
       else
       {
-        $next_invoice_sum += $ii->amount;
+        $next_invoice_sum += $invoiceLineItem->amount;
       }
     }
 

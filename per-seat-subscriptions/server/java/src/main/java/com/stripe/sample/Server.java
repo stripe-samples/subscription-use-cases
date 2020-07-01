@@ -367,11 +367,11 @@ public class Server {
         Long immediateTotal = 0L;
         Long nextInvoiceSum = 0L;
 
-        for (InvoiceLineItem ii : invoice.getLines().autoPagingIterable()) {
-          if (ii.getPeriod().getEnd().equals(currentPeriodEnd))
-            immediateTotal += ii.getAmount();
+        for (InvoiceLineItem invoiceLineItem : invoice.getLines().autoPagingIterable()) {
+          if (invoiceLineItem.getPeriod().getEnd().equals(currentPeriodEnd))
+            immediateTotal += invoiceLineItem.getAmount();
           else
-            nextInvoiceSum = ii.getAmount();
+            nextInvoiceSum = invoiceLineItem.getAmount();
         }
         responseData.put("immediate_total", immediateTotal);
         responseData.put("next_invoice_sum", nextInvoiceSum);

@@ -194,11 +194,11 @@ def retrieveUpcomingInvoice():
             immediate_total = 0
             next_invoice_sum = 0
 
-            for ii in invoice.lines.data:
-                if ii.period.end == current_period_end:
-                    immediate_total += ii.amount
+            for invoiceLineItem in invoice.lines.data:
+                if invoiceLineItem.period.end == current_period_end:
+                    immediate_total += invoiceLineItem.amount
                 else:
-                    next_invoice_sum += ii.amount
+                    next_invoice_sum += invoiceLineItem.amount
 
             response = {
                 'immediate_total': immediate_total,

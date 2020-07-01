@@ -176,11 +176,11 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
     var immediate_total = 0;
     var next_invoice_sum = 0;
 
-    invoice.lines.data.forEach((ii) => {
-      if (ii.period.end == current_period_end) {
-        immediate_total += ii.amount;
+    invoice.lines.data.forEach((invoiceLineItem) => {
+      if (invoiceLineItem.period.end == current_period_end) {
+        immediate_total += invoiceLineItem.amount;
       } else {
-        next_invoice_sum += ii.amount;
+        next_invoice_sum += invoiceLineItem.amount;
       }
     });
 

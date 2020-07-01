@@ -193,11 +193,11 @@ post '/retrieve-upcoming-invoice' do
     immediate_total = 0
     next_invoice_sum = 0
 
-    invoice.lines.data.each do |ii|
-      if ii.period.end ==  current_period_end
-        immediate_total += ii.amount
+    invoice.lines.data.each do |invoiceLineItem|
+      if invoiceLineItem.period.end ==  current_period_end
+        immediate_total += invoiceLineItem.amount
       else
-        next_invoice_sum += ii.amount
+        next_invoice_sum += invoiceLineItem.amount
       end
     end
     response = {
