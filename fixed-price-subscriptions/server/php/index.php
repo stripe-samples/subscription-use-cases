@@ -127,16 +127,16 @@ $app->post('/retrieve-upcoming-invoice', function (Request $request, Response $r
 
   $invoice = $stripe->invoices->upcoming([
     "customer" => $body->customerId,
-    "subscription_prorate" => TRUE,
+    "subscription_prorate" => true,
     "subscription" => $body->subscriptionId,
     "subscription_items" => [
       [
         'id' => $subscription->items->data[0]->id,
-        'deleted' => TRUE
+        'deleted' => true
       ],
       [
         'price' => getenv($body->newPriceId),
-        'deleted' => FALSE
+        'deleted' => false
       ],
     ]
   ]);
