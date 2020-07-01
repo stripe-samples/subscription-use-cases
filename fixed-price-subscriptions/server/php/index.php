@@ -200,7 +200,7 @@ $app->post('/stripe-webhook', function(Request $request, Response $response) {
           $webhookSecret
         );
         
-      } catch (\Exception $e) {
+      } catch (Exception $e) {
         return $response->withJson([ 'error' => $e->getMessage() ])->withStatus(403);
       }
     } else {
