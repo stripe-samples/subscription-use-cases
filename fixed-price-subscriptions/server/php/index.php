@@ -7,185 +7,217 @@ require 'vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::create(__DIR__);
 $dotenv->load();
 
-
 require './config.php';
 
-$app = new \Slim\App;
+$app = new \Slim\App();
 
 // Instantiate the logger as a dependency
 $container = $app->getContainer();
 $container['logger'] = function ($c) {
-  $settings = $c->get('settings')['logger'];
-  $logger = new Monolog\Logger($settings['name']);
-  $logger->pushProcessor(new Monolog\Processor\UidProcessor());
-  $logger->pushHandler(new Monolog\Handler\StreamHandler(__DIR__ . '/logs/app.log', \Monolog\Logger::DEBUG));
-  return $logger;
+    $settings = $c->get('settings')['logger'];
+    $logger = new Monolog\Logger($settings['name']);
+    $logger->pushProcessor(new Monolog\Processor\UidProcessor());
+    $logger->pushHandler(
+        new Monolog\Handler\StreamHandler(
+            __DIR__ . '/logs/app.log',
+            \Monolog\Logger::DEBUG
+        )
+    );
+    return $logger;
 };
 
 /* Initialize the Stripe client */
 $container['stripe'] = function ($c) {
-  $stripe = new \Stripe\StripeClient(getenv('STRIPE_SECRET_KEY'));
-  return $stripe;
+    $stripe = new \Stripe\StripeClient(getenv('STRIPE_SECRET_KEY'));
+    return $stripe;
 };
 
-$app->get('/', function (Request $request, Response $response, array $args) {   
-  // Display checkout page
-  return $response->write(file_get_contents('../../client/index.html'));
+$app->get('/', function (Request $request, Response $response, array $args) {
+    // Display checkout page
+    return $response->write(file_get_contents('../../client/index.html'));
 });
 
-$app->get('/config', function (Request $request, Response $response, array $args) {
-  $pub_key = getenv('STRIPE_PUBLISHABLE_KEY');
-  
-  return $response->withJson(['publishableKey' => $pub_key]);
+$app->get('/config', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $pub_key = getenv('STRIPE_PUBLISHABLE_KEY');
+
+    return $response->withJson(['publishableKey' => $pub_key]);
 });
 
-$app->post('/create-customer', function (Request $request, Response $response, array $args) {$body = json_decode($request->getBody());
-  $stripe = $this->stripe;
-  
-  // Create a new customer object
-  $customer = $stripe->customers->create([
-    'email' => $body->email
-  ]);
+$app->post('/create-customer', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->stripe;
 
-  return $response->withJson(['customer' => $customer]);
-});
-
-$app->post('/create-subscription', function (Request $request, Response $response, array $args) {  
-  $body = json_decode($request->getBody());
-  $stripe = $this->stripe;
-
-  try {
-    $payment_method = $stripe->paymentMethods->retrieve(
-      $body->paymentMethodId
-    );
-    $payment_method->attach([
-      'customer' => $body->customerId,
+    // Create a new customer object
+    $customer = $stripe->customers->create([
+        'email' => $body->email,
     ]);
-  } catch (Exception $e) {
-    return $response->withJson($e->jsonBody);
-  }
-  
-    
-  // Set the default payment method on the customer
-  $stripe->customers->update($body->customerId, [
-    'invoice_settings' => [
-      'default_payment_method' => $body->paymentMethodId
-    ]
-  ]);
-  
-  // Create the subscription
-  $subscription = $stripe->subscriptions->create([
-    'customer' => $body->customerId,
-    'items' => [
-      [
-        'price' => getenv($body->priceId),
-      ],
-    ],
-    'expand' => ['latest_invoice.payment_intent'],
-  ]);
 
-  return $response->withJson($subscription);
+    return $response->withJson(['customer' => $customer]);
 });
 
-$app->post('/retry-invoice', function (Request $request, Response $response, array $args) {  
-  $body = json_decode($request->getBody());
-  $stripe = $this->stripe;
+$app->post('/create-subscription', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->stripe;
 
-  try {
-    $payment_method = $stripe->paymentMethods->retrieve(
-      $body->paymentMethodId
-    );
-    $payment_method->attach([
-      'customer' => $body->customerId,
+    try {
+        $payment_method = $stripe->paymentMethods->retrieve(
+            $body->paymentMethodId
+        );
+        $payment_method->attach([
+            'customer' => $body->customerId,
+        ]);
+    } catch (Exception $e) {
+        return $response->withJson($e->jsonBody);
+    }
+
+    // Set the default payment method on the customer
+    $stripe->customers->update($body->customerId, [
+        'invoice_settings' => [
+            'default_payment_method' => $body->paymentMethodId,
+        ],
     ]);
-  } catch (Exception $e) {
-    return $response->withJson($e->jsonBody);
-  }
-  
-    
-  // Set the default payment method on the customer
-  $stripe->customers->update($body->customerId, [
-    'invoice_settings' => [
-      'default_payment_method' => $body->paymentMethodId
-    ]
-  ]);
 
-  $invoice = $stripe->invoices->retrieve($body->invoiceId, [
-    'expand' => ['payment_intent'],
-  ]);
+    // Create the subscription
+    $subscription = $stripe->subscriptions->create([
+        'customer' => $body->customerId,
+        'items' => [
+            [
+                'price' => getenv($body->priceId),
+            ],
+        ],
+        'expand' => ['latest_invoice.payment_intent'],
+    ]);
 
-  return $response->withJson($invoice);
+    return $response->withJson($subscription);
 });
 
-$app->post('/retrieve-upcoming-invoice', function (Request $request, Response $response, array $args) {  
-  $body = json_decode($request->getBody());
-  $stripe = $this->stripe;
+$app->post('/retry-invoice', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->stripe;
 
-  $subscription = $stripe->subscriptions->retrieve(
-    $body->subscriptionId
-  );
+    try {
+        $payment_method = $stripe->paymentMethods->retrieve(
+            $body->paymentMethodId
+        );
+        $payment_method->attach([
+            'customer' => $body->customerId,
+        ]);
+    } catch (Exception $e) {
+        return $response->withJson($e->jsonBody);
+    }
 
-  $invoice = $stripe->invoices->upcoming([
-    "customer" => $body->customerId,
-    "subscription_prorate" => true,
-    "subscription" => $body->subscriptionId,
-    "subscription_items" => [
-      [
-        'id' => $subscription->items->data[0]->id,
-        'deleted' => true
-      ],
-      [
-        'price' => getenv($body->newPriceId),
-        'deleted' => false
-      ],
-    ]
-  ]);
+    // Set the default payment method on the customer
+    $stripe->customers->update($body->customerId, [
+        'invoice_settings' => [
+            'default_payment_method' => $body->paymentMethodId,
+        ],
+    ]);
 
-  return $response->withJson($invoice);
+    $invoice = $stripe->invoices->retrieve($body->invoiceId, [
+        'expand' => ['payment_intent'],
+    ]);
+
+    return $response->withJson($invoice);
 });
 
-$app->post('/cancel-subscription', function (Request $request, Response $response, array $args) {  
-  $body = json_decode($request->getBody());
-  $stripe = $this->stripe;
+$app->post('/retrieve-upcoming-invoice', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->stripe;
 
-  $subscription = $stripe->subscriptions->retrieve(
-    $body->subscriptionId
-  );
-  $subscription->delete();
+    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
 
-  return $response->withJson($subscription);
+    $invoice = $stripe->invoices->upcoming([
+        "customer" => $body->customerId,
+        "subscription_prorate" => true,
+        "subscription" => $body->subscriptionId,
+        "subscription_items" => [
+            [
+                'id' => $subscription->items->data[0]->id,
+                'deleted' => true,
+            ],
+            [
+                'price' => getenv($body->newPriceId),
+                'deleted' => false,
+            ],
+        ],
+    ]);
+
+    return $response->withJson($invoice);
 });
 
-$app->post('/update-subscription', function (Request $request, Response $response, array $args) {  
-  $body = json_decode($request->getBody());
-  $stripe = $this->stripe;
+$app->post('/cancel-subscription', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->stripe;
 
-  $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
-  
-  $updatedSubscription = $stripe->subscriptions->update($body->subscriptionId, [
-    'items' => [
-      [
-        'id' => $subscription->items->data[0]->id,
-        'price' => getenv($body->newPriceId),
-      ],
-    ],
-  ]);
+    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
+    $subscription->delete();
 
-  return $response->withJson($updatedSubscription);
+    return $response->withJson($subscription);
 });
 
-$app->post('/retrieve-customer-payment-method', function (Request $request, Response $response, array $args) {
-  $body = json_decode($request->getBody());
-  $stripe = $this->stripe;
+$app->post('/update-subscription', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->stripe;
 
-  $paymentMethod = $stripe->paymentMethods->retrieve(
-    $body->paymentMethodId
-  );
+    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
 
-  return $response->withJson($paymentMethod);
+    $updatedSubscription = $stripe->subscriptions->update(
+        $body->subscriptionId,
+        [
+            'items' => [
+                [
+                    'id' => $subscription->items->data[0]->id,
+                    'price' => getenv($body->newPriceId),
+                ],
+            ],
+        ]
+    );
+
+    return $response->withJson($updatedSubscription);
 });
 
-$app->post('/stripe-webhook', function(Request $request, Response $response) {
+$app->post('/retrieve-customer-payment-method', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->stripe;
+
+    $paymentMethod = $stripe->paymentMethods->retrieve($body->paymentMethodId);
+
+    return $response->withJson($paymentMethod);
+});
+
+$app->post('/stripe-webhook', function (Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
     $stripe = $this->stripe;
@@ -193,18 +225,19 @@ $app->post('/stripe-webhook', function(Request $request, Response $response) {
     // Parse the message body (and check the signature if possible)
     $webhookSecret = getenv('STRIPE_WEBHOOK_SECRET');
     if ($webhookSecret) {
-      try {
-        $event = $stripe->webhooks->constructEvent(
-          $request->getBody(),
-          $request->getHeaderLine('stripe-signature'),
-          $webhookSecret
-        );
-        
-      } catch (Exception $e) {
-        return $response->withJson([ 'error' => $e->getMessage() ])->withStatus(403);
-      }
+        try {
+            $event = $stripe->webhooks->constructEvent(
+                $request->getBody(),
+                $request->getHeaderLine('stripe-signature'),
+                $webhookSecret
+            );
+        } catch (Exception $e) {
+            return $response
+                ->withJson(['error' => $e->getMessage()])
+                ->withStatus(403);
+        }
     } else {
-      $event = $request->getParsedBody();
+        $event = $request->getParsedBody();
     }
     $type = $event['type'];
     $object = $event['data']['object'];
@@ -214,40 +247,40 @@ $app->post('/stripe-webhook', function(Request $request, Response $response) {
     // https://stripe.com/docs/billing/webhooks
     // Remove comment to see the various objects sent for this sample
     switch ($type) {
-      case 'invoice.paid':
-        // The status of the invoice will show up as paid. Store the status in your
-        // database to reference when a user accesses your service to avoid hitting rate
-        // limits.
-        $logger->info('🔔  Webhook received! ' . $object);
-        break;
-      case 'invoice.payment_failed':
-        // If the payment fails or the customer does not have a valid payment method,
-        // an invoice.payment_failed event is sent, the subscription becomes past_due.
-        // Use this webhook to notify your user that their payment has
-        // failed and to retrieve new card details.
-        $logger->info('🔔  Webhook received! ' . $object);
-        break;
-      case 'invoice.finalized':
-        // If you want to manually send out invoices to your customers
-        // or store them locally to reference to avoid hitting Stripe rate limits.
-          $logger->info('🔔  Webhook received! ' . $object);
-        break;
-      case 'customer.subscription.deleted':
-        // handle subscription cancelled automatically based
-        // upon your subscription settings. Or if the user 
-        // cancels it. 
-        $logger->info('🔔  Webhook received! ' . $object);
-        break;
-      case 'customer.subscription.trial_will_end':
-        // Send notification to your user that the trial will end
-        $logger->info('🔔  Webhook received! ' . $object);
-        break;
-      // ... handle other event types
-      default:
+        case 'invoice.paid':
+            // The status of the invoice will show up as paid. Store the status in your
+            // database to reference when a user accesses your service to avoid hitting rate
+            // limits.
+            $logger->info('🔔  Webhook received! ' . $object);
+            break;
+        case 'invoice.payment_failed':
+            // If the payment fails or the customer does not have a valid payment method,
+            // an invoice.payment_failed event is sent, the subscription becomes past_due.
+            // Use this webhook to notify your user that their payment has
+            // failed and to retrieve new card details.
+            $logger->info('🔔  Webhook received! ' . $object);
+            break;
+        case 'invoice.finalized':
+            // If you want to manually send out invoices to your customers
+            // or store them locally to reference to avoid hitting Stripe rate limits.
+            $logger->info('🔔  Webhook received! ' . $object);
+            break;
+        case 'customer.subscription.deleted':
+            // handle subscription cancelled automatically based
+            // upon your subscription settings. Or if the user
+            // cancels it.
+            $logger->info('🔔  Webhook received! ' . $object);
+            break;
+        case 'customer.subscription.trial_will_end':
+            // Send notification to your user that the trial will end
+            $logger->info('🔔  Webhook received! ' . $object);
+            break;
+        // ... handle other event types
+        default:
         // Unhandled event type
     }
 
-    return $response->withJson([ 'status' => 'success' ])->withStatus(200);
+    return $response->withJson(['status' => 'success'])->withStatus(200);
 });
 
 $app->run();

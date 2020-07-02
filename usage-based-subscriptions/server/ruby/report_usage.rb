@@ -12,7 +12,6 @@ Dotenv.load
 # See your keys here: https://dashboard.stripe.com/account/apikeys
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
-
 # You need to write some of your own business logic before creating the
 # usage record. Pull a record of a customer from your database
 # and extract the customer's Stripe Subscription Item ID and usage for
@@ -26,20 +25,16 @@ usage_quantity = 100
 
 timestamp = Time.now.to_i
 # The idempotency key allows you to retry this usage record call if it fails.
-idempotency_key = SecureRandom.uuid()
+idempotency_key = SecureRandom.uuid
 
 begin
   Stripe::SubscriptionItem.create_usage_record(
     subscription_item_id,
-    {
-      quantity: usage_quantity,
-      timestamp: timestamp,
-      action: 'set'
-    }, {
-      idempotency_key: idempotency_key
-    }
+    { quantity: usage_quantity, timestamp: timestamp, action: 'set' },
+    { idempotency_key: idempotency_key }
   )
 rescue Stripe::StripeError => e
-  puts "Usage report failed for item ID #{subscription_item_id} with idempotency key #{idempotency_key}: #{e.error.message}"
+  puts "Usage report failed for item ID #{
+         subscription_item_id
+       } with idempotency key #{idempotency_key}: #{e.error.message}"
 end
-

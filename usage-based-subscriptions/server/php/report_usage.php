@@ -36,11 +36,11 @@ try {
         [
             'quantity' => $usage_quantity,
             'timestamp' => $timestamp,
-            'action' -> $action
+            ('action')->$action,
         ],
         [
             'idempotency_key' => $idempotency_key,
-        ],
+        ]
     );
 } catch (\Stripe\Exception\ApiErrorException $e) {
     echo "Usage report failed for item ID $subscription_item_id with idempotency key $idempotency_key: $error.toString()";

@@ -5,429 +5,527 @@ import static spark.Spark.port;
 import static spark.Spark.post;
 import static spark.Spark.staticFiles;
 
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.stripe.Stripe;
 import com.stripe.exception.CardException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Customer;
-import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.CustomerUpdateParams;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
+import com.stripe.model.PaymentMethod;
+import com.stripe.model.StripeObject;
+import com.stripe.model.Subscription;
+import com.stripe.net.Webhook;
+import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.InvoiceRetrieveParams;
 import com.stripe.param.InvoiceUpcomingParams;
-import com.stripe.model.PaymentMethod;
-import com.stripe.model.StripeObject;
 import com.stripe.param.PaymentMethodAttachParams;
-import com.stripe.param.SubscriptionUpdateParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
-import com.stripe.model.Subscription;
-import com.stripe.net.Webhook;
-
+import com.stripe.param.SubscriptionUpdateParams;
 import io.github.cdimascio.dotenv.Dotenv;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Server {
-    private static Gson gson = new Gson();
+  private static Gson gson = new Gson();
 
-    static class CreateCustomerBody {
-        @SerializedName("name")
-        String name;
-        @SerializedName("email")
-        String email;
+  static class CreateCustomerBody {
+    @SerializedName("name")
+    String name;
 
-        public String getName() {
-            return name;
-        }
+    @SerializedName("email")
+    String email;
 
-        public String getEmail() {
-            return email;
-        }
+    public String getName() {
+      return name;
     }
 
-    static class CreateSubscriptionBody {
-        @SerializedName("customerId")
-        String customerId;
+    public String getEmail() {
+      return email;
+    }
+  }
 
-        @SerializedName("priceId")
-        String priceId;
+  static class CreateSubscriptionBody {
+    @SerializedName("customerId")
+    String customerId;
 
-        @SerializedName("paymentMethodId")
-        String paymentMethodId;
+    @SerializedName("priceId")
+    String priceId;
 
-        public String getCustomerId() {
-            return customerId;
-        }
+    @SerializedName("paymentMethodId")
+    String paymentMethodId;
 
-        public String getPriceId() {
-            return priceId;
-        }
-
-        public String getPaymentMethodId() {
-            return paymentMethodId;
-        }
+    public String getCustomerId() {
+      return customerId;
     }
 
-    static class PostBody {
-        @SerializedName("subscriptionId")
-        String subscriptionId;
-
-        @SerializedName("priceId")
-        String priceId;
-
-        @SerializedName("newPriceId")
-        String newPriceId;
-
-        public String getSubscriptionId() {
-            return subscriptionId;
-        }
-
-        public String getPriceId() {
-            return newPriceId;
-        }
-
-        public String getNewPriceId() {
-            return newPriceId;
-        }
+    public String getPriceId() {
+      return priceId;
     }
 
-    static class RetryInvoiceBody {
-        @SerializedName("invoiceId")
-        String invoiceId;
+    public String getPaymentMethodId() {
+      return paymentMethodId;
+    }
+  }
 
-        @SerializedName("paymentMethodId")
-        String paymentMethodId;
+  static class PostBody {
+    @SerializedName("subscriptionId")
+    String subscriptionId;
 
-        @SerializedName("customerId")
-        String customerId;
+    @SerializedName("priceId")
+    String priceId;
 
-        public String getInvoiceId() {
-            return invoiceId;
-        }
+    @SerializedName("newPriceId")
+    String newPriceId;
 
-        public String getPaymentMethodId() {
-            return paymentMethodId;
-        }
-
-        public String getCustomerId() {
-            return customerId;
-        }
+    public String getSubscriptionId() {
+      return subscriptionId;
     }
 
-    static class UpdatePostBody {
-        @SerializedName("subscriptionId")
-        String subscriptionId;
-
-        @SerializedName("newPriceId")
-        String newPriceId;
-
-        public String getSubscriptionId() {
-            return subscriptionId;
-        }
-
-        public String getNewPriceId() {
-            return newPriceId;
-        }
+    public String getPriceId() {
+      return newPriceId;
     }
 
-    static class CancelPostBody {
-        @SerializedName("subscriptionId")
-        String subscriptionId;
+    public String getNewPriceId() {
+      return newPriceId;
+    }
+  }
 
-        public String getSubscriptionId() {
-            return subscriptionId;
-        }
+  static class RetryInvoiceBody {
+    @SerializedName("invoiceId")
+    String invoiceId;
+
+    @SerializedName("paymentMethodId")
+    String paymentMethodId;
+
+    @SerializedName("customerId")
+    String customerId;
+
+    public String getInvoiceId() {
+      return invoiceId;
     }
 
-    static class UpcomingInvoicePostBody {
-        @SerializedName("customerId")
-        String customerId;
-
-        @SerializedName("subscriptionId")
-        String subscriptionId;
-
-        @SerializedName("newPriceId")
-        String newPriceId;
-
-        @SerializedName("subscription_trial_end")
-        String subscription_trial_end;
-
-        public String getCustomerId() {
-            return customerId;
-        }
-
-        public String getSubscriptionId() {
-            return subscriptionId;
-        }
-
-        public String getNewPriceId() {
-            return newPriceId;
-        }
-
-        public String getSubscriptionTrialEnd() {
-            return subscription_trial_end;
-        }
+    public String getPaymentMethodId() {
+      return paymentMethodId;
     }
 
-    static class PaymentMethodBody {
-        @SerializedName("paymentMethodId")
-        String paymentMethodId;
+    public String getCustomerId() {
+      return customerId;
+    }
+  }
 
-        public String getPaymentMethodId() {
-            return paymentMethodId;
+  static class UpdatePostBody {
+    @SerializedName("subscriptionId")
+    String subscriptionId;
+
+    @SerializedName("newPriceId")
+    String newPriceId;
+
+    public String getSubscriptionId() {
+      return subscriptionId;
+    }
+
+    public String getNewPriceId() {
+      return newPriceId;
+    }
+  }
+
+  static class CancelPostBody {
+    @SerializedName("subscriptionId")
+    String subscriptionId;
+
+    public String getSubscriptionId() {
+      return subscriptionId;
+    }
+  }
+
+  static class UpcomingInvoicePostBody {
+    @SerializedName("customerId")
+    String customerId;
+
+    @SerializedName("subscriptionId")
+    String subscriptionId;
+
+    @SerializedName("newPriceId")
+    String newPriceId;
+
+    @SerializedName("subscription_trial_end")
+    String subscription_trial_end;
+
+    public String getCustomerId() {
+      return customerId;
+    }
+
+    public String getSubscriptionId() {
+      return subscriptionId;
+    }
+
+    public String getNewPriceId() {
+      return newPriceId;
+    }
+
+    public String getSubscriptionTrialEnd() {
+      return subscription_trial_end;
+    }
+  }
+
+  static class PaymentMethodBody {
+    @SerializedName("paymentMethodId")
+    String paymentMethodId;
+
+    public String getPaymentMethodId() {
+      return paymentMethodId;
+    }
+  }
+
+  public static void main(String[] args) {
+    port(4242);
+    Dotenv dotenv = Dotenv.load();
+    Stripe.apiKey = dotenv.get("STRIPE_SECRET_KEY");
+
+    staticFiles.externalLocation(
+      Paths
+        .get(
+          Paths.get("").toAbsolutePath().toString(),
+          dotenv.get("STATIC_DIR")
+        )
+        .normalize()
+        .toString()
+    );
+
+    get(
+      "/config",
+      (request, response) -> {
+        response.type("application/json");
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put(
+          "publishableKey",
+          dotenv.get("STRIPE_PUBLISHABLE_KEY")
+        );
+        return gson.toJson(responseData);
+      }
+    );
+
+    post(
+      "/create-customer",
+      (request, response) -> {
+        response.type("application/json");
+
+        CreateCustomerBody postBody = gson.fromJson(
+          request.body(),
+          CreateCustomerBody.class
+        );
+        CustomerCreateParams customerParams = CustomerCreateParams
+          .builder()
+          .setEmail(postBody.getEmail())
+          .build();
+        // Create a new customer object
+        Customer customer = Customer.create(customerParams);
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("customer", customer);
+
+        //we use StripeObject.PRETTY_PRINT_GSON.toJson() so that we get the JSON our client is expecting on the polymorphic
+        //parameters that can either be object ids or the object themselves. If we tried to generate the JSON without call this,
+        //for example, by calling gson.toJson(responseData) we will see something like "customer":{"id":"cus_XXX"} instead of
+        //"customer":"cus_XXX".
+        //If you only need to return 1 object, you can use the built in serializers, i.e. Subscription.retrieve("sub_XXX").toJson()
+        return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
+      }
+    );
+
+    post(
+      "/create-subscription",
+      (request, response) -> {
+        response.type("application/json");
+        // Set the default payment method on the customer
+        CreateSubscriptionBody postBody = gson.fromJson(
+          request.body(),
+          CreateSubscriptionBody.class
+        );
+        Customer customer = Customer.retrieve(postBody.getCustomerId());
+
+        try {
+          // Set the default payment method on the customer
+          PaymentMethod pm = PaymentMethod.retrieve(
+            postBody.getPaymentMethodId()
+          );
+          pm.attach(
+            PaymentMethodAttachParams
+              .builder()
+              .setCustomer(customer.getId())
+              .build()
+          );
+        } catch (CardException e) {
+          // Since it's a decline, CardException will be caught
+          Map<String, String> responseErrorMessage = new HashMap<>();
+          responseErrorMessage.put("message", e.getLocalizedMessage());
+          Map<String, Object> responseError = new HashMap<>();
+          responseError.put("error", responseErrorMessage);
+
+          return gson.toJson(responseError);
         }
-    }
 
-    public static void main(String[] args) {
-        port(4242);
-        Dotenv dotenv = Dotenv.load();
-        Stripe.apiKey = dotenv.get("STRIPE_SECRET_KEY");
+        CustomerUpdateParams customerUpdateParams = CustomerUpdateParams
+          .builder()
+          .setInvoiceSettings(
+            CustomerUpdateParams
+              .InvoiceSettings.builder()
+              .setDefaultPaymentMethod(postBody.getPaymentMethodId())
+              .build()
+          )
+          .build();
 
-        staticFiles.externalLocation(
-                Paths.get(Paths.get("").toAbsolutePath().toString(), dotenv.get("STATIC_DIR")).normalize().toString());
+        customer.update(customerUpdateParams);
 
-        get("/config", (request, response) -> {
-            response.type("application/json");
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("publishableKey", dotenv.get("STRIPE_PUBLISHABLE_KEY"));
-            return gson.toJson(responseData);
-        });
+        // Create the subscription
+        SubscriptionCreateParams subCreateParams = SubscriptionCreateParams
+          .builder()
+          .addItem(
+            SubscriptionCreateParams
+              .Item.builder()
+              .setPrice(dotenv.get(postBody.getPriceId().toUpperCase()))
+              .build()
+          )
+          .setCustomer(customer.getId())
+          .addAllExpand(Arrays.asList("latest_invoice.payment_intent"))
+          .build();
 
-        post("/create-customer", (request, response) -> {
-            response.type("application/json");
+        Subscription subscription = Subscription.create(subCreateParams);
 
-            CreateCustomerBody postBody = gson.fromJson(request.body(), CreateCustomerBody.class);
-            CustomerCreateParams customerParams =
-                CustomerCreateParams.builder()
-                    .setEmail(postBody.getEmail())
-                    .build();
-            // Create a new customer object
-            Customer customer = Customer.create(customerParams);
+        return subscription.toJson();
+      }
+    );
 
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("customer", customer);
+    post(
+      "/retry-invoice",
+      (request, response) -> {
+        response.type("application/json");
+        // Set the default payment method on the customer
+        RetryInvoiceBody postBody = gson.fromJson(
+          request.body(),
+          RetryInvoiceBody.class
+        );
+        Customer customer = Customer.retrieve(postBody.getCustomerId());
 
-            //we use StripeObject.PRETTY_PRINT_GSON.toJson() so that we get the JSON our client is expecting on the polymorphic
-            //parameters that can either be object ids or the object themselves. If we tried to generate the JSON without call this,
-            //for example, by calling gson.toJson(responseData) we will see something like "customer":{"id":"cus_XXX"} instead of
-            //"customer":"cus_XXX".
-            //If you only need to return 1 object, you can use the built in serializers, i.e. Subscription.retrieve("sub_XXX").toJson()
-            return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
-        });
+        try {
+          // Set the default payment method on the customer
+          PaymentMethod pm = PaymentMethod.retrieve(
+            postBody.getPaymentMethodId()
+          );
+          pm.attach(
+            PaymentMethodAttachParams
+              .builder()
+              .setCustomer(customer.getId())
+              .build()
+          );
+        } catch (CardException e) {
+          // Since it's a decline, CardException will be caught
+          Map<String, String> responseErrorMessage = new HashMap<>();
+          responseErrorMessage.put("message", e.getLocalizedMessage());
+          Map<String, Object> responseError = new HashMap<>();
+          responseError.put("error", responseErrorMessage);
+          return gson.toJson(responseError);
+        }
 
-        post("/create-subscription", (request, response) -> {
-            response.type("application/json");
-            // Set the default payment method on the customer
-            CreateSubscriptionBody postBody = gson.fromJson(request.body(), CreateSubscriptionBody.class);
-            Customer customer = Customer.retrieve(postBody.getCustomerId());
+        CustomerUpdateParams customerUpdateParams = CustomerUpdateParams
+          .builder()
+          .setInvoiceSettings(
+            CustomerUpdateParams
+              .InvoiceSettings.builder()
+              .setDefaultPaymentMethod(postBody.getPaymentMethodId())
+              .build()
+          )
+          .build();
 
-            try {
-                // Set the default payment method on the customer
-                PaymentMethod pm = PaymentMethod.retrieve(postBody.getPaymentMethodId());
-                pm.attach(PaymentMethodAttachParams.builder().setCustomer(customer.getId()).build());
-            } catch (CardException e) {
-                // Since it's a decline, CardException will be caught
-                Map<String, String> responseErrorMessage = new HashMap<>();
-                responseErrorMessage.put("message", e.getLocalizedMessage());
-                Map<String, Object> responseError = new HashMap<>();
-                responseError.put("error", responseErrorMessage);
+        customer.update(customerUpdateParams);
 
-                return gson.toJson(responseError);
-            }
+        InvoiceRetrieveParams params = InvoiceRetrieveParams
+          .builder()
+          .addAllExpand(Arrays.asList("payment_intent"))
+          .build();
 
-            CustomerUpdateParams customerUpdateParams =
-              CustomerUpdateParams.builder()
-                .setInvoiceSettings(CustomerUpdateParams.InvoiceSettings.builder()
-                .setDefaultPaymentMethod(postBody.getPaymentMethodId())
-                .build())
-              .build();
+        Invoice invoice = Invoice.retrieve(
+          postBody.getInvoiceId(),
+          params,
+          null
+        );
 
-            customer.update(customerUpdateParams);
+        return invoice.toJson();
+      }
+    );
 
-            // Create the subscription
-            SubscriptionCreateParams subCreateParams =
-              SubscriptionCreateParams.builder()
-                .addItem(
-                  SubscriptionCreateParams.Item.builder()
-                    .setPrice(dotenv.get(postBody.getPriceId().toUpperCase()))
-                  .build()
-                )
-                .setCustomer(customer.getId())
-                .addAllExpand(Arrays.asList(
-                  "latest_invoice.payment_intent"))
-              .build();
+    post(
+      "/retrieve-upcoming-invoice",
+      (request, response) -> {
+        response.type("application/json");
+        UpcomingInvoicePostBody postBody = gson.fromJson(
+          request.body(),
+          UpcomingInvoicePostBody.class
+        );
 
-            Subscription subscription = Subscription.create(subCreateParams);
+        Subscription subscription = Subscription.retrieve(
+          postBody.getSubscriptionId()
+        );
 
-            return subscription.toJson();
-        });
+        InvoiceUpcomingParams invoiceParams = InvoiceUpcomingParams
+          .builder()
+          .setCustomer(postBody.getCustomerId())
+          .setSubscription(postBody.getSubscriptionId())
+          .addSubscriptionItem(
+            InvoiceUpcomingParams
+              .SubscriptionItem.builder()
+              .setId(subscription.getItems().getData().get(0).getId())
+              .setDeleted(true)
+              .setClearUsage(true)
+              .build()
+          )
+          .addSubscriptionItem(
+            InvoiceUpcomingParams
+              .SubscriptionItem.builder()
+              .setPrice(dotenv.get(postBody.getNewPriceId().toUpperCase()))
+              .build()
+          )
+          .build();
 
-        post("/retry-invoice", (request, response) -> {
-            response.type("application/json");
-            // Set the default payment method on the customer
-            RetryInvoiceBody postBody = gson.fromJson(request.body(), RetryInvoiceBody.class);
-            Customer customer = Customer.retrieve(postBody.getCustomerId());
+        Invoice invoice = Invoice.upcoming(invoiceParams);
 
-            try {
-                // Set the default payment method on the customer
-                PaymentMethod pm = PaymentMethod.retrieve(postBody.getPaymentMethodId());
-                pm.attach(PaymentMethodAttachParams.builder().setCustomer(customer.getId()).build());
-            } catch (CardException e) {
-                // Since it's a decline, CardException will be caught
-                Map<String, String> responseErrorMessage = new HashMap<>();
-                responseErrorMessage.put("message", e.getLocalizedMessage());
-                Map<String, Object> responseError = new HashMap<>();
-                responseError.put("error", responseErrorMessage);
-                return gson.toJson(responseError);
-            }
+        return invoice.toJson();
+      }
+    );
 
-            CustomerUpdateParams customerUpdateParams =
-              CustomerUpdateParams.builder()
-                .setInvoiceSettings(CustomerUpdateParams.InvoiceSettings.builder()
-                .setDefaultPaymentMethod(postBody.getPaymentMethodId())
-                .build())
-              .build();
+    post(
+      "/cancel-subscription",
+      (request, response) -> {
+        response.type("application/json");
+        // Set the default payment method on the customer
+        CancelPostBody postBody = gson.fromJson(
+          request.body(),
+          CancelPostBody.class
+        );
 
-            customer.update(customerUpdateParams);
+        Subscription subscription = Subscription.retrieve(
+          postBody.getSubscriptionId()
+        );
 
-            InvoiceRetrieveParams params =
-              InvoiceRetrieveParams.builder()
-                .addAllExpand(Arrays.asList(
-                  "payment_intent"))
-                .build();
+        Subscription deletedSubscription = subscription.cancel();
+        return deletedSubscription.toJson();
+      }
+    );
 
-            Invoice invoice = Invoice.retrieve(postBody.getInvoiceId(), params, null);
+    post(
+      "/update-subscription",
+      (request, response) -> {
+        response.type("application/json");
+        // Set the default payment method on the customer
+        UpdatePostBody postBody = gson.fromJson(
+          request.body(),
+          UpdatePostBody.class
+        );
 
-            return invoice.toJson();
-        });
+        Subscription subscription = Subscription.retrieve(
+          postBody.getSubscriptionId()
+        );
 
-        post("/retrieve-upcoming-invoice", (request, response) -> {
-            response.type("application/json");
-            UpcomingInvoicePostBody postBody = gson.fromJson(request.body(), UpcomingInvoicePostBody.class);
+        SubscriptionUpdateParams params = SubscriptionUpdateParams
+          .builder()
+          .addItem(
+            SubscriptionUpdateParams
+              .Item.builder()
+              .setId(subscription.getItems().getData().get(0).getId())
+              .setPlan(dotenv.get(postBody.getNewPriceId().toUpperCase()))
+              .build()
+          )
+          .setCancelAtPeriodEnd(false)
+          .build();
 
-            Subscription subscription = Subscription.retrieve(postBody.getSubscriptionId());
+        subscription.update(params);
+        return subscription.toJson();
+      }
+    );
 
-            InvoiceUpcomingParams invoiceParams =
-              InvoiceUpcomingParams.builder()
-                .setCustomer(postBody.getCustomerId())
-                .setSubscription(postBody.getSubscriptionId())
-                .addSubscriptionItem(
-                  InvoiceUpcomingParams.SubscriptionItem.builder()
-                    .setId(subscription.getItems().getData().get(0).getId())
-                    .setDeleted(true)
-                    .setClearUsage(true)
-                    .build())
-                .addSubscriptionItem(
-                  InvoiceUpcomingParams.SubscriptionItem.builder()
-                    .setPrice(dotenv.get(postBody.getNewPriceId().toUpperCase()))
-                    .build())
-                .build();
+    post(
+      "/retrieve-customer-payment-method",
+      (request, response) -> {
+        response.type("application/json");
+        // Set the default payment method on the customer
+        PaymentMethodBody paymentMethodBody = gson.fromJson(
+          request.body(),
+          PaymentMethodBody.class
+        );
 
-            Invoice invoice = Invoice.upcoming(invoiceParams);
+        PaymentMethod paymentMethod = PaymentMethod.retrieve(
+          paymentMethodBody.getPaymentMethodId()
+        );
+        return paymentMethod.toJson();
+      }
+    );
 
-            return invoice.toJson();
-        });
+    post(
+      "/stripe-webhook",
+      (request, response) -> {
+        String payload = request.body();
+        String sigHeader = request.headers("Stripe-Signature");
+        String endpointSecret = dotenv.get("STRIPE_WEBHOOK_SECRET");
+        Event event = null;
 
-        post("/cancel-subscription", (request, response) -> {
-            response.type("application/json");
-            // Set the default payment method on the customer
-            CancelPostBody postBody = gson.fromJson(request.body(), CancelPostBody.class);
+        try {
+          event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
+        } catch (SignatureVerificationException e) {
+          // Invalid signature
+          response.status(400);
+          return "";
+        }
 
-            Subscription subscription = Subscription.retrieve(postBody.getSubscriptionId());
+        // Deserialize the nested object inside the event
+        EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+        StripeObject stripeObject = null;
+        if (dataObjectDeserializer.getObject().isPresent()) {
+          stripeObject = dataObjectDeserializer.getObject().get();
+        } else {
+          // Deserialization failed, probably due to an API version mismatch.
+          // Refer to the Javadoc documentation on `EventDataObjectDeserializer` for
+          // instructions on how to handle this case, or return an error here.
+        }
 
-            Subscription deletedSubscription = subscription.cancel();
-            return deletedSubscription.toJson();
-        });
+        switch (event.getType()) {
+          case "invoice.paid":
+            // Used to provision services after the trial has ended.
+            // The status of the invoice will show up as paid. Store the status in your
+            // database to reference when a user accesses your service to avoid hitting rate
+            // limits.
+            break;
+          case "invoice.payment_failed":
+            // If the payment fails or the customer does not have a valid payment method,
+            // an invoice.payment_failed event is sent, the subscription becomes past_due.
+            // Use this webhook to notify your user that their payment has
+            // failed and to retrieve new card details.
+            break;
+          case "invoice.finalized":
+            // If you want to manually send out invoices to your customers
+            // or store them locally to reference to avoid hitting Stripe rate limits.
+            break;
+          case "customer.subscription.deleted":
+            // handle subscription cancelled automatically based
+            // upon your subscription settings. Or if the user
+            // cancels it.
+            break;
+          default:
+          // Unhandled event type
+        }
 
-        post("/update-subscription", (request, response) -> {
-            response.type("application/json");
-            // Set the default payment method on the customer
-            UpdatePostBody postBody = gson.fromJson(request.body(), UpdatePostBody.class);
-
-            Subscription subscription = Subscription.retrieve(postBody.getSubscriptionId());
-
-            SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
-                    .addItem(SubscriptionUpdateParams.Item.builder()
-                            .setId(subscription.getItems().getData().get(0).getId())
-                            .setPlan(dotenv.get(postBody.getNewPriceId().toUpperCase())).build())
-                    .setCancelAtPeriodEnd(false).build();
-
-            subscription.update(params);
-            return subscription.toJson();
-        });
-
-        post("/retrieve-customer-payment-method", (request, response) -> {
-            response.type("application/json");
-            // Set the default payment method on the customer
-            PaymentMethodBody paymentMethodBody = gson.fromJson(request.body(), PaymentMethodBody.class);
-
-            PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodBody.getPaymentMethodId());
-            return paymentMethod.toJson();
-        });
-
-        post("/stripe-webhook", (request, response) -> {
-            String payload = request.body();
-            String sigHeader = request.headers("Stripe-Signature");
-            String endpointSecret = dotenv.get("STRIPE_WEBHOOK_SECRET");
-            Event event = null;
-
-            try {
-                event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
-            } catch (SignatureVerificationException e) {
-                // Invalid signature
-                response.status(400);
-                return "";
-            }
-
-            // Deserialize the nested object inside the event
-            EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-            StripeObject stripeObject = null;
-            if (dataObjectDeserializer.getObject().isPresent()) {
-                stripeObject = dataObjectDeserializer.getObject().get();
-            } else {
-                // Deserialization failed, probably due to an API version mismatch.
-                // Refer to the Javadoc documentation on `EventDataObjectDeserializer` for
-                // instructions on how to handle this case, or return an error here.
-            }
-
-            switch (event.getType()) {
-                case "invoice.paid":
-                    // Used to provision services after the trial has ended.
-                    // The status of the invoice will show up as paid. Store the status in your
-                    // database to reference when a user accesses your service to avoid hitting rate
-                    // limits.
-                    break;
-                case "invoice.payment_failed":
-                    // If the payment fails or the customer does not have a valid payment method,
-                    // an invoice.payment_failed event is sent, the subscription becomes past_due.
-                    // Use this webhook to notify your user that their payment has
-                    // failed and to retrieve new card details.
-                    break;
-                case "invoice.finalized":
-                    // If you want to manually send out invoices to your customers
-                    // or store them locally to reference to avoid hitting Stripe rate limits.
-                    break;
-                case "customer.subscription.deleted":
-                    // handle subscription cancelled automatically based
-                    // upon your subscription settings. Or if the user
-                    // cancels it.
-                    break;
-                default:
-                    // Unhandled event type
-            }
-
-            response.status(200);
-            return "";
-        });
-    }
+        response.status(200);
+        return "";
+      }
+    );
+  }
 }
