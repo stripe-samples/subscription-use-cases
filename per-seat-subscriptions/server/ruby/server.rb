@@ -31,14 +31,16 @@ post '/retrieve-subscription-information' do
 
   subscriptionId = data['subscriptionId']
   subscription =
-    Stripe::Subscription.retrieve({
-                                    id: subscriptionId,
-                                    expand: %w[
-                                      latest_invoice
-                                      customer.invoice_settings.default_payment_method
-                                      plan.product
-                                    ]
-                                  })
+    Stripe::Subscription.retrieve(
+      {
+        id: subscriptionId,
+        expand: %w[
+          latest_invoice
+          customer.invoice_settings.default_payment_method
+          plan.product
+        ]
+      }
+    )
 
   upcoming_invoice = Stripe::Invoice.upcoming(subscription: subscriptionId)
 
@@ -208,14 +210,17 @@ post '/update-subscription' do
   new_price = ENV[data['newPriceId']]
   quantity = data['quantity']
 
-  updated_subscription =
-    if current_price == new_price
+  updated_subscription = subscription
+
+  if current_price == new_price
+    updated_subscription =
       Stripe::Subscription.update(
         data['subscriptionId'],
         items: [{ id: subscription.items.data[0].id, quantity: quantity }],
         expand: %w[plan.product]
       )
-    else
+  else
+    updated_subscription =
       Stripe::Subscription.update(
         data['subscriptionId'],
         items: [
@@ -224,7 +229,7 @@ post '/update-subscription' do
         ],
         expand: %w[plan.product]
       )
-    end
+  end
 
   # invoice and charge the customer immediately for the payment representing any balance that the customer accrued
   # as a result of the change.  For example, if the user added seats for this month, this would charge the proration amount for those
