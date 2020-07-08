@@ -80,6 +80,7 @@ namespace dotnet.Controllers
                 },
             };
             subscriptionOptions.AddExpand("latest_invoice.payment_intent");
+            subscriptionOptions.AddExpand("pending_setup_intent");
             var subscriptionService = new SubscriptionService();
             try
             {

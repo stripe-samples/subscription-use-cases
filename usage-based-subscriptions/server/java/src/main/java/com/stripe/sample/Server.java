@@ -297,7 +297,7 @@ public class Server {
               .build()
           )
           .setCustomer(customer.getId())
-          .addAllExpand(Arrays.asList("latest_invoice.payment_intent"))
+          .addAllExpand(Arrays.asList("latest_invoice.payment_intent", "pending_setup_intent"))
           .build();
 
         Subscription subscription = Subscription.create(subCreateParams);

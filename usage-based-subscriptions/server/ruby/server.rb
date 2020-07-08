@@ -59,7 +59,7 @@ post '/create-subscription' do
     Stripe::Subscription.create(
       customer: data['customerId'],
       items: [{ price: ENV[data['priceId']] }],
-      expand: %w[latest_invoice.payment_intent]
+      expand: %w[latest_invoice.payment_intent pending_setup_intent]
     )
 
   subscription.to_json

@@ -79,7 +79,7 @@ def createSubscription():
                     'price': os.getenv(data['priceId'])
                 }
             ],
-            expand=['latest_invoice.payment_intent'],
+            expand=['latest_invoice.payment_intent', 'pending_setup_intent'],
         )
         return jsonify(subscription)
     except Exception as e:
