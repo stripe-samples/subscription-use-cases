@@ -6,9 +6,9 @@
   "scripts": {
     "server": "node server.js",
     "reactClient": "cd ../../client/react && npm start",
-    "startReact": "concurrently \"npm run reactClient\" \"npm run server\"",
-    "startVanillajs": "npm run server",
-    "start": "npm run server",
+    "startReact": "concurrently \"yarn reactClient\" \"yarn server\"",
+    "startVanillajs": "yarn server",
+    "start": "yarn server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "stripe-demos",

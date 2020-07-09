@@ -25,6 +25,7 @@ const CheckoutForm = ({ productSelected, customer }) => {
   const elements = useElements();
   const [subscribing, setSubscribing] = useState(false);
   const [accountInformation, setAccountInformation] = useState(null);
+  let [errorToDisplay, setErrorToDisplay] = useState('');
 
   function handlePaymentThatRequiresCustomerAction({
     subscription,
@@ -99,10 +100,62 @@ const CheckoutForm = ({ productSelected, customer }) => {
         'latestInvoicePaymentIntentStatus',
         subscription.latest_invoice.payment_intent.status
       );
-      throw new Error({ error: { message: 'Your card was declined.' } });
+      throw new Error('Your card was declined.');
     } else {
       return { subscription, priceId, paymentMethodId };
     }
+  }
+
+  function retryInvoiceWithNewPaymentMethod({ paymentMethodId, invoiceId }) {
+    const priceId = productSelected.name.toUpperCase();
+    return (
+      fetch('/retry-invoice', {
+        method: 'post',
+        headers: {
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerId: customer.id,
+          paymentMethodId: paymentMethodId,
+          invoiceId: invoiceId,
+        }),
+      })
+        .then((response) => {
+          return response.json();
+        })
+        // If the card is declined, display an error to the user.
+        .then((result) => {
+          if (result.error) {
+            // The card had an error when trying to attach it to a customer.
+            throw result;
+          }
+          return result;
+        })
+        // Normalize the result to contain the object returned by Stripe.
+        // Add the addional details we need.
+        .then((result) => {
+          return {
+            // Use the Stripe 'object' property on the
+            // returned result to understand what object is returned.
+            invoice: result,
+            paymentMethodId: paymentMethodId,
+            priceId: priceId,
+            isRetry: true,
+          };
+        })
+        // Some payment methods require a customer to be on session
+        // to complete the payment process. Check the status of the
+        // payment intent to handle these actions.
+        .then(handlePaymentThatRequiresCustomerAction)
+        // No more actions required. Provision your service for the user.
+        .then(onSubscriptionComplete)
+        .catch((error) => {
+          console.log(error);
+          // An error has happened. Display the failure to the user here.
+          setSubscribing(false);
+          setErrorToDisplay(error && error.error && error.error.decline_code);
+        })
+    );
   }
 
   function onSubscriptionComplete(result) {
@@ -110,6 +163,12 @@ const CheckoutForm = ({ productSelected, customer }) => {
     // Payment was successful. Provision access to your service.
     // Remove invoice from localstorage because payment is now complete.
     // clearCache();
+    if (result && !result.subscription) {
+      const subscription = { id: result.invoice.subscription };
+      result.subscription = subscription;
+      localStorage.clear();
+    }
+
     setAccountInformation(result);
     // Change your UI to show a success message to your customer.
     // onSubscriptionSampleDemoComplete(result);
@@ -167,8 +226,8 @@ const CheckoutForm = ({ productSelected, customer }) => {
         .catch((error) => {
           // An error has happened. Display the failure to the user here.
           // We utilize the HTML element we created.
-          console.log(error);
-          // displayError(error);
+          setSubscribing(false);
+          setErrorToDisplay(error.message || error.error.decline_code);
         })
     );
   }
@@ -190,6 +249,11 @@ const CheckoutForm = ({ productSelected, customer }) => {
     // each type of element.
     const cardElement = elements.getElement(CardElement);
 
+    // If a previous payment was attempted, get the lastest invoice
+    const latestInvoicePaymentIntentStatus = localStorage.getItem(
+      'latestInvoicePaymentIntentStatus'
+    );
+
     // Use your card Element with other Stripe.js APIs
     const { error, paymentMethod } = await stripe.createPaymentMethod({
       type: 'card',
@@ -197,10 +261,25 @@ const CheckoutForm = ({ productSelected, customer }) => {
     });
 
     if (error) {
-      console.log('[error]', error);
+      console.log('[createPaymentMethod error]', error);
+      setSubscribing(false);
+      setErrorToDisplay(error && error.message);
     } else {
       console.log('[PaymentMethod]', paymentMethod);
-      createSubscription({ paymentMethodId: paymentMethod.id });
+      const paymentMethodId = paymentMethod.id;
+      if (latestInvoicePaymentIntentStatus === 'requires_payment_method') {
+        // Update the payment method and retry invoice payment
+        const invoiceId = localStorage.getItem('latestInvoiceId');
+        retryInvoiceWithNewPaymentMethod({
+          paymentMethodId: paymentMethodId,
+          invoiceId: invoiceId,
+        });
+      } else {
+        // Create the subscription
+        createSubscription({
+          paymentMethodId: paymentMethodId,
+        });
+      }
     }
   };
 
@@ -273,11 +352,9 @@ const CheckoutForm = ({ productSelected, customer }) => {
                       }}
                     />
                   </div>
-                  <div
-                    id="card-element-errors"
-                    className="text-gray-700 text-base mt-2"
-                    role="alert"
-                  ></div>
+                  <div className="text-gray-700 text-base mt-2" role="alert">
+                    {errorToDisplay ? errorToDisplay : null}
+                  </div>
                 </div>
               </div>
               <button
