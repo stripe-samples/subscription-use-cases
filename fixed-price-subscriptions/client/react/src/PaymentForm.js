@@ -26,7 +26,7 @@ const CheckoutForm = ({ productSelected, customer }) => {
   const [subscribing, setSubscribing] = useState(false);
   const [accountInformation, setAccountInformation] = useState(null);
 
-  function handleCustomerActionRequired({
+  function handlePaymentThatRequiresCustomerAction({
     subscription,
     invoice,
     priceId,
@@ -79,7 +79,7 @@ const CheckoutForm = ({ productSelected, customer }) => {
     }
   }
 
-  function handlePaymentMethodRequired({
+  function handleRequiresPaymentMethod({
     subscription,
     paymentMethodId,
     priceId,
@@ -157,11 +157,11 @@ const CheckoutForm = ({ productSelected, customer }) => {
         // Some payment methods require a customer to do additional
         // authentication with their financial institution.
         // Eg: 2FA for cards.
-        .then(handleCustomerActionRequired)
+        .then(handlePaymentThatRequiresCustomerAction)
         // If attaching this card to a Customer object succeeds,
         // but attempts to charge the customer fail. You will
         // get a requires_payment_method error.
-        .then(handlePaymentMethodRequired)
+        .then(handleRequiresPaymentMethod)
         // No more actions required. Provision your service for the user.
         .then(onSubscriptionComplete)
         .catch((error) => {
