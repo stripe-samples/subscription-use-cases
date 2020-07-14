@@ -64,6 +64,7 @@ function Account({ location }) {
   }
 
   function cancelSubscription() {
+    console.log(accountInformation.subscription);
     fetch('/cancel-subscription', {
       method: 'post',
       headers: {
@@ -81,6 +82,11 @@ function Account({ location }) {
       });
   }
 
+  function resetDemo() {
+    localStorage.clear();
+    window.location.href = '/';
+  }
+
   return (
     <div className="p-6">
       <TopNavigationBar />
@@ -93,7 +99,7 @@ function Account({ location }) {
             <button
               className="bg-pasha hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded"
               type="button"
-              onClick={() => (window.location.href = '/')}
+              onClick={() => resetDemo()}
             >
               Restart demo
             </button>

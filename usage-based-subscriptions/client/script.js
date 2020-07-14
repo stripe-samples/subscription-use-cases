@@ -298,7 +298,7 @@ function handleCardSetupRequired({
 }
 
 
-function handleCustomerActionRequired({
+function handlePaymentThatRequiresCustomerAction({
   subscription,
   invoice,
   priceId,
@@ -348,7 +348,7 @@ function handleCustomerActionRequired({
   }
 }
 
-function handlePaymentMethodRequired({
+function handleRequiresPaymentMethod({
   subscription,
   paymentMethodId,
   priceId,
@@ -425,11 +425,11 @@ function createSubscription(customerId, paymentMethodId, priceId) {
       // authentication with their financial institution.
       // Eg: 2FA for cards.
       .then(handleCardSetupRequired)
-      .then(handleCustomerActionRequired)
+      .then(handlePaymentThatRequiresCustomerAction)
       // If attaching this card to a Customer object succeeds,
       // but attempts to charge the customer fail. You will
       // get a requires_payment_method error.
-      .then(handlePaymentMethodRequired)
+      .then(handleRequiresPaymentMethod)
       // No more actions required. Provision your service for the user.
       .then(onSubscriptionComplete)
       .catch((error) => {
@@ -484,7 +484,7 @@ function retryInvoiceWithNewPaymentMethod(
       // Some payment methods require a customer to be on session
       // to complete the payment process. Check the status of the
       // payment intent to handle these actions.
-      .then(handleCustomerActionRequired)
+      .then(handlePaymentThatRequiresCustomerAction)
       // No more actions required. Provision your service for the user.
       .then(onSubscriptionComplete)
       .catch((error) => {

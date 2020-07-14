@@ -11,7 +11,7 @@ See a hosted version of the [sample](https://l2sny.sse.codesandbox.io/) in test 
 
 The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
 
-Use the `4000000000003220` test card number to trigger a 3D Secure challenge flow.
+Use the `4000002500003155` test card number to trigger a 3D Secure challenge flow.
 
 Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
