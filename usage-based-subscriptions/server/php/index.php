@@ -79,7 +79,7 @@ $app->post('/create-subscription', function (
             'customer' => $body->customerId,
         ]);
     } catch (Exception $e) {
-        return $response->withJson($e->jsonBody);
+        return $response->withJson(['error' => $e->getError()]);
     }
 
     // Set the default payment method on the customer
@@ -97,7 +97,7 @@ $app->post('/create-subscription', function (
                 'price' => getenv($body->priceId),
             ],
         ],
-        'expand' => ['latest_invoice.payment_intent'],
+        'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
     ]);
 
     return $response->withJson($subscription);

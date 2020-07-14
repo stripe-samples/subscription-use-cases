@@ -124,7 +124,7 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
     })
     .then((result) => {
       if (result.error) {
-        displayError(error);
+        displayError(result.error);
       } else {
         if (isPaymentRetry) {
           // Update the payment method and retry invoice payment
@@ -255,6 +255,49 @@ function createCustomer() {
     });
 }
 
+function handleCardSetupRequired({
+  subscription,
+  invoice,
+  priceId,
+  paymentMethodId
+})
+{
+  let setupIntent = subscription.pending_setup_intent;
+
+  if (setupIntent && setupIntent.status === 'requires_action')
+  {
+    return stripe
+      .confirmCardSetup(setupIntent.client_secret, {
+        payment_method: paymentMethodId,
+      })
+      .then((result) => {
+        if (result.error) {
+          // start code flow to handle updating the payment details
+          // Display error message in your UI.
+          // The card was declined (i.e. insufficient funds, card has expired, etc)
+          throw result;
+        } else {
+          if (result.setupIntent.status === 'succeeded') {
+            // There's a risk of the customer closing the window before callback
+            // execution. To handle this case, set up a webhook endpoint and
+            // listen to setup_intent.succeeded.
+            return {
+              priceId: priceId,
+              subscription: subscription,
+              invoice: invoice,
+              paymentMethodId: paymentMethodId,
+            };
+          }
+        }
+      });
+  }
+  else {
+    // No customer action needed
+    return { subscription, priceId, paymentMethodId };
+  }
+}
+
+
 function handlePaymentThatRequiresCustomerAction({
   subscription,
   invoice,
@@ -262,16 +305,14 @@ function handlePaymentThatRequiresCustomerAction({
   paymentMethodId,
   isRetry,
 }) {
-  if (subscription && subscription.status === 'active') {
-    // subscription is active, no customer actions required.
-    return { subscription, priceId, paymentMethodId };
-  }
-
   // If it's a first payment attempt, the payment intent is on the subscription latest invoice.
   // If it's a retry, the payment intent will be on the invoice itself.
   let paymentIntent = invoice
     ? invoice.payment_intent
     : subscription.latest_invoice.payment_intent;
+
+  if (!paymentIntent)
+    return { subscription, priceId, paymentMethodId };
 
   if (
     paymentIntent.status === 'requires_action' ||
@@ -383,6 +424,7 @@ function createSubscription(customerId, paymentMethodId, priceId) {
       // Some payment methods require a customer to do additional
       // authentication with their financial institution.
       // Eg: 2FA for cards.
+      .then(handleCardSetupRequired)
       .then(handlePaymentThatRequiresCustomerAction)
       // If attaching this card to a Customer object succeeds,
       // but attempts to charge the customer fail. You will
@@ -719,12 +761,9 @@ function changeLoadingStateprices(isLoading) {
         .classList.add('invisible');
     }
   } else {
-    let buttons = document.querySelectorAll('#button-text');
-    let loading = document.querySelectorAll('#loading');
-    for (let i = 0; i < buttons.length; i++) {
-      buttons[i].classList.remove('hidden');
-      loading[i].classList.remove('loading');
-    }
+    document.querySelector('#button-text').classList.remove('hidden');
+    document.querySelector('#loading').classList.add('hidden');
+
     document.querySelector('#submit-basic').classList.remove('invisible');
     document.querySelector('#submit-premium').classList.remove('invisible');
     if (document.getElementById('confirm-price-change-cancel')) {

@@ -168,6 +168,8 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	subscriptionParams.AddExpand("latest_invoice.payment_intent")
+	subscriptionParams.AddExpand("pending_setup_intent")
+
 	s, err := sub.New(subscriptionParams)
 
 	if err != nil {
