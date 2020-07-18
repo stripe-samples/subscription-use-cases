@@ -24,36 +24,6 @@ get '/config' do
   { 'publishableKey': ENV['STRIPE_PUBLISHABLE_KEY'] }.to_json
 end
 
-# Returns information about the subscription and payment method used to display on the account page.
-post '/retrieve-subscription-information' do
-  content_type 'application/json'
-  data = JSON.parse request.body.read
-
-  subscriptionId = data['subscriptionId']
-  subscription =
-    Stripe::Subscription.retrieve(
-      {
-        id: subscriptionId,
-        expand: %w[
-          latest_invoice
-          customer.invoice_settings.default_payment_method
-          plan.product
-        ]
-      }
-    )
-
-  upcoming_invoice = Stripe::Invoice.upcoming(subscription: subscriptionId)
-
-  {
-    card: subscription.customer.invoice_settings.default_payment_method.card,
-    product_description: subscription.plan.product.name,
-    current_price: subscription.plan.id,
-    current_quantity: subscription.items.data[0].quantity,
-    latest_invoice: subscription.latest_invoice,
-    upcoming_invoice: upcoming_invoice
-  }.to_json
-end
-
 post '/create-customer' do
   content_type 'application/json'
   data = JSON.parse request.body.read
@@ -71,31 +41,63 @@ post '/create-subscription' do
   data = JSON.parse request.body.read
 
   begin
-    Stripe::PaymentMethod.attach(
+    payment_method = Stripe::PaymentMethod.attach(
       data['paymentMethodId'],
       { customer: data['customerId'] }
     )
   rescue Stripe::CardError => e
-    halt 200,
+    halt 422,
          { 'Content-Type' => 'application/json' },
-         { 'error': { message: e.error.message } }.to_json
+         { error: { message: e.error.message } }.to_json
   end
 
   # Set the default payment method on the customer
   Stripe::Customer.update(
     data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
+    invoice_settings: { default_payment_method: payment_method.id }
   )
 
   # Create the subscription
-  subscription =
-    Stripe::Subscription.create(
+  begin
+    subscription = Stripe::Subscription.create(
       customer: data['customerId'],
       items: [{ price: ENV[data['priceId']], quantity: data['quantity'] }],
       expand: %w[latest_invoice.payment_intent plan.product]
     )
+  rescue Stripe::StripeError => e
+    halt 422,
+        { 'Content-Type' => 'application/json' },
+        { error: { message: e.error.message } }.to_json
+  end
 
   subscription.to_json
+end
+
+# Returns information about the subscription and payment method used to display on the account page.
+post '/retrieve-subscription-information' do
+  content_type 'application/json'
+  data = JSON.parse request.body.read
+
+  subscriptionId = data['subscriptionId']
+  subscription = Stripe::Subscription.retrieve({
+    id: subscriptionId,
+    expand: %w[
+      latest_invoice
+      customer.invoice_settings.default_payment_method
+      plan.product
+    ]
+  })
+
+  upcoming_invoice = Stripe::Invoice.upcoming(subscription: subscriptionId)
+
+  {
+    card: subscription.customer.invoice_settings.default_payment_method.card,
+    product_description: subscription.plan.product.name,
+    current_price: subscription.plan.id,
+    current_quantity: subscription.items.data[0].quantity,
+    latest_invoice: subscription.latest_invoice,
+    upcoming_invoice: upcoming_invoice
+  }.to_json
 end
 
 post '/retry-invoice' do
@@ -103,26 +105,28 @@ post '/retry-invoice' do
   data = JSON.parse request.body.read
 
   begin
-    Stripe::PaymentMethod.attach(
+    payment_method = Stripe::PaymentMethod.attach(
       data['paymentMethodId'],
       { customer: data['customerId'] }
     )
   rescue Stripe::CardError => e
     halt 200,
          { 'Content-Type' => 'application/json' },
-         { 'error': { message: e.error.message } }.to_json
+         { error: { message: e.error.message } }.to_json
   end
 
   # Set the default payment method on the customer
   Stripe::Customer.update(
     data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
+    invoice_settings: {
+      default_payment_method: payment_method.id
+    }
   )
 
-  invoice =
-    Stripe::Invoice.retrieve(
-      { id: data['invoiceId'], expand: %w[payment_intent] }
-    )
+  invoice = Stripe::Invoice.retrieve({
+    id: data['invoiceId'],
+    expand: %w[payment_intent],
+  })
 
   invoice.to_json
 end
@@ -147,15 +151,20 @@ post '/retrieve-upcoming-invoice' do
 
     current_price = subscription.items.data[0].price.id
 
-    params[:subscription_items] =
-      if current_price == new_price
-        [{ id: subscription.items.data[0].id, quantity: quantity }]
-      else
-        [
-          { id: subscription.items.data[0].id, deleted: true },
-          { price: new_price, quantity: quantity }
-        ]
-      end
+    if current_price == new_price
+      params[:subscription_items] = [{
+        id: subscription.items.data[0].id,
+        quantity: quantity
+      }]
+    else
+      params[:subscription_items] = [{
+        id: subscription.items.data[0].id,
+        deleted: true,
+      }, {
+        price: new_price,
+        quantity: quantity,
+      }]
+    end
   else
     params[:subscription_items] = [{ price: new_price, quantity: quantity }]
   end
@@ -191,15 +200,6 @@ post '/retrieve-upcoming-invoice' do
   response.to_json
 end
 
-post '/cancel-subscription' do
-  content_type 'application/json'
-  data = JSON.parse request.body.read
-
-  deleted_subscription = Stripe::Subscription.delete(data['subscriptionId'])
-
-  deleted_subscription.to_json
-end
-
 # The update may just involve updating the quantity of the subscription, or it may mean changing the price.
 post '/update-subscription' do
   content_type 'application/json'
@@ -213,22 +213,26 @@ post '/update-subscription' do
   updated_subscription = subscription
 
   if current_price == new_price
-    updated_subscription =
-      Stripe::Subscription.update(
-        data['subscriptionId'],
-        items: [{ id: subscription.items.data[0].id, quantity: quantity }],
-        expand: %w[plan.product]
-      )
+    updated_subscription = Stripe::Subscription.update(
+      data['subscriptionId'],
+      items: [{
+        id: subscription.items.data[0].id,
+        quantity: quantity
+      }],
+      expand: %w[plan.product]
+    )
   else
-    updated_subscription =
-      Stripe::Subscription.update(
-        data['subscriptionId'],
-        items: [
-          { id: subscription.items.data[0].id, deleted: true },
-          { price: new_price, quantity: data['quantity'] }
-        ],
-        expand: %w[plan.product]
-      )
+    updated_subscription = Stripe::Subscription.update(
+      data['subscriptionId'],
+      items: [{
+        id: subscription.items.data[0].id,
+        deleted: true,
+      }, {
+        price: new_price,
+        quantity: data['quantity'],
+      }],
+      expand: %w[plan.product]
+    )
   end
 
   # invoice and charge the customer immediately for the payment representing any balance that the customer accrued
@@ -249,6 +253,16 @@ post '/update-subscription' do
 
   { subscription: updated_subscription }.to_json
 end
+
+post '/cancel-subscription' do
+  content_type 'application/json'
+  data = JSON.parse request.body.read
+
+  deleted_subscription = Stripe::Subscription.delete(data['subscriptionId'])
+
+  deleted_subscription.to_json
+end
+
 
 post '/stripe-webhook' do
   # You can use webhooks to receive information about asynchronous payment events.

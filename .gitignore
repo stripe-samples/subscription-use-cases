@@ -1,6 +1,7 @@
 .env
 .DS_Store
 .vscode
+.byebug_history
 
 # Dependencies
 node_modules
