@@ -24,6 +24,8 @@ RSpec.describe "full integration path" do
     })
     expect(subscription).not_to be_nil
     expect(subscription["id"]).to start_with("sub_")
+    expect(subscription["items"]["data"].length).to eq(1)
+    expect(subscription["items"]["data"][0]["quantity"]).to eq(3)
     subscription_id = subscription["id"]
 
     # Create the subscription with a bad price
@@ -124,6 +126,8 @@ RSpec.describe "full integration path" do
     })
     expect(updated_subscription).not_to be_nil
     expect(updated_subscription.keys).to contain_exactly("subscription")
+    expect(updated_subscription["subscription"]["items"]["data"].length).to eq(1)
+    expect(updated_subscription["subscription"]["items"]["data"][0]["quantity"]).to eq(5)
 
     # Update subscription with new price
     updated_subscription, _ = post_json("/update-subscription", {
