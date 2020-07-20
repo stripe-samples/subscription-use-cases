@@ -71,7 +71,7 @@ post '/create-subscription' do
   data = JSON.parse request.body.read
 
   begin
-    Stripe::PaymentMethod.attach(
+    payment_method = Stripe::PaymentMethod.attach(
       data['paymentMethodId'],
       { customer: data['customerId'] }
     )
@@ -84,7 +84,7 @@ post '/create-subscription' do
   # Set the default payment method on the customer
   Stripe::Customer.update(
     data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
+    invoice_settings: { default_payment_method: payment_method.id }
   )
 
   # Create the subscription
