@@ -81,9 +81,7 @@ You can create Products and Prices [in the Dashboard](https://dashboard.stripe.c
 
 See the integration guides for examples of creating Products and Prices for different business models.
 [Fixed Price](https://stripe.com/docs/billing/subscriptions/fixed-price#create-business-model)
-
 [Usage Based Billing](https://stripe.com/docs/billing/subscriptions/metered#create-business-model)
-
 [Per Seat Billing](https://stripe.com/docs/billing/subscriptions/per-seat#create-business-model)
 
 
