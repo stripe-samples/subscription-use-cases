@@ -3,12 +3,12 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v71"
@@ -307,7 +307,7 @@ func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newPriceID := os.Getenv(strings.ToUpper(req.NewPriceID))
+	newPriceID := os.Getenv(req.NewPriceID)
 
 	var items []*stripe.SubscriptionItemsParams
 	var s stripe.Subscription
@@ -450,7 +450,7 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	currentPriceID := s.Items.Data[0].Price.ID
-	newPriceID := os.Getenv(strings.ToUpper(req.NewPriceID))
+	newPriceID := os.Getenv(req.NewPriceID)
 
 	var params *stripe.SubscriptionParams
 

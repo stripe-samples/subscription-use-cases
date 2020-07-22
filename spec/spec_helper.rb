@@ -115,9 +115,9 @@ def get_json(path, *args, **kwargs)
   JSON.parse(response.body)
 end
 
-def post_json(path, payload)
+def post_json(path, payload, *args, **kwargs)
   puts "Posting json to #{path}"
-  response = RestClient.post("#{SERVER_URL}#{path}", payload.to_json, content_type: 'application/json')
+  response = RestClient.post("#{SERVER_URL}#{path}", payload.to_json, *args, **kwargs)
   [JSON.parse(response.body), response.code]
 rescue => e
   [JSON.parse(e.http_body), e.http_code]

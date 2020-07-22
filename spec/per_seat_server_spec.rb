@@ -117,15 +117,6 @@ RSpec.describe "full integration path" do
     expect(upcoming_invoice).not_to be_nil
     expect(upcoming_invoice.keys).to contain_exactly("invoice")
 
-    # Get upcoming invoice with lowercase price ID
-    upcoming_invoice, _ = post_json("/retrieve-upcoming-invoice", {
-      customerId: customer_id,
-      newPriceId: "basic",
-      quantity: 5,
-    })
-    expect(upcoming_invoice).not_to be_nil
-    expect(upcoming_invoice.keys).to contain_exactly("invoice")
-
     # Update subscription with new quantity
     updated_subscription, _ = post_json("/update-subscription", {
       customerId: customer_id,
