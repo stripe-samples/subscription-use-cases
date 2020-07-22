@@ -110,8 +110,9 @@ app.post('/create-customer', async (req, res) => {
 
 app.post('/create-subscription', async (req, res) => {
   // Set the default payment method on the customer
+  let paymentMethod;
   try {
-    await stripe.paymentMethods.attach(req.body.paymentMethodId, {
+    paymentMethod = await stripe.paymentMethods.attach(req.body.paymentMethodId, {
       customer: req.body.customerId,
     });
   } catch (error) {
@@ -122,7 +123,7 @@ app.post('/create-subscription', async (req, res) => {
     req.body.customerId,
     {
       invoice_settings: {
-        default_payment_method: req.body.paymentMethodId,
+        default_payment_method: paymentMethod.id,
       },
     }
   );
