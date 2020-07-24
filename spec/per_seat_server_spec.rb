@@ -65,7 +65,7 @@ RSpec.describe "full integration path" do
     expect(incomplete_subscription["latest_invoice"]["id"]).to start_with("in_")
     invoice_id = incomplete_subscription["latest_invoice"]["id"]
 
-    # Create the subscription with a bad price
+    # Complete the subscription with a good card
     invoice, status = post_json("/retry-invoice", {
       paymentMethodId: "pm_card_visa",
       customerId: customer_id,
