@@ -15,6 +15,7 @@ import com.google.gson.reflect.TypeToken;
 import com.stripe.Stripe;
 import com.stripe.exception.CardException;
 import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
@@ -316,38 +317,29 @@ public class Server {
 
         try {
           // Set the default payment method on the customer
-          PaymentMethod pm = PaymentMethod.retrieve(
+          PaymentMethod paymentMethod = PaymentMethod.retrieve(
             postBody.getPaymentMethodId()
           );
-          pm.attach(
+          paymentMethod.attach(
             PaymentMethodAttachParams
               .builder()
               .setCustomer(customer.getId())
               .build()
           );
-        } catch (CardException e) {
-          // Since it's a decline, CardException will be caught
-          Map<String, String> responseErrorMessage = new HashMap<>();
-          responseErrorMessage.put("message", e.getLocalizedMessage());
-          Map<String, Object> responseError = new HashMap<>();
-          responseError.put("error", responseErrorMessage);
 
-          return gson.toJson(responseError);
-        }
-
-        CustomerUpdateParams customerUpdateParams = CustomerUpdateParams
+          CustomerUpdateParams customerUpdateParams = CustomerUpdateParams
           .builder()
           .setInvoiceSettings(
             CustomerUpdateParams
               .InvoiceSettings.builder()
-              .setDefaultPaymentMethod(postBody.getPaymentMethodId())
+              .setDefaultPaymentMethod(paymentMethod.getId())
               .build()
           )
           .build();
 
-        customer.update(customerUpdateParams);
+          customer.update(customerUpdateParams);
 
-        SubscriptionCreateParams subCreateParams = SubscriptionCreateParams
+          SubscriptionCreateParams subCreateParams = SubscriptionCreateParams
           .builder()
           .addItem(
             SubscriptionCreateParams
@@ -362,9 +354,19 @@ public class Server {
           )
           .build();
 
-        Subscription subscription = Subscription.create(subCreateParams);
+          Subscription subscription = Subscription.create(subCreateParams);
 
-        return subscription.toJson();
+          return subscription.toJson();
+
+        } catch (StripeException e) {
+          // Since it's a decline, CardException will be caught
+          Map<String, String> responseErrorMessage = new HashMap<>();
+          responseErrorMessage.put("message", e.getLocalizedMessage());
+          Map<String, Object> responseError = new HashMap<>();
+          responseError.put("error", responseErrorMessage);
+          response.status(400);
+          return gson.toJson(responseError);
+        }
       }
     );
 
@@ -381,48 +383,49 @@ public class Server {
 
         try {
           // Set the default payment method on the customer
-          PaymentMethod pm = PaymentMethod.retrieve(
+          PaymentMethod paymentMethod = PaymentMethod.retrieve(
             postBody.getPaymentMethodId()
           );
-          pm.attach(
+          paymentMethod.attach(
             PaymentMethodAttachParams
               .builder()
               .setCustomer(customer.getId())
               .build()
           );
+
+          CustomerUpdateParams customerUpdateParams = CustomerUpdateParams
+            .builder()
+            .setInvoiceSettings(
+              CustomerUpdateParams
+                .InvoiceSettings.builder()
+                .setDefaultPaymentMethod(paymentMethod.getId())
+                .build()
+            )
+            .build();
+
+          customer.update(customerUpdateParams);
+
+          InvoiceRetrieveParams params = InvoiceRetrieveParams
+            .builder()
+            .addAllExpand(Arrays.asList("payment_intent"))
+            .build();
+
+          Invoice invoice = Invoice.retrieve(
+            postBody.getInvoiceId(),
+            params,
+            null
+          );
+
+          return invoice.toJson();
         } catch (CardException e) {
           // Since it's a decline, CardException will be caught
           Map<String, String> responseErrorMessage = new HashMap<>();
           responseErrorMessage.put("message", e.getLocalizedMessage());
           Map<String, Object> responseError = new HashMap<>();
           responseError.put("error", responseErrorMessage);
+          response.status(400);
           return gson.toJson(responseError);
         }
-
-        CustomerUpdateParams customerUpdateParams = CustomerUpdateParams
-          .builder()
-          .setInvoiceSettings(
-            CustomerUpdateParams
-              .InvoiceSettings.builder()
-              .setDefaultPaymentMethod(postBody.getPaymentMethodId())
-              .build()
-          )
-          .build();
-
-        customer.update(customerUpdateParams);
-
-        InvoiceRetrieveParams params = InvoiceRetrieveParams
-          .builder()
-          .addAllExpand(Arrays.asList("payment_intent"))
-          .build();
-
-        Invoice invoice = Invoice.retrieve(
-          postBody.getInvoiceId(),
-          params,
-          null
-        );
-
-        return invoice.toJson();
       }
     );
 
@@ -613,7 +616,9 @@ public class Server {
 
         invoice = invoice.pay();
 
-        return subscription.toJson();
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("subscription", subscription);
+        return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
       }
     );
 
