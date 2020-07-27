@@ -92,7 +92,7 @@ post '/create-subscription' do
 
     subscription.to_json
   rescue Stripe::StripeError => e
-    halt 422,
+    halt 400,
          { 'Content-Type' => 'application/json' },
          { 'error': { message: e.error.message } }.to_json
   end
@@ -107,11 +107,11 @@ post '/retry-invoice' do
       data['paymentMethodId'],
       { customer: data['customerId'] }
     )
-  
+
     # Set the default payment method on the customer
     Stripe::Customer.update(
       data['customerId'],
-      invoice_settings: { default_payment_method: payment_method }
+      invoice_settings: { default_payment_method: payment_method.id },
     )
 
     invoice =
@@ -119,7 +119,7 @@ post '/retry-invoice' do
         { id: data['invoiceId'], expand: %w[payment_intent] }
       )
   rescue Stripe::StripeError => e
-    halt 200,
+    halt 400,
       { 'Content-Type' => 'application/json' },
       { 'error': { message: e.error.message } }.to_json
   end
