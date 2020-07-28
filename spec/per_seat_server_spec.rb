@@ -14,6 +14,7 @@ RSpec.describe "full integration path" do
     })
     expect(customer["customer"]["id"]).to start_with("cus_")
     customer_id = customer["customer"]["id"]
+    expect(customer["customer"]["email"]).to eq("jenny.rosen@example.com")
 
     # Create the subscription
     subscription, _ = post_json("/create-subscription", {
@@ -28,14 +29,14 @@ RSpec.describe "full integration path" do
     expect(subscription["items"]["data"][0]["quantity"]).to eq(3)
     subscription_id = subscription["id"]
 
-    # Create the subscription with a bad price
+    # Create the subscription without a price
     error, status = post_json("/create-subscription", {
       customerId: customer_id,
       paymentMethodId: "pm_card_visa",
       priceId: "not-a-price",
       quantity: 3,
     })
-    expect(status).to eq(422)
+    expect(status).to eq(400)
     expect(error).not_to be_nil
     expect(error.keys).to contain_exactly("error")
     expect(error["error"].keys).to contain_exactly("message")
@@ -47,7 +48,7 @@ RSpec.describe "full integration path" do
       priceId: "BASIC",
       quantity: 3,
     })
-    expect(status).to eq(422)
+    expect(status).to eq(400)
     expect(error).not_to be_nil
     expect(error.keys).to contain_exactly("error")
     expect(error["error"].keys).to contain_exactly("message")
@@ -65,7 +66,7 @@ RSpec.describe "full integration path" do
     expect(incomplete_subscription["latest_invoice"]["id"]).to start_with("in_")
     invoice_id = incomplete_subscription["latest_invoice"]["id"]
 
-    # Create the subscription with a bad price
+    # Complete the subscription with a good card
     invoice, status = post_json("/retry-invoice", {
       paymentMethodId: "pm_card_visa",
       customerId: customer_id,

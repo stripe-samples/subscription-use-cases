@@ -70,9 +70,9 @@ STRIPE_SECRET_KEY=<replace-with-your-secret-key>
 
 **2. Create Products and Plans on Stripe**
 
-This sample requires a [Plan](https://stripe.com/docs/api/plans/object) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
+This sample requires a [Price](https://stripe.com/docs/api/prices/object) ID to create the subscription. Products and Prices are objects on Stripe that you use to model a subscription.
 
-You can create Products and Plans [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/plans/create). Create a Plan to run this sample and add it to your `.env`.
+You can create Products and Prices [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
 
 **3. Follow the server instructions on how to run:**
 

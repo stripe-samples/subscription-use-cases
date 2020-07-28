@@ -117,7 +117,8 @@ end
 
 def post_json(path, payload)
   puts "Posting json to #{path}"
-  response = RestClient.post("#{SERVER_URL}#{path}", payload.to_json, content_type: 'application/json')
+  defaults = {content_type: :json}
+  response = RestClient.post("#{SERVER_URL}#{path}", payload.to_json, *args, defaults.merge(**kwargs))
   [JSON.parse(response.body), response.code]
 rescue => e
   [JSON.parse(e.http_body), e.http_code]

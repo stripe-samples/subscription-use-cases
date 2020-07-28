@@ -119,30 +119,33 @@ $app->post('/create-subscription', function (
         $payment_method->attach([
             'customer' => $body->customerId,
         ]);
-    } catch (Exception $e) {
-        return $response->withJson($e->jsonBody);
-    }
 
-    // Set the default payment method on the customer
-    $stripe->customers->update($body->customerId, [
-        'invoice_settings' => [
-            'default_payment_method' => $body->paymentMethodId,
-        ],
-    ]);
-
-    // Create the subscription
-    $subscription = $stripe->subscriptions->create([
-        'customer' => $body->customerId,
-        'items' => [
-            [
-                'price' => getenv($body->priceId),
-                'quantity' => $body->quantity,
+        // Set the default payment method on the customer
+        $stripe->customers->update($body->customerId, [
+            'invoice_settings' => [
+                'default_payment_method' => $payment_method->id,
             ],
-        ],
-        'expand' => ['latest_invoice.payment_intent', 'plan.product'],
-    ]);
+        ]);
 
-    return $response->withJson($subscription);
+        // Create the subscription
+        $subscription = $stripe->subscriptions->create([
+            'customer' => $body->customerId,
+            'items' => [
+                [
+                    'price' => getenv($body->priceId),
+                    'quantity' => $body->quantity,
+                ],
+            ],
+            'expand' => ['latest_invoice.payment_intent', 'plan.product'],
+        ]);
+
+        return $response->withJson($subscription);
+    } catch (Exception $e) {
+        return $response->withJson([
+            'error' => [
+              'message' => $e->getMessage()]
+          ])->withStatus(400);
+    }
 });
 
 $app->post('/retry-invoice', function (
@@ -160,22 +163,25 @@ $app->post('/retry-invoice', function (
         $payment_method->attach([
             'customer' => $body->customerId,
         ]);
+
+        // Set the default payment method on the customer
+        $stripe->customers->update($body->customerId, [
+            'invoice_settings' => [
+                'default_payment_method' => $payment_method->id,
+            ],
+        ]);
+
+        $invoice = $stripe->invoices->retrieve($body->invoiceId, [
+            'expand' => ['payment_intent'],
+        ]);
+
+      return $response->withJson($invoice);
     } catch (Exception $e) {
-        return $response->withJson($e->jsonBody);
+        return $response->withJson([
+            'error' => [
+              'message' => $e->getMessage()]
+          ])->withStatus(400);
     }
-
-    // Set the default payment method on the customer
-    $stripe->customers->update($body->customerId, [
-        'invoice_settings' => [
-            'default_payment_method' => $body->paymentMethodId,
-        ],
-    ]);
-
-    $invoice = $stripe->invoices->retrieve($body->invoiceId, [
-        'expand' => ['payment_intent'],
-    ]);
-
-    return $response->withJson($invoice);
 });
 
 $app->post('/retrieve-upcoming-invoice', function (

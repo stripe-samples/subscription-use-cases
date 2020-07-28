@@ -75,27 +75,27 @@ post '/create-subscription' do
       data['paymentMethodId'],
       { customer: data['customerId'] }
     )
-  rescue Stripe::CardError => e
-    halt 200,
+
+    # Set the default payment method on the customer
+    Stripe::Customer.update(
+      data['customerId'],
+      invoice_settings: { default_payment_method: payment_method.id }
+    )
+
+    # Create the subscription
+    subscription =
+      Stripe::Subscription.create(
+        customer: data['customerId'],
+        items: [{ price: ENV[data['priceId']], quantity: data['quantity'] }],
+        expand: %w[latest_invoice.payment_intent plan.product]
+      )
+
+    subscription.to_json
+  rescue Stripe::StripeError => e
+    halt 400,
          { 'Content-Type' => 'application/json' },
          { 'error': { message: e.error.message } }.to_json
   end
-
-  # Set the default payment method on the customer
-  Stripe::Customer.update(
-    data['customerId'],
-    invoice_settings: { default_payment_method: payment_method.id }
-  )
-
-  # Create the subscription
-  subscription =
-    Stripe::Subscription.create(
-      customer: data['customerId'],
-      items: [{ price: ENV[data['priceId']], quantity: data['quantity'] }],
-      expand: %w[latest_invoice.payment_intent plan.product]
-    )
-
-  subscription.to_json
 end
 
 post '/retry-invoice' do
@@ -103,27 +103,26 @@ post '/retry-invoice' do
   data = JSON.parse request.body.read
 
   begin
-    Stripe::PaymentMethod.attach(
+    payment_method = Stripe::PaymentMethod.attach(
       data['paymentMethodId'],
       { customer: data['customerId'] }
     )
-  rescue Stripe::CardError => e
-    halt 200,
-         { 'Content-Type' => 'application/json' },
-         { 'error': { message: e.error.message } }.to_json
-  end
 
-  # Set the default payment method on the customer
-  Stripe::Customer.update(
-    data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
-  )
-
-  invoice =
-    Stripe::Invoice.retrieve(
-      { id: data['invoiceId'], expand: %w[payment_intent] }
+    # Set the default payment method on the customer
+    Stripe::Customer.update(
+      data['customerId'],
+      invoice_settings: { default_payment_method: payment_method.id },
     )
 
+    invoice =
+      Stripe::Invoice.retrieve(
+        { id: data['invoiceId'], expand: %w[payment_intent] }
+      )
+  rescue Stripe::StripeError => e
+    halt 400,
+      { 'Content-Type' => 'application/json' },
+      { 'error': { message: e.error.message } }.to_json
+  end
   invoice.to_json
 end
 

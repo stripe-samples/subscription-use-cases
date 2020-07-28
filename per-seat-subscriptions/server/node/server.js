@@ -70,9 +70,6 @@ app.get('/config', async (req, res) => {
 
 app.post('/retrieve-subscription-information', async (req, res) => {
   const subscriptionId = req.body.subscriptionId;
-  console.log(
-    'subscription id is ' + subscriptionId + ' type is ' + typeof subscriptionId
-  );
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
     expand: [
@@ -115,47 +112,47 @@ app.post('/create-subscription', async (req, res) => {
     paymentMethod = await stripe.paymentMethods.attach(req.body.paymentMethodId, {
       customer: req.body.customerId,
     });
+
+    await stripe.customers.update(
+      req.body.customerId,
+      {
+        invoice_settings: {
+          default_payment_method: payment_method.id,
+        },
+      }
+    );
+
+    // Create the subscription
+    const subscription = await stripe.subscriptions.create({
+      customer: req.body.customerId,
+      items: [
+        { price: process.env[req.body.priceId], quantity: req.body.quantity },
+      ],
+      expand: ['latest_invoice.payment_intent', 'plan.product'],
+    });
+
+    res.send(subscription);
   } catch (error) {
-    return res.status('402').send({ error: { message: error.message } });
+    return res.status(400).send({ error: { message: error.message } });
   }
-
-  let updateCustomerDefaultPaymentMethod = await stripe.customers.update(
-    req.body.customerId,
-    {
-      invoice_settings: {
-        default_payment_method: paymentMethod.id,
-      },
-    }
-  );
-
-  // Create the subscription
-  const subscription = await stripe.subscriptions.create({
-    customer: req.body.customerId,
-    items: [
-      { price: process.env[req.body.priceId], quantity: req.body.quantity },
-    ],
-    expand: ['latest_invoice.payment_intent', 'plan.product'],
-  });
-
-  res.send(subscription);
 });
 
 app.post('/retry-invoice', async (req, res) => {
   // Set the default payment method on the customer
 
   try {
-    await stripe.paymentMethods.attach(req.body.paymentMethodId, {
+    const payment_method = await stripe.paymentMethods.attach(req.body.paymentMethodId, {
       customer: req.body.customerId,
     });
     await stripe.customers.update(req.body.customerId, {
       invoice_settings: {
-        default_payment_method: req.body.paymentMethodId,
+        default_payment_method: payment_method.id,
       },
     });
   } catch (error) {
     // in case card_decline error
     return res
-      .status('402')
+      .status(400)
       .send({ result: { error: { message: error.message } } });
   }
 
@@ -207,7 +204,6 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
       },
     ];
   }
-  console.log('params are ' + JSON.stringify(params));
 
   const invoice = await stripe.invoices.retrieveUpcoming(params);
 
@@ -295,7 +291,7 @@ app.post('/update-subscription', async (req, res) => {
   });
 
   invoice = await stripe.invoices.pay(invoice.id);
-  res.send(updatedSubscription);
+  res.send({subscription: updatedSubscription});
 });
 
 // Webhook handler for asynchronous events.
