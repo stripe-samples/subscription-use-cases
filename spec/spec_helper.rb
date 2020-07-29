@@ -115,10 +115,10 @@ def get_json(path, *args, **kwargs)
   JSON.parse(response.body)
 end
 
-def post_json(path, payload)
+def post_json(path, payload, **kwargs)
   puts "Posting json to #{path}"
   defaults = {content_type: :json}
-  response = RestClient.post("#{SERVER_URL}#{path}", payload.to_json, *args, defaults.merge(**kwargs))
+  response = RestClient.post("#{SERVER_URL}#{path}", payload.to_json, defaults.merge(**kwargs))
   [JSON.parse(response.body), response.code]
 rescue => e
   [JSON.parse(e.http_body), e.http_code]

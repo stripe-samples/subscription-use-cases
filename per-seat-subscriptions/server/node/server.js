@@ -107,9 +107,8 @@ app.post('/create-customer', async (req, res) => {
 
 app.post('/create-subscription', async (req, res) => {
   // Set the default payment method on the customer
-  let paymentMethod;
   try {
-    paymentMethod = await stripe.paymentMethods.attach(req.body.paymentMethodId, {
+    const payment_method = await stripe.paymentMethods.attach(req.body.paymentMethodId, {
       customer: req.body.customerId,
     });
 
@@ -131,10 +130,12 @@ app.post('/create-subscription', async (req, res) => {
       expand: ['latest_invoice.payment_intent', 'plan.product'],
     });
 
-    res.send(subscription);
+    return res.send(subscription);
   } catch (error) {
     return res.status(400).send({ error: { message: error.message } });
   }
+
+
 });
 
 app.post('/retry-invoice', async (req, res) => {
