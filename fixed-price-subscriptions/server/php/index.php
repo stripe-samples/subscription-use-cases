@@ -34,7 +34,7 @@ $container['stripe'] = function ($c) {
 
 $app->get('/', function (Request $request, Response $response, array $args) {
     // Display checkout page
-    return $response->write(file_get_contents('../../client/index.html'));
+    return $response->write(file_get_contents(getenv('STATIC_DIR') . '/index.html'));
 });
 
 $app->get('/config', function (
