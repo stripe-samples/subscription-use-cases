@@ -25,7 +25,7 @@ const CheckoutForm = ({ productSelected, customer }) => {
   const elements = useElements();
   const [subscribing, setSubscribing] = useState(false);
   const [accountInformation, setAccountInformation] = useState(null);
-  let [errorToDisplay, setErrorToDisplay] = useState('');
+  const [errorToDisplay, setErrorToDisplay] = useState('');
 
   function handlePaymentThatRequiresCustomerAction({
     subscription,
@@ -41,7 +41,7 @@ const CheckoutForm = ({ productSelected, customer }) => {
 
     // If it's a first payment attempt, the payment intent is on the subscription latest invoice.
     // If it's a retry, the payment intent will be on the invoice itself.
-    let paymentIntent = invoice
+    const paymentIntent = invoice
       ? invoice.payment_intent
       : subscription.latest_invoice.payment_intent;
 
