@@ -445,7 +445,7 @@ namespace dotnet.Controllers
             return Ok();
         }
 
-        private ActionResult FailWithMessage(string message, int statusCode = 422)
+        private ActionResult FailWithMessage(string message, int statusCode = 400)
         {
             return this.StatusCode(statusCode, new { error = new { message = message } });
         }

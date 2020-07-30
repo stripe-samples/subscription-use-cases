@@ -112,7 +112,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONErrorMessage(w, err.Error(), 422)
+		writeJSONErrorMessage(w, err.Error(), 400)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
@@ -127,7 +127,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		writeJSONErrorMessage(w, err.Error(), 422)
+		writeJSONErrorMessage(w, err.Error(), 400)
 		log.Printf("paymentmethod.Attach: %v %s", err, pm.ID)
 		return
 	}
@@ -144,7 +144,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		writeJSONErrorMessage(w, err.Error(), 422)
+		writeJSONErrorMessage(w, err.Error(), 400)
 		log.Printf("customer.Update: %v %s", err, c.ID)
 		return
 	}
@@ -155,6 +155,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		Items: []*stripe.SubscriptionItemsParams{
 			{
 				Price: stripe.String(os.Getenv(req.PriceID)),
+				Quantity: stripe.Int64(req.Quantity),
 			},
 		},
 	}
@@ -163,7 +164,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	s, err := sub.New(subscriptionParams)
 
 	if err != nil {
-		writeJSONErrorMessage(w, err.Error(), 422)
+		writeJSONErrorMessage(w, err.Error(), 400)
 		log.Printf("sub.New: %v", err)
 		return
 	}
