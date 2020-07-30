@@ -264,23 +264,26 @@ const CheckoutForm = ({ productSelected, customer }) => {
       console.log('[createPaymentMethod error]', error);
       setSubscribing(false);
       setErrorToDisplay(error && error.message);
-    } else {
-      console.log('[PaymentMethod]', paymentMethod);
-      const paymentMethodId = paymentMethod.id;
-      if (latestInvoicePaymentIntentStatus === 'requires_payment_method') {
-        // Update the payment method and retry invoice payment
-        const invoiceId = localStorage.getItem('latestInvoiceId');
-        retryInvoiceWithNewPaymentMethod({
-          paymentMethodId: paymentMethodId,
-          invoiceId: invoiceId,
-        });
-      } else {
-        // Create the subscription
-        createSubscription({
-          paymentMethodId: paymentMethodId,
-        });
-      }
+      return;
     }
+    console.log('[PaymentMethod]', paymentMethod);
+    const paymentMethodId = paymentMethod.id;
+    if (latestInvoicePaymentIntentStatus === 'requires_payment_method') {
+      // Update the payment method and retry invoice payment
+      const invoiceId = localStorage.getItem('latestInvoiceId');
+      retryInvoiceWithNewPaymentMethod({
+        paymentMethodId: paymentMethodId,
+        invoiceId: invoiceId,
+      });
+      return;
+    }
+
+    // Create the subscription
+    createSubscription({
+      paymentMethodId: paymentMethodId,
+    });
+
+    
   };
 
   if (accountInformation) {
