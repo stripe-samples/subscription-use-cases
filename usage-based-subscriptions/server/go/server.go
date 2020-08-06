@@ -136,8 +136,9 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		params,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("paymentmethod.Attach: %v %s", err, pm.ID)
+		writeJSON(w, struct {
+			Error error `json:"error"`
+		}{err})
 		return
 	}
 
@@ -235,9 +236,9 @@ func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
 		Customer:     stripe.String(req.CustomerID),
 		Subscription: stripe.String(req.SubscriptionID),
 		SubscriptionItems: []*stripe.SubscriptionItemsParams{{
-			ID:      stripe.String(s.Items.Data[0].ID),
-			Deleted: stripe.Bool(true),
-      ClearUsage: stripe.Bool(true),
+			ID:         stripe.String(s.Items.Data[0].ID),
+			Deleted:    stripe.Bool(true),
+			ClearUsage: stripe.Bool(true),
 		}, {
 			Price:   stripe.String(os.Getenv(req.NewPriceID)),
 			Deleted: stripe.Bool(false),
@@ -324,8 +325,9 @@ func handleRetryInvoice(w http.ResponseWriter, r *http.Request) {
 		params,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("paymentmethod.Attach: %v %s", err, pm.ID)
+		writeJSON(w, struct {
+			Error error `json:"error"`
+		}{err})
 		return
 	}
 
