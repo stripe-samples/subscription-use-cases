@@ -227,7 +227,7 @@ $app->post('/stripe-webhook', function (Request $request, Response $response) {
     $webhookSecret = getenv('STRIPE_WEBHOOK_SECRET');
     if ($webhookSecret) {
         try {
-            $event = $stripe->webhooks->constructEvent(
+            $event = \Stripe\Webhook::constructEvent(
                 $request->getBody(),
                 $request->getHeaderLine('stripe-signature'),
                 $webhookSecret
