@@ -1,0 +1,14 @@
+services:
+  web:
+    image: mcr.microsoft.com/dotnet/core/sdk
+    command: ['dotnet', 'run', '--urls', 'http://0.0.0.0:4242']
+    ports: ['4242:4242']
+    working_dir: /app/server/dotnet
+    volumes:
+      - ../..:/app
+
+  stripe:
+    image: stripe/stripe-cli
+    command: ['listen', '--forward-to', 'http://web:4242/stripe-webhook']
+    volumes:
+      - .config/stripe:/root/.config/stripe

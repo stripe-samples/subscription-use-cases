@@ -1,0 +1,15 @@
+services:
+  web:
+    image: maven
+    command: [] # will be overridden by docker-compose.override.yml
+    ports: ['4242:4242']
+    working_dir: /app/server/java
+    volumes:
+      - ../..:/app
+      - .m2:/root/.m2
+
+  stripe:
+    image: stripe/stripe-cli
+    command: ['listen', '--forward-to', 'http://web:4242/stripe-webhook']
+    volumes:
+      - .config/stripe:/root/.config/stripe

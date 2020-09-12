@@ -33,9 +33,15 @@ target/
 .classpath
 .factorypath
 .project
+.m2
 
 # Typescript
 dist
 
 # React
 build
+
+# Docker Compose
+.config
+.local
+.bundle

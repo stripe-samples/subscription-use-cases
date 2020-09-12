@@ -1,0 +1,17 @@
+services:
+  web:
+    image: ruby:2.7
+    command: ['bundle', 'exec', 'ruby', 'server.rb', '-o', '0.0.0.0']
+    ports: ['4242:4242']
+    working_dir: /app/server/ruby
+    environment:
+      - BUNDLE_PATH=/app/server/ruby/.bundle
+    volumes:
+      - ../..:/app
+      - .bundle:/usr/local/bundle
+
+  stripe:
+    image: stripe/stripe-cli
+    command: ['listen', '--forward-to', 'http://web:4242/stripe-webhook']
+    volumes:
+      - .config/stripe:/root/.config/stripe

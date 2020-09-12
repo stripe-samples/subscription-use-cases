@@ -16,3 +16,12 @@ go run server.go
 ```
 
 2. Go to `localhost:4242` to see the demo
+
+### Run with docker-compose.yml
+
+```
+docker-compose run --rm stripe login
+docker-compose run --rm stripe # Copy the webhook signing secret that start with "whsec_..." and set it as STRIPE_WEBHOOK_SECRET in the .env file
+
+docker-compose up
+```

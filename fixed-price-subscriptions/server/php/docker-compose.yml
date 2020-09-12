@@ -1,0 +1,14 @@
+services:
+  web:
+    image: composer
+    command: ['composer', 'start']
+    ports: ['4242:4242']
+    working_dir: /app/server/php
+    volumes:
+      - ../..:/app
+
+  stripe:
+    image: stripe/stripe-cli
+    command: ['listen', '--forward-to', 'http://web:4242/stripe-webhook']
+    volumes:
+      - .config/stripe:/root/.config/stripe

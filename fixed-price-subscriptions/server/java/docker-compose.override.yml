@@ -1,0 +1,3 @@
+services:
+  web:
+    command: ['java', '-cp', 'target/subscriptions-with-fixed-price-1.0.0-SNAPSHOT-jar-with-dependencies.jar', 'com.stripe.sample.Server']
