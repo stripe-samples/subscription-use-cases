@@ -30,7 +30,7 @@ if (
         'Add BASIC priceID to your .env file. See repo readme for setup instructions.'
       );
 
-  process.env.STRIPE_SECRET_KEY
+  process.env.PREMIUM
     ? ''
     : console.log(
         'Add PREMIUM priceID to your .env file. See repo readme for setup instructions.'
