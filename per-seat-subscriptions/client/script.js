@@ -161,7 +161,7 @@ function goToPaymentPage(evt) {
 
   priceId = button.dataset.plan;
 
-  quantity = document.getElementById('quantity-input-' + priceId).value;
+  quantity = parseInt(document.getElementById('quantity-input-' + priceId).value);
 
   retrieveUpcomingInvoice(customerId, null, priceId, quantity).then(
     (response) => {
