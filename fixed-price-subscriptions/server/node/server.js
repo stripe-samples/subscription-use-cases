@@ -203,7 +203,7 @@ app.post(
     try {
       event = stripe.webhooks.constructEvent(
         req.body,
-        req.headers['Stripe-Signature'],
+        req.header('Stripe-Signature'),
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
