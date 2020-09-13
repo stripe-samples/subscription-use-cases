@@ -6,4 +6,5 @@ gem 'dotenv'
 gem 'json'
 gem 'prettier'
 gem 'sinatra'
+gem 'sinatra-contrib', group: :development
 gem 'stripe'
