@@ -27,7 +27,7 @@ func main() {
   params := &stripe.UsageRecordParams{
     SubscriptionItem: stripe.String(subscriptionItemId),
     Quantity: stripe.Int64(usageQuantity),
-    Timestamp: stripe.Int64(1597415390),
+    Timestamp: stripe.Int64(time.Now().Unix()),
     Action: stripe.String(string(stripe.UsageRecordActionSet)),
   }
 
