@@ -8,7 +8,7 @@ import (
 func main() {
   // Set your secret key. Remember to switch to your live secret key in production!
   // See your keys here: https://dashboard.stripe.com/account/apikeys
-	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	stripe.Key = os.Getenv("{{STRIPE_SECRET_KEY}}")
 
   // This code can be run on an interval (e.g., every 24 hours) for each active
   // metered subscription.
