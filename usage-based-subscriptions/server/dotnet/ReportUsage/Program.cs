@@ -1,16 +1,17 @@
-﻿using System;
-using Stripe;
+﻿using Stripe;
+using System;
 
-namespace dotnet.Controllers
+namespace ReportUsage
 {
-    public class ReportUsage
+    class Program
     {
         static void Main(string[] args)
         {
+
             // Set your secret key. Remember to switch to your live secret key in production!
             // See your keys here: https://dashboard.stripe.com/account/apikeys
 
-            StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_PUBLISHABLE_KEY");
+            StripeConfiguration.ApiKey = "{{STRIPE_SECRET_KEY}}";
 
             // This code can be run on an interval (e.g., every 24 hours) for each active
             // metered subscription.
@@ -24,28 +25,29 @@ namespace dotnet.Controllers
             var subscriptionItemId = "{{SUBSCRIPTION_ITEM_ID}}";
 
             // The usage number you've been keeping track of in your database for the last 24 hours.
-            var usageQuantity = 100L;
+            var usageQuantity = 100;
 
             // The idempotency key allows you to retry this usage record call if it fails.
             var idempotencyKey = System.Guid.NewGuid().ToString();
 
-            var timestamp = DateTimeOffset.FromUnixTimeSeconds(1597408025).UtcDateTime;
+            var unixNow = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            var timestamp = DateTimeOffset.FromUnixTimeSeconds(unixNow).UtcDateTime;
 
             var service = new UsageRecordService();
             try
             {
                 var usageRecord = service.Create(
-                  subscriptionItemId,
-                  new UsageRecordCreateOptions
-                  {
-                      Quantity = usageQuantity,
-                      Timestamp = timestamp,
-                      Action = "set",
-                  },
-                  new RequestOptions
-                  {
-                      IdempotencyKey = idempotencyKey,
-                  }
+                subscriptionItemId,
+                    new UsageRecordCreateOptions
+                    {
+                        Quantity = usageQuantity,
+                        Timestamp = timestamp,
+                        Action = "set",
+                    },
+                    new RequestOptions
+                    {
+                        IdempotencyKey = idempotencyKey,
+                    }
                 );
             }
             catch (StripeException e)
