@@ -36,7 +36,7 @@ func main() {
 	http.HandleFunc("/retrieve-upcoming-invoice", handleRetrieveUpcomingInvoice)
 	http.HandleFunc("/stripe-webhook", handleWebhook)
 
-	addr := "localhost:4242"
+	addr := "0.0.0.0:4242"
 	log.Printf("Listening on %s ...", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
