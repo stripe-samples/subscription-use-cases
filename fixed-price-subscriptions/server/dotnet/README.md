@@ -1,7 +1,7 @@
 # Subscriptions fixed price
 
 ## Requirements
-- [.NET Core()]https://dotnet.microsoft.com/download)
+- [.NET Core](https://dotnet.microsoft.com/download)
 - [Configured .env file](../README.md)
 
 ## How to run
