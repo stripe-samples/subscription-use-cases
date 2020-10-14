@@ -1,6 +1,6 @@
 # Subscriptions with fixed price
 
-## Requirements## Requirements
+## Requirements
 
 - Python 3
 - [Configured .env file](../README.md)
