@@ -86,7 +86,7 @@ def createSubscription():
     data = json.loads(request.data)
     try:
 
-        stripe.PaymentMethod.attach(
+        payment_method = stripe.PaymentMethod.attach(
             data['paymentMethodId'],
             customer=data['customerId'],
         )
@@ -94,7 +94,7 @@ def createSubscription():
         stripe.Customer.modify(
             data['customerId'],
             invoice_settings={
-                'default_payment_method': data['paymentMethodId'],
+                'default_payment_method': payment_method.id,
             },
         )
 
@@ -111,7 +111,7 @@ def createSubscription():
         )
         return jsonify(subscription)
     except Exception as e:
-        return jsonify(error={'message': str(e)}), 200
+        return jsonify(error={'message': str(e)}), 400
 
 
 @app.route('/retry-invoice', methods=['POST'])
@@ -119,7 +119,7 @@ def retrySubscription():
     data = json.loads(request.data)
     try:
 
-        stripe.PaymentMethod.attach(
+        payment_method = stripe.PaymentMethod.attach(
             data['paymentMethodId'],
             customer=data['customerId'],
         )
@@ -127,7 +127,7 @@ def retrySubscription():
         stripe.Customer.modify(
             data['customerId'],
             invoice_settings={
-                'default_payment_method': data['paymentMethodId'],
+                'default_payment_method': payment_method.id,
             },
         )
 
@@ -146,7 +146,7 @@ def retrieveUpcomingInvoice():
     try:
         new_price = os.getenv(data['newPriceId'].upper())
         quantity = data['quantity']
-        subscriptionId = data['subscriptionId']
+        subscriptionId = data.get('subscriptionId', None)
 
         params = dict(
             customer=data['customerId']
@@ -154,7 +154,7 @@ def retrieveUpcomingInvoice():
 
         if subscriptionId != None:
             # Retrieve the subscription
-            subscription = stripe.Subscription.retrieve(data['subscriptionId'])
+            subscription = stripe.Subscription.retrieve(subscriptionId)
             params["subscription"] = subscriptionId
             current_price = subscription['items']['data'][0].price.id
 
@@ -189,7 +189,7 @@ def retrieveUpcomingInvoice():
         invoice = stripe.Invoice.upcoming(**params)
         response = {}
 
-        if data['subscriptionId'] != None:
+        if subscriptionId != None:
             current_period_end = subscription.current_period_end
             immediate_total = 0
             next_invoice_sum = 0
@@ -233,7 +233,7 @@ def updateSubscription():
     try:
         new_price = os.getenv(data['newPriceId'].upper())
         quantity = data['quantity']
-        subscriptionId = data['subscriptionId']
+        subscriptionId = data.get('subscriptionId', None)
         subscription = stripe.Subscription.retrieve(subscriptionId)
         current_price = subscription['items']['data'][0].price.id
 
@@ -264,13 +264,13 @@ def updateSubscription():
         invoice = stripe.Invoice.create(
             customer=subscription.customer,
             subscription=subscriptionId,
-            description="Change to " + quantity +
+            description="Change to " + str(quantity) +
             " seat(s) on the " + updatedSubscription.plan.product.name + " plan"
         )
 
         invoice = stripe.Invoice.pay(invoice.id)
 
-        return jsonify(updatedSubscription)
+        return jsonify({'subscription': updatedSubscription})
     except Exception as e:
         return jsonify(error=str(e)), 403
 
