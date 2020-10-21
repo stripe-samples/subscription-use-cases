@@ -163,7 +163,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		Customer: stripe.String(req.CustomerID),
 		Items: []*stripe.SubscriptionItemsParams{
 			{
-				Plan: stripe.String(os.Getenv(req.PriceID)),
+				Plan: stripe.String(req.PriceID),
 			},
 		},
 	}
