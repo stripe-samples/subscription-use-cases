@@ -215,24 +215,24 @@ def webhook_received():
         # limits.
         print(data)
 
-    if event_type == 'invoice.payment_failed':
+    elif event_type == 'invoice.payment_failed':
         # If the payment fails or the customer does not have a valid payment method,
         # an invoice.payment_failed event is sent, the subscription becomes past_due.
         # Use this webhook to notify your user that their payment has
         # failed and to retrieve new card details.
         print(data)
 
-    if event_type == 'invoice.finalized':
+    elif event_type == 'invoice.finalized':
         # If you want to manually send out invoices to your customers
         # or store them locally to reference to avoid hitting Stripe rate limits.
         print(data)
 
-    if event_type == 'customer.subscription.deleted':
+    elif event_type == 'customer.subscription.deleted':
         # handle subscription cancelled automatically based
         # upon your subscription settings. Or if the user cancels it.
         print(data)
 
-    if event_type == 'customer.subscription.trial_will_end':
+    elif event_type == 'customer.subscription.trial_will_end':
         # Send notification to your user that the trial will end
         print(data)
 
