@@ -95,7 +95,7 @@ You can use the Stripe CLI to forward webhook events to your server running loca
 If you haven't already, [install the CLI](https://stripe.com/docs/stripe-cli) and [link your Stripe account](https://stripe.com/docs/stripe-cli#link-account).
 
 ```
-stripe listen --forward-to localhost:4242/webhook
+stripe listen --forward-to localhost:4242/stripe-webhook
 ```
 
 The CLI will print a webhook secret key to the console. Set `STRIPE_WEBHOOK_SECRET` to this value in your .env file.
