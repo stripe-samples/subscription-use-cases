@@ -227,7 +227,7 @@ public class Server {
             Arrays.asList(
               "latest_invoice",
               "customer.invoice_settings.default_payment_method",
-              "plan.product"
+              "items.data.price.product"
             )
           )
           .build();

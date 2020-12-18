@@ -45,7 +45,8 @@ def retrieve_subscription_information():
         subscription = stripe.Subscription.retrieve(
             subscriptionId,
             expand=['latest_invoice',
-                    'customer.invoice_settings.default_payment_method', 'plan.product']
+                    'customer.invoice_settings.default_payment_method',
+                    'items.data.price.product']
         )
 
         upcoming_invoice = stripe.Invoice.upcoming(subscription=subscriptionId)

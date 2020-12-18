@@ -66,7 +66,7 @@ $app->post('/retrieve-subscription-information', function (
         'expand' => [
             'latest_invoice',
             'customer.invoice_settings.default_payment_method',
-            'plan.product',
+            'items.data.price.product',
         ],
     ]);
 

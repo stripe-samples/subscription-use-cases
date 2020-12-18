@@ -169,7 +169,7 @@ namespace dotnet.Controllers
             var options = new SubscriptionGetOptions();
             options.AddExpand("latest_invoice");
             options.AddExpand("customer.invoice_settings.default_payment_method");
-            options.AddExpand("plan.product");
+            options.AddExpand("items.data.price.product");
             var service = new SubscriptionService();
             Subscription subscription;
             try

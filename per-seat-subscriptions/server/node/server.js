@@ -75,7 +75,7 @@ app.post('/retrieve-subscription-information', async (req, res) => {
     expand: [
       'latest_invoice',
       'customer.invoice_settings.default_payment_method',
-      'plan.product',
+      'items.data.price.product',
     ],
   });
 

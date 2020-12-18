@@ -160,7 +160,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	subscriptionParams.AddExpand("latest_invoice.payment_intent")
-	subscriptionParams.AddExpand("plan.product")
+	subscriptionParams.AddExpand("items.data.price.product")
 	s, err := sub.New(subscriptionParams)
 
 	if err != nil {
