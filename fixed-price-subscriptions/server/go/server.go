@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -50,7 +51,7 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
 		PublishableKey string `json:"publishableKey"`
 	}{
 		PublishableKey: os.Getenv("STRIPE_PUBLISHABLE_KEY"),
-	})
+	}, nil)
 }
 
 func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +63,7 @@ func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
@@ -73,7 +74,7 @@ func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
 
 	c, err := customer.New(params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("customer.New: %v", err)
 		return
 	}
@@ -82,7 +83,7 @@ func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
 		Customer *stripe.Customer `json:"customer"`
 	}{
 		Customer: c,
-	})
+	}, nil)
 }
 
 func handleRetrieveCustomerPaymentMethod(w http.ResponseWriter, r *http.Request) {
@@ -94,19 +95,19 @@ func handleRetrieveCustomerPaymentMethod(w http.ResponseWriter, r *http.Request)
 		PaymentMethodID string `json:"paymentMethodId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
 
 	pm, err := paymentmethod.Get(req.PaymentMethodID, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("paymentmethod.Get: %v", err)
 		return
 	}
 
-	writeJSON(w, pm)
+	writeJSON(w, pm, nil)
 }
 
 func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +123,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
@@ -136,7 +137,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		params,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("paymentmethod.Attach: %v %s", err, pm.ID)
 		return
 	}
@@ -153,7 +154,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("customer.Update: %v %s", err, c.ID)
 		return
 	}
@@ -171,12 +172,12 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	s, err := sub.New(subscriptionParams)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("sub.New: %v", err)
 		return
 	}
 
-	writeJSON(w, s)
+	writeJSON(w, s, nil)
 }
 
 func handleCancelSubscription(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +191,7 @@ func handleCancelSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
@@ -198,12 +199,12 @@ func handleCancelSubscription(w http.ResponseWriter, r *http.Request) {
 	s, err := sub.Cancel(req.SubscriptionID, nil)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("sub.Cancel: %v", err)
 		return
 	}
 
-	writeJSON(w, s)
+	writeJSON(w, s, nil)
 }
 
 func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
@@ -218,14 +219,14 @@ func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
 
 	s, err := sub.Get(req.SubscriptionID, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("sub.Get: %v", err)
 		return
 	}
@@ -243,12 +244,12 @@ func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
 	in, err := invoice.GetNext(params)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("invoice.GetNext: %v", err)
 		return
 	}
 
-	writeJSON(w, in)
+	writeJSON(w, in, nil)
 }
 
 func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
@@ -263,14 +264,14 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
 
 	s, err := sub.Get(req.SubscriptionID, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("sub.Get: %v", err)
 		return
 	}
@@ -286,12 +287,12 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	updatedSubscription, err := sub.Update(req.SubscriptionID, params)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("sub.Update: %v", err)
 		return
 	}
 
-	writeJSON(w, updatedSubscription)
+	writeJSON(w, updatedSubscription, nil)
 }
 
 func handleRetryInvoice(w http.ResponseWriter, r *http.Request) {
@@ -307,7 +308,7 @@ func handleRetryInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
@@ -321,7 +322,7 @@ func handleRetryInvoice(w http.ResponseWriter, r *http.Request) {
 		params,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("paymentmethod.Attach: %v %s", err, pm.ID)
 		return
 	}
@@ -338,7 +339,7 @@ func handleRetryInvoice(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("customer.Update: %v %s", err, c.ID)
 		return
 	}
@@ -352,12 +353,12 @@ func handleRetryInvoice(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, nil, err)
 		log.Printf("invoice.Get: %v", err)
 		return
 	}
 
-	writeJSON(w, in)
+	writeJSON(w, in, nil)
 }
 
 func handleWebhook(w http.ResponseWriter, r *http.Request) {
@@ -367,14 +368,14 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSON(w, nil, err)
 		log.Printf("ioutil.ReadAll: %v", err)
 		return
 	}
 
 	event, err := webhook.ConstructEvent(b, r.Header.Get("Stripe-Signature"), os.Getenv("STRIPE_WEBHOOK_SECRET"))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJSON(w, nil, err)
 		log.Printf("webhook.ConstructEvent: %v", err)
 		return
 	}
@@ -385,6 +386,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 	cust, err := customer.Get(event.GetObjectValue("customer"), nil)
 	if err != nil {
+		writeJSON(w, nil, err)
 		log.Printf("customer.Get: %v", err)
 		return
 	}
@@ -397,9 +399,32 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func writeJSON(w http.ResponseWriter, v interface{}) {
+type errResp struct {
+	Error struct {
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+func writeJSON(w http.ResponseWriter, v interface{}, err error) {
+	var respVal interface{}
+	if err != nil {
+		msg := err.Error()
+		var serr *stripe.Error
+		if errors.As(err, &serr) {
+			msg = serr.Msg
+		}
+    // This is what it should be, but the other servers were inconsistent.
+    // TODO(cjavilla): Fix this so it's 400 not 200.
+		// w.WriteHeader(http.StatusBadRequest)
+		var e errResp
+		e.Error.Message = msg
+		respVal = e
+	} else {
+		respVal = v
+	}
+
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(v); err != nil {
+	if err := json.NewEncoder(&buf).Encode(respVal); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("json.NewEncoder.Encode: %v", err)
 		return

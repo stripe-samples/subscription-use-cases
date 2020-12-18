@@ -12,18 +12,20 @@ RSpec.describe "full integration path" do
     expect(resp).to have_key("publishableKey")
   end
 
-  it "creates a customer with the given email" do
-    email = "jenny.rosen@example.com"
-    resp, status = post_json("/create-customer", {
-      email: email
-    })
-    expect(resp).to have_key("customer")
-    expect(resp["customer"]).to have_key("id")
-    expect(resp["customer"]["id"]).to start_with("cus_")
-    expect(resp["customer"]["email"]).to eq(email)
+  describe "/create-customer" do
+    it "creates a customer with the given email" do
+      email = "jenny.rosen@example.com"
+      resp, status = post_json("/create-customer", {
+        email: email
+      })
+      expect(resp).to have_key("customer")
+      expect(resp["customer"]).to have_key("id")
+      expect(resp["customer"]["id"]).to start_with("cus_")
+      expect(resp["customer"]["email"]).to eq(email)
+    end
   end
 
-  describe "/create-customer" do
+  describe "/create-subscription" do
     it "attaches pm, sets default pm, creates sub successfully" do
       customer_id = Stripe::Customer.create.id
       pms_before = Stripe::PaymentMethod.list(
@@ -90,7 +92,7 @@ RSpec.describe "full integration path" do
       expect(status).to eq(200)
       expect(resp).to have_key("error")
       expect(resp["error"]).to have_key("message")
-      expect(resp["error"]["message"]).to eq("Your card was declined.")
+      expect(resp["error"]["message"]).to start_with("Your card was declined.")
     end
   end
 
@@ -114,8 +116,8 @@ RSpec.describe "full integration path" do
         newPriceId: 'PREMIUM',
       })
       expect(status).to eq(200)
-      expect(resp).to have_key("object")
-      expect(resp["object"]).to eq("invoice")
+      expect(resp).to have_key("status")
+      expect(resp["status"]).to eq("draft")
       new_price = resp.dig("lines", "data", 0, "price")
       expect(new_price).not_to eq(old_price)
     end

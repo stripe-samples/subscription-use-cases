@@ -60,7 +60,7 @@ def createSubscription():
     data = json.loads(request.data)
     try:
 
-        stripe.PaymentMethod.attach(
+        payment_method = stripe.PaymentMethod.attach(
             data['paymentMethodId'],
             customer=data['customerId'],
         )
@@ -68,23 +68,21 @@ def createSubscription():
         stripe.Customer.modify(
             data['customerId'],
             invoice_settings={
-                'default_payment_method': data['paymentMethodId'],
+                'default_payment_method': payment_method.id,
             },
         )
 
         # Create the subscription
         subscription = stripe.Subscription.create(
             customer=data['customerId'],
-            items=[
-                {
-                    'price': os.getenv(data['priceId'])
-                }
-            ],
+            items=[{
+                'price': os.getenv(data['priceId'])
+            }],
             expand=['latest_invoice.payment_intent'],
         )
         return jsonify(subscription)
     except Exception as e:
-        return jsonify(error={'message': str(e)}), 200
+        return jsonify(error={'message': e.user_message}), 200
 
 
 @app.route('/retry-invoice', methods=['POST'])
@@ -92,7 +90,7 @@ def retrySubscription():
     data = json.loads(request.data)
     try:
 
-        stripe.PaymentMethod.attach(
+        payment_method = stripe.PaymentMethod.attach(
             data['paymentMethodId'],
             customer=data['customerId'],
         )
@@ -100,7 +98,7 @@ def retrySubscription():
         stripe.Customer.modify(
             data['customerId'],
             invoice_settings={
-                'default_payment_method': data['paymentMethodId'],
+                'default_payment_method': payment_method.id,
             },
         )
 
@@ -145,8 +143,7 @@ def cancelSubscription():
     data = json.loads(request.data)
     try:
          # Cancel the subscription by deleting it
-        deletedSubscription = stripe.Subscription.delete(
-            data['subscriptionId'])
+        deletedSubscription = stripe.Subscription.delete(data['subscriptionId'])
         return jsonify(deletedSubscription)
     except Exception as e:
         return jsonify(error=str(e)), 403

@@ -82,19 +82,22 @@ app.post('/create-customer', async (req, res) => {
 
 app.post('/create-subscription', async (req, res) => {
   // Set the default payment method on the customer
+  let paymentMethod;
   try {
-    await stripe.paymentMethods.attach(req.body.paymentMethodId, {
-      customer: req.body.customerId,
-    });
+    paymentMethod = await stripe.paymentMethods.attach(
+      req.body.paymentMethodId, {
+        customer: req.body.customerId,
+      }
+    );
   } catch (error) {
-    return res.status('402').send({ error: { message: error.message } });
+    return res.status(200).send({ error: { message: error.message } });
   }
 
   let updateCustomerDefaultPaymentMethod = await stripe.customers.update(
     req.body.customerId,
     {
       invoice_settings: {
-        default_payment_method: req.body.paymentMethodId,
+        default_payment_method: paymentMethod.id,
       },
     }
   );
@@ -256,4 +259,4 @@ app.post(
   }
 );
 
-app.listen(4242, () => console.log(`Node server listening on port ${4242}!`));
+app.listen(4242, () => console.log(`Node server listening on port http://localhost:${4242}!`));
