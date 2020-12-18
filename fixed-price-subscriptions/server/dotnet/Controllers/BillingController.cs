@@ -49,12 +49,20 @@ namespace dotnet.Controllers
         public ActionResult<Subscription> CreateSubscription([FromBody] CreateSubscriptionRequest req)
         {
             // Attach payment method
-            var options = new PaymentMethodAttachOptions
+            PaymentMethod paymentMethod;
+            try
             {
-                Customer = req.Customer,
-            };
-            var service = new PaymentMethodService();
-            var paymentMethod = service.Attach(req.PaymentMethod, options);
+              var options = new PaymentMethodAttachOptions
+              {
+                  Customer = req.Customer,
+              };
+              var service = new PaymentMethodService();
+              paymentMethod = service.Attach(req.PaymentMethod, options);
+            }
+            catch (StripeException e)
+            {
+              return Ok(new { error = new { message = e.Message }});
+            }
 
             // Update customer's default invoice payment method
             var customerOptions = new CustomerUpdateOptions

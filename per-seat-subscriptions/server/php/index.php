@@ -15,15 +15,17 @@ $app = new \Slim\App();
 $container = $app->getContainer();
 $container['logger'] = function ($c) {
     $settings = $c->get('settings')['logger'];
-    $logger = new Monolog\Logger($settings['name']);
-    $logger->pushProcessor(new Monolog\Processor\UidProcessor());
-    $logger->pushHandler(
-        new Monolog\Handler\StreamHandler(
-            __DIR__ . '/logs/app.log',
-            \Monolog\Logger::DEBUG
-        )
-    );
-    return $logger;
+    if(isset($settings['name'])) {
+      $logger = new Monolog\Logger($settings['name']);
+      $logger->pushProcessor(new Monolog\Processor\UidProcessor());
+      $logger->pushHandler(
+          new Monolog\Handler\StreamHandler(
+              __DIR__ . '/logs/app.log',
+              \Monolog\Logger::DEBUG
+          )
+      );
+      return $logger;
+    }
 };
 
 /* Initialize the Stripe client */
@@ -66,7 +68,7 @@ $app->post('/retrieve-subscription-information', function (
         'expand' => [
             'latest_invoice',
             'customer.invoice_settings.default_payment_method',
-            'plan.product',
+            'items.data.price.product',
         ],
     ]);
 
@@ -74,13 +76,12 @@ $app->post('/retrieve-subscription-information', function (
         'subscription' => $subscriptionId,
     ]);
 
+    $item = $subscription->items->data[0];
     return $response->withJson([
-        'card' =>
-            $subscription->customer->invoice_settings->default_payment_method
-                ->card,
-        'product_description' => $subscription->plan->product->name,
-        'current_price' => $subscription->plan->id,
-        'current_quantity' => $subscription->items->data[0]->quantity,
+        'card' => $subscription->customer->invoice_settings->default_payment_method->card,
+        'product_description' => $item->price->product->name,
+        'current_price' => $item->price->id,
+        'current_quantity' => $item->quantity,
         'latest_invoice' => $subscription->latest_invoice,
         'upcoming_invoice' => $upcomingInvoice,
     ]);
@@ -194,9 +195,13 @@ $app->post('/retrieve-upcoming-invoice', function (
 
     $new_price = getenv(strtoupper($body->newPriceId));
     $params = [];
-    $params['customer'] = $body->customerId;
+    $subscription = null;
+    $subscriptionId = null;
 
-    $subscriptionId = $body->subscriptionId;
+    $params['customer'] = $body->customerId;
+    if(isset($body->subscriptionId)) {
+      $subscriptionId = $body->subscriptionId;
+    }
 
     if ($subscriptionId != null) {
         $subscription = $stripe->subscriptions->retrieve($subscriptionId);
@@ -301,7 +306,7 @@ $app->post('/update-subscription', function (
     $quantity = $body->quantity;
 
     if ($current_price == $new_price) {
-        $this->logger->addInfo('updating quantity of existing item');
+        $this->logger && $this->logger->addInfo('updating quantity of existing item');
         $updatedSubscription = $stripe->subscriptions->update(
             $body->subscriptionId,
             [

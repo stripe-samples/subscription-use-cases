@@ -97,7 +97,11 @@ RSpec.describe "full integration path" do
       subscriptionId: subscription_id
     })
     expect(upcoming_invoice).not_to be_nil
-    expect(upcoming_invoice.keys).to contain_exactly("immediate_total", "next_invoice_sum", "invoice")
+    expect(upcoming_invoice.keys).to contain_exactly(
+      "immediate_total",
+      "next_invoice_sum",
+      "invoice"
+    )
 
     # Get upcoming invoice with new quantity
     upcoming_invoice, _ = post_json("/retrieve-upcoming-invoice", {

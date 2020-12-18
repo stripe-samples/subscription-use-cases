@@ -160,7 +160,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	subscriptionParams.AddExpand("latest_invoice.payment_intent")
-	subscriptionParams.AddExpand("plan.product")
+	subscriptionParams.AddExpand("items.data.price.product")
 	s, err := sub.New(subscriptionParams)
 
 	if err != nil {
@@ -274,6 +274,7 @@ func handleRetrieveSubscriptionInformation(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+  item := s.Items.Data[0]
 	writeJSON(w, struct {
 		Card            *stripe.PaymentMethodCard `json:"card"`
 		Description     string                    `json:"product_description"`
@@ -283,8 +284,8 @@ func handleRetrieveSubscriptionInformation(w http.ResponseWriter, r *http.Reques
 		UpcomingInvoice *stripe.Invoice           `json:"upcoming_invoice"`
 	}{
 		Card:            s.Customer.InvoiceSettings.DefaultPaymentMethod.Card,
-		Description:     s.Plan.Product.Name,
-		CurrentPriceID:  s.Plan.ID,
+		Description:     item.Price.Product.Name,
+		CurrentPriceID:  item.Price.ID,
 		LatestInvoice:   s.LatestInvoice,
 		UpcomingInvoice: upcomingInvoice,
 	})

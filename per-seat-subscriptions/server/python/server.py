@@ -45,16 +45,18 @@ def retrieve_subscription_information():
         subscription = stripe.Subscription.retrieve(
             subscriptionId,
             expand=['latest_invoice',
-                    'customer.invoice_settings.default_payment_method', 'plan.product']
+                    'customer.invoice_settings.default_payment_method',
+                    'items.data.price.product']
         )
 
         upcoming_invoice = stripe.Invoice.upcoming(subscription=subscriptionId)
 
+        item = subscription['items']['data'][0]
         return jsonify(
             card=subscription.customer.invoice_settings.default_payment_method.card,
-            product_description=subscription.plan.product.name,
-            current_price=subscription.plan.id,
-            current_quantity=subscription['items']['data'][0].quantity,
+            product_description=item.price.product.name,
+            current_price=item.price.id,
+            current_quantity=item.quantity,
             latest_invoice=subscription.latest_invoice,
             upcoming_invoice=upcoming_invoice
         )

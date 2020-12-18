@@ -254,9 +254,11 @@ public class Server {
         );
         Customer customer = Customer.retrieve(postBody.getCustomerId());
 
+        PaymentMethod pm;
+
         try {
           // Set the default payment method on the customer
-          PaymentMethod pm = PaymentMethod.retrieve(
+          pm = PaymentMethod.retrieve(
             postBody.getPaymentMethodId()
           );
           pm.attach(
@@ -268,7 +270,7 @@ public class Server {
         } catch (CardException e) {
           // Since it's a decline, CardException will be caught
           Map<String, String> responseErrorMessage = new HashMap<>();
-          responseErrorMessage.put("message", e.getLocalizedMessage());
+          responseErrorMessage.put("message", e.getMessage());
           Map<String, Object> responseError = new HashMap<>();
           responseError.put("error", responseErrorMessage);
 
@@ -280,7 +282,7 @@ public class Server {
           .setInvoiceSettings(
             CustomerUpdateParams
               .InvoiceSettings.builder()
-              .setDefaultPaymentMethod(postBody.getPaymentMethodId())
+              .setDefaultPaymentMethod(pm.getId())
               .build()
           )
           .build();

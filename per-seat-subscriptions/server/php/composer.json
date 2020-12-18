@@ -1,5 +1,5 @@
 {
-  "name": "subscriptions-with-fixed-prices",
+  "name": "subscription-use-cases/per-seat",
   "version": "1.0.0",
   "description": "A Stripe sample implementing subscriptions with per seat pricing using card payments",
   "require": {

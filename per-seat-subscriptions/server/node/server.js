@@ -75,7 +75,7 @@ app.post('/retrieve-subscription-information', async (req, res) => {
     expand: [
       'latest_invoice',
       'customer.invoice_settings.default_payment_method',
-      'plan.product',
+      'items.data.price.product',
     ],
   });
 
@@ -83,11 +83,13 @@ app.post('/retrieve-subscription-information', async (req, res) => {
     subscription: subscriptionId,
   });
 
+  const item = subscription.items.data[0];
+
   res.send({
     card: subscription.customer.invoice_settings.default_payment_method.card,
-    product_description: subscription.plan.product.name,
-    current_price: subscription.plan.id,
-    current_quantity: subscription.items.data[0].quantity,
+    product_description: item.price.product.name,
+    current_price: item.price.id,
+    current_quantity: item.quantity,
     latest_invoice: subscription.latest_invoice,
     upcoming_invoice: upcoming_invoice,
   });
@@ -359,4 +361,4 @@ app.post(
   }
 );
 
-app.listen(4242, () => console.log(`Node server listening on port ${4242}!`));
+app.listen(4242, () => console.log(`Node server listening on port http://localhost:${4242}!`));
