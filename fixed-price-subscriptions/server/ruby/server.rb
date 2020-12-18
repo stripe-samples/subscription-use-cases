@@ -3,9 +3,11 @@
 require 'stripe'
 require 'sinatra'
 require 'dotenv'
+require './config_helper.rb'
 
 # Replace if using a different env file or config
 Dotenv.load
+ConfigHelper.check_env!
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
 set :static, true
@@ -25,22 +27,21 @@ end
 
 post '/create-customer' do
   content_type 'application/json'
-  data = JSON.parse request.body.read
+  data = JSON.parse(request.body.read)
 
   # Create a new customer object
   customer = Stripe::Customer.create(email: data['email'])
 
-  { 'customer': customer }.to_json
+  { customer: customer }.to_json
 end
 
 post '/create-subscription' do
   content_type 'application/json'
   data = JSON.parse request.body.read
-
   begin
-    Stripe::PaymentMethod.attach(
+    payment_method = Stripe::PaymentMethod.attach(
       data['paymentMethodId'],
-      { customer: data['customerId'] }
+      customer: data['customerId']
     )
   rescue Stripe::CardError => e
     halt 200,
@@ -51,16 +52,17 @@ post '/create-subscription' do
   # Set the default payment method on the customer
   Stripe::Customer.update(
     data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
+    invoice_settings: {
+      default_payment_method: payment_method.id
+    }
   )
 
   # Create the subscription
-  subscription =
-    Stripe::Subscription.create(
-      customer: data['customerId'],
-      items: [{ price: ENV[data['priceId']] }],
-      expand: %w[latest_invoice.payment_intent]
-    )
+  subscription = Stripe::Subscription.create(
+    customer: data['customerId'],
+    items: [{ price: ENV[data['priceId']] }],
+    expand: %w[latest_invoice.payment_intent]
+  )
 
   subscription.to_json
 end
