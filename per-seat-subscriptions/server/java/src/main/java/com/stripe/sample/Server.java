@@ -24,6 +24,7 @@ import com.stripe.model.InvoiceLineItem;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.StripeObject;
 import com.stripe.model.Subscription;
+import com.stripe.model.SubscriptionItem;
 import com.stripe.net.Webhook;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
@@ -254,14 +255,20 @@ public class Server {
             .getDefaultPaymentMethodObject()
             .getCard()
         );
+
+        SubscriptionItem item = subscription.getItems().getData().get(0);
+
         responseData.put(
           "product_description",
-          subscription.getPlan().getProductObject().getName()
+          item.getPrice().getProductObject().getName()
         );
-        responseData.put("current_price", subscription.getPlan().getId());
+        responseData.put(
+          "current_price",
+          item.getPrice().getId()
+        );
         responseData.put(
           "current_quantity",
-          subscription.getItems().getData().get(0).getQuantity()
+          item.getQuantity()
         );
         responseData.put(
           "latest_invoice",

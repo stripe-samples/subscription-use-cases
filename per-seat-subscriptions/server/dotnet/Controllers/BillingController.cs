@@ -196,12 +196,13 @@ namespace dotnet.Controllers
                 return this.FailWithMessage($"Failed to retrieve upcoming invoice: {e}");
             }
 
+            var item = subscription.Items.Data[0];
             return new RetrieveSubscriptionInformationResponse
             {
                 Card = subscription.Customer.InvoiceSettings.DefaultPaymentMethod.Card,
-                ProductDescription = subscription.Plan.Product.Name,
-                CurrentPrice = subscription.Plan.Id,
-                CurrentQuantity = subscription.Items.Data[0].Quantity,
+                ProductDescription = item.Price.Product.Name,
+                CurrentPrice = item.Price.Id,
+                CurrentQuantity = item.Quantity,
                 LatestInvoice = subscription.LatestInvoice,
                 UpcomingInvoice = upcomingInvoice,
             };
