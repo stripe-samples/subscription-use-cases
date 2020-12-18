@@ -74,7 +74,7 @@ post '/retry-invoice' do
   begin
     Stripe::PaymentMethod.attach(
       data['paymentMethodId'],
-      { customer: data['customerId'] }
+      customer: data['customerId']
     )
   rescue Stripe::CardError => e
     halt 200,
@@ -85,13 +85,15 @@ post '/retry-invoice' do
   # Set the default payment method on the customer
   Stripe::Customer.update(
     data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
+    invoice_settings: {
+      default_payment_method: data['paymentMethodId']
+    }
   )
 
-  invoice =
-    Stripe::Invoice.retrieve(
-      { id: data['invoiceId'], expand: %w[payment_intent] }
-    )
+  invoice = Stripe::Invoice.retrieve({
+    id: data['invoiceId'],
+    expand: %w[payment_intent]
+  })
 
   invoice.to_json
 end
@@ -102,15 +104,14 @@ post '/retrieve-upcoming-invoice' do
 
   subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
 
-  invoice =
-    Stripe::Invoice.upcoming(
-      customer: data['customerId'],
-      subscription: data['subscriptionId'],
-      subscription_items: [
-        { id: subscription.items.data[0].id, deleted: true },
-        { price: ENV[data['newPriceId']], deleted: false }
-      ]
-    )
+  invoice = Stripe::Invoice.upcoming(
+    customer: data['customerId'],
+    subscription: data['subscriptionId'],
+    subscription_items: [
+      { id: subscription.items.data[0].id, deleted: true },
+      { price: ENV[data['newPriceId']], deleted: false }
+    ]
+  )
 
   invoice.to_json
 end
@@ -130,14 +131,13 @@ post '/update-subscription' do
 
   subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
 
-  updated_subscription =
-    Stripe::Subscription.update(
-      data['subscriptionId'],
-      cancel_at_period_end: false,
-      items: [
-        { id: subscription.items.data[0].id, price: ENV[data['newPriceId']] }
-      ]
-    )
+  updated_subscription = Stripe::Subscription.update(
+    data['subscriptionId'],
+    items: [{
+      id: subscription.items.data[0].id,
+      price: ENV[data['newPriceId']]
+    }]
+  )
 
   updated_subscription.to_json
 end
