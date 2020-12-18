@@ -152,7 +152,6 @@ $app->post('/retrieve-upcoming-invoice', function (
 
     $invoice = $stripe->invoices->upcoming([
         "customer" => $body->customerId,
-        "subscription_prorate" => true,
         "subscription" => $body->subscriptionId,
         "subscription_items" => [
             [
