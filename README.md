@@ -40,7 +40,7 @@ Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
 - **A Stripe account**: You can sign up for a Stripe account here: https://dashboard.stripe.com/register
 - **Stripe API Keys**: Available in your Stripe dashboard here: https://dashboard.stripe.com/test/apikeys
-- **2 Prices**: This sample demonstrates two tiers of pricing. You'll need the IDs for two Price objects from your Stripe account. See *How to create Prices* below for more information.
+- **2 Prices**: This sample demonstrates two tiers of pricing. You'll need the IDs for two Price objects from your Stripe account. See [How to create Prices](#how-to-create-prices) below for more information.
 
 
 
