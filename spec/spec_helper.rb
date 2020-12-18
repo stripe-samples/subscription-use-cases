@@ -108,6 +108,7 @@ end
 SERVER_URL = ENV.fetch('SERVER_URL', 'http://localhost:4242')
 Dotenv.load
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
+Stripe.max_network_retries = 2
 
 def get(path, *args, **kwargs)
   RestClient.get("#{SERVER_URL}#{path}", *args, **kwargs)

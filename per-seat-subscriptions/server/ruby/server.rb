@@ -4,9 +4,11 @@ require 'stripe'
 require 'sinatra'
 require 'sinatra/reloader' if development?
 require 'dotenv'
+require './config_helper.rb'
 
 # Replace if using a different env file or config
 Dotenv.load
+ConfigHelper.check_env!
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
 set :static, true
