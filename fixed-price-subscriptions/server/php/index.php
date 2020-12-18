@@ -78,14 +78,18 @@ $app->post('/create-subscription', function (
         $payment_method->attach([
             'customer' => $body->customerId,
         ]);
-    } catch (Exception $e) {
-        return $response->withJson($e->jsonBody);
+    } catch (\Stripe\Exception\CardException $e) {
+      return $response->withJson([
+        'error' => [
+          'message' => $e->getError()->message,
+        ]
+      ]);
     }
 
     // Set the default payment method on the customer
     $stripe->customers->update($body->customerId, [
         'invoice_settings' => [
-            'default_payment_method' => $body->paymentMethodId,
+            'default_payment_method' => $payment_method->id,
         ],
     ]);
 
