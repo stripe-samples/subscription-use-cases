@@ -143,7 +143,6 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
   );
 
   const invoice = await stripe.invoices.retrieveUpcoming({
-    subscription_prorate: true,
     customer: req.body.customerId,
     subscription: req.body.subscriptionId,
     subscription_items: [
