@@ -34,7 +34,7 @@ func main() {
 	http.HandleFunc("/update-subscription", handleUpdateSubscription)
 	http.HandleFunc("/retry-invoice", handleRetryInvoice)
 	http.HandleFunc("/retrieve-upcoming-invoice", handleRetrieveUpcomingInvoice)
-	http.HandleFunc("/stripe-webhook", handleWebhook)
+	http.HandleFunc("/webhook", handleWebhook)
 
 	addr := "0.0.0.0:4242"
 	log.Printf("Listening on %s ...", addr)

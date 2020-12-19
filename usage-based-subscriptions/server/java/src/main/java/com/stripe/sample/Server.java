@@ -471,7 +471,7 @@ public class Server {
     );
 
     post(
-      "/stripe-webhook",
+      "/webhook",
       (request, response) -> {
         String payload = request.body();
         String sigHeader = request.headers("Stripe-Signature");

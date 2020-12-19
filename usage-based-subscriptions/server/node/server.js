@@ -50,7 +50,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 app.use(express.static(process.env.STATIC_DIR));
 // Use JSON parser for all non-webhook routes.
 app.use((req, res, next) => {
-  if (req.originalUrl === '/stripe-webhook') {
+  if (req.originalUrl === '/webhook') {
     next();
   } else {
     bodyParser.json()(req, res, next);
@@ -195,7 +195,7 @@ app.post('/retrieve-customer-payment-method', async (req, res) => {
 });
 // Webhook handler for asynchronous events.
 app.post(
-  '/stripe-webhook',
+  '/webhook',
   bodyParser.raw({ type: 'application/json' }),
   async (req, res) => {
     // Retrieve the event by verifying the signature using the raw body and secret.

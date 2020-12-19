@@ -149,7 +149,7 @@ post '/retrieve-customer-payment-method' do
   payment_method.to_json
 end
 
-post '/stripe-webhook' do
+post '/webhook' do
   # You can use webhooks to receive information about asynchronous payment events.
   # For more about our webhook events check out https://stripe.com/docs/webhooks.
   webhook_secret = ENV['STRIPE_WEBHOOK_SECRET']

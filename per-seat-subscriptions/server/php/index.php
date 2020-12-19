@@ -358,7 +358,7 @@ $app->post('/update-subscription', function (
     return $response->withJson(['subscription' => $updatedSubscription]);
 });
 
-$app->post('/stripe-webhook', function (Request $request, Response $response) {
+$app->post('/webhook', function (Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
     $stripe = $this->stripe;

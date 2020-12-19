@@ -394,7 +394,7 @@ namespace dotnet.Controllers
             return paymentMethod;
         }
 
-        [HttpPost("stripe-webhook")]
+        [HttpPost("webhook")]
         public async Task<IActionResult> Webhook()
         {
             var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();

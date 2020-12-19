@@ -220,7 +220,7 @@ $app->post('/retrieve-customer-payment-method', function (
     return $response->withJson($paymentMethod);
 });
 
-$app->post('/stripe-webhook', function (Request $request, Response $response) {
+$app->post('/webhook', function (Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
     $stripe = $this->stripe;
