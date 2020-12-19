@@ -205,6 +205,8 @@ stripe prices create --unit-amount 900 --currency usd -d "recurring[interval]=mo
 
 ## `.env` config
 
+Example configuration file [`.env.example`](./.env.example)
+
 - **STRIPE_PUBLISHABLE_KEY**: Found in the dashboard here: https://dashboard.stripe.com/test/apikeys
 - **STRIPE_SECRET_KEY**: Found in the dashboard here: https://dashboard.stripe.com/test/apikeys
 - **STRIPE_WEBHOOK_SECRET**: If using the Stripe CLI (recommended) run `stripe listen --print-secret`, otherwise you can find the signing secret for the webhook endpoint in the dashboard by viewing the details of the endpoint here: https://dashboard.stripe.com/test/webhooks.
