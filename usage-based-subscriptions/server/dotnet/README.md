@@ -2,7 +2,8 @@
 
 ## Requirements
 - [.NET Core()]https://dotnet.microsoft.com/download)
-- [Configured .env file](../README.md)
+- [Configured .env file](../../../README.md#env-config)
+
 
 ## How to run
 
@@ -11,4 +12,4 @@
 dotnet run
 ```
 
-2. Go to `https://localhost:4242` or `http://localhost:42424` in your browser to see the demo
+2. Go to `http://localhost:4242` in your browser to see the demo

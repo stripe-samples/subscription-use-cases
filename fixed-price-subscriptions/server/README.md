@@ -10,3 +10,5 @@ Pick the language you are most comfortable with and follow the instructions in t
 - [PHP (Slim)](php/README.md)
 - [Python (Flask)](python/README.md)
 - [Ruby (Sinatra)](ruby/README.md)
+- [Go](go/README.md)
+- [.NET](dotnet/README.md)
