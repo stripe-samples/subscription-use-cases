@@ -62,7 +62,13 @@ stripe samples create subscription-use-cases
 The CLI will walk you through picking your integration type, server and client
 languages, and partially configuring your `.env` file with your Stripe API keys.
 
-4. Open `server/.env` and set the ID values for `BASIC` and `PREMIUM` to the
+4. Move into the server directory:
+
+```sh
+cd subscription-use-cases/server
+```
+
+5. Open `server/.env` and set the ID values for `BASIC` and `PREMIUM` to the
    IDs of two Prices from your Stripe account. The API keys should
    already have been configured by the Stripe CLI. The `STATIC_DIR` value
    should be `../client` when installed using the Stripe CLI.
@@ -86,9 +92,11 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
 STATIC_DIR=../client
 ```
 
-5. Follow the instructions in `server/README.md` for how to build and/or run the server.
+6. Follow the instructions in `server/README.md` for how to build and/or run the server.
 
-6. [Optional] Forward webhook events
+7. View in the browser: [localhost:4242](http://localhost:4242) and test with `4242424242424242`.
+
+8. [Optional] Forward webhook events
 
 You can use the Stripe CLI to forward webhook events to your server running
 locally.
@@ -125,15 +133,17 @@ Copy the `.env.example` file from the root of the project into a file named
 
 ```sh
 cp .env.example fixed-price-subscriptions/server/node/.env
+cd fixed-price-subscriptions/server/node
 ```
 
 For example with ruby:
 
 ```sh
 cp .env.example fixed-price-subscriptions/server/ruby/.env
+cd fixed-price-subscriptions/server/ruby
 ```
 
-3. Edit `.env` and populate all of the variables. For more information see: [`.env` config](#env-config)
+3. Edit the copied `.env` and populate all of the variables. For more information see: [`.env` config](#env-config)
 
 ```yml
 # Stripe keys
@@ -157,7 +167,7 @@ STATIC_DIR=../../client/vanillajs
 Pick the server language you want and follow the instructions in the server folder README on how to run.
 
 ```
-cd server/node # there's a README in this folder with instructions
+cd fixed-price-subscriptions/server/node # there's a README in this folder with instructions
 npm install
 npm start
 ```
@@ -180,7 +190,6 @@ You should see events logged in the console where the CLI is running.
 When you are ready to create a live webhook endpoint, follow our guide in the
 docs on [configuring a webhook endpoint in the
 dashboard](https://stripe.com/docs/webhooks/setup#configure-webhook-settings).
-
 
 ## How to create Prices
 
