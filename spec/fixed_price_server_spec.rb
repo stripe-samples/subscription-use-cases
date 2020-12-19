@@ -167,13 +167,13 @@ RSpec.describe "full integration path" do
     end
   end
 
-  describe "/retrieve-customer-payment-method" do
+  describe "/retrieve-payment-method" do
     it "retrieves the payment method" do
       customer_id = Stripe::Customer.create(
         payment_method: 'pm_card_visa'
       )
       pm = Stripe::PaymentMethod.list(customer: customer_id, type: 'card').data.first
-      resp, status = post_json("/retrieve-customer-payment-method", {
+      resp, status = post_json("/retrieve-payment-method", {
         paymentMethodId: pm.id,
       })
       expect(status).to eq(200)

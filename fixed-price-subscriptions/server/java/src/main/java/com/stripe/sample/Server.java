@@ -455,7 +455,7 @@ public class Server {
     );
 
     post(
-      "/retrieve-customer-payment-method",
+      "/retrieve-payment-method",
       (request, response) -> {
         response.type("application/json");
         // Set the default payment method on the customer

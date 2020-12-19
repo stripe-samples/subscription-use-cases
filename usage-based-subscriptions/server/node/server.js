@@ -186,7 +186,7 @@ app.post('/update-subscription', async (req, res) => {
   res.send(updatedSubscription);
 });
 
-app.post('/retrieve-customer-payment-method', async (req, res) => {
+app.post('/retrieve-payment-method', async (req, res) => {
   const paymentMethod = await stripe.paymentMethods.retrieve(
     req.body.paymentMethodId
   );

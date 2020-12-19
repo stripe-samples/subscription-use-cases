@@ -29,7 +29,7 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR"))))
 	http.HandleFunc("/config", handleConfig)
 	http.HandleFunc("/create-customer", handleCreateCustomer)
-	http.HandleFunc("/retrieve-customer-payment-method", handleRetrieveCustomerPaymentMethod)
+	http.HandleFunc("/retrieve-payment-method", handleRetrieveCustomerPaymentMethod)
 	http.HandleFunc("/create-subscription", handleCreateSubscription)
 	http.HandleFunc("/cancel-subscription", handleCancelSubscription)
 	http.HandleFunc("/update-subscription", handleUpdateSubscription)

@@ -37,7 +37,7 @@ function Account({ location }) {
   useEffect(() => {
     async function fetchData() {
       // You can await here
-      const response = await fetch('/retrieve-customer-payment-method', {
+      const response = await fetch('/retrieve-payment-method', {
         method: 'post',
         headers: {
           'Content-type': 'application/json',

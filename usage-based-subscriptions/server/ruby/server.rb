@@ -140,7 +140,7 @@ post '/update-subscription' do
   updated_subscription.to_json
 end
 
-post '/retrieve-customer-payment-method' do
+post '/retrieve-payment-method' do
   content_type 'application/json'
   data = JSON.parse request.body.read
 

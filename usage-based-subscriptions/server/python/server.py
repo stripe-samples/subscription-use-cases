@@ -170,7 +170,7 @@ def updateSubscription():
         return jsonify(error=str(e)), 403
 
 
-@app.route('/retrieve-customer-payment-method', methods=['POST'])
+@app.route('/retrieve-payment-method', methods=['POST'])
 def retrieveCustomerPaymentMethod():
     data = json.loads(request.data)
     try:

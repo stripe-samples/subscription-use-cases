@@ -386,7 +386,7 @@ namespace dotnet.Controllers
             };
         }
 
-        [HttpPost("retrieve-customer-payment-method")]
+        [HttpPost("retrieve-payment-method")]
         public ActionResult<PaymentMethod> RetrieveCustomerPaymentMethod([FromBody] RetrieveCustomerPaymentMethodRequest req)
         {
             var service = new PaymentMethodService();

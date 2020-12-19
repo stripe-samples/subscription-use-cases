@@ -557,7 +557,7 @@ function updateSubscription(priceId, subscriptionId) {
 }
 
 function retrieveCustomerPaymentMethod(paymentMethodId) {
-  return fetch('/retrieve-customer-payment-method', {
+  return fetch('/retrieve-payment-method', {
     method: 'post',
     headers: {
       'Content-type': 'application/json',

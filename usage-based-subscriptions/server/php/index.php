@@ -205,7 +205,7 @@ $app->post('/update-subscription', function (
     return $response->withJson($updatedSubscription);
 });
 
-$app->post('/retrieve-customer-payment-method', function (
+$app->post('/retrieve-payment-method', function (
     Request $request,
     Response $response,
     array $args
