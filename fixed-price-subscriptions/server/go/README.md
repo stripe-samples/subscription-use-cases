@@ -5,7 +5,7 @@ A [Go](https://golang.org) implementation
 ## Requirements
 
 - Go
-- [Configured .env file](../README.md)
+- [Configured .env file](../../../README.md#env-config)
 
 ## How to run
 
