@@ -1,13 +1,11 @@
 name: CI for stripe-samples/subscription-use-cases
-on: [push]
+on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        with:
-          repository: 'stripe-samples/subscription-use-cases'
 
       - uses: actions/checkout@v2
         with:
@@ -37,9 +35,7 @@ jobs:
           sample=fixed-price-subscriptions
           for lang in $(cat .cli.json | server_langs_for_integration $sample)
           do
-            configure_docker_compose_for_integration "$sample" "$lang" ../../client/vanillajs \
-                                                     target/subscriptions-with-fixed-price-1.0.0-SNAPSHOT-jar-with-dependencies.jar
-
+            configure_docker_compose_for_integration "$sample" "$lang" ../../client/vanillajs
             docker-compose up -d && wait_web_server
             docker-compose exec -T runner bundle exec rspec spec/fixed_price_server_spec.rb
           done
@@ -48,9 +44,7 @@ jobs:
           sample=per-seat-subscriptions
           for lang in $(cat .cli.json | server_langs_for_integration $sample)
           do
-            configure_docker_compose_for_integration "$sample" "$lang" ../../client \
-                                                     target/subscriptions-with-per-seat-pricing-1.0.0-SNAPSHOT-jar-with-dependencies.jar
-
+            configure_docker_compose_for_integration "$sample" "$lang" ../../client
             docker-compose up -d && wait_web_server
             docker-compose exec -T runner bundle exec rspec spec/per_seat_server_spec.rb
           done
@@ -59,9 +53,7 @@ jobs:
           rm -rf ${sample}/server/dotnet/ReportUsage # causes "Program.cs(14,28): error CS0017: Program has more than one entry point defined."
           for lang in $(cat .cli.json | server_langs_for_integration $sample)
           do
-            configure_docker_compose_for_integration "$sample" "$lang" ../../client \
-                                                     target/subscriptions-with-metered-usage-1.0.0-SNAPSHOT-jar-with-dependencies.jar
-
+            configure_docker_compose_for_integration "$sample" "$lang" ../../client
             docker-compose up -d && wait_web_server
             docker-compose exec -T runner bundle exec rspec spec/usage_based_server_spec.rb
           done
