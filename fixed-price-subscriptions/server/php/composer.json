@@ -1,5 +1,5 @@
 {
-  "name": "subscriptionusecases",
+  "name": "subscription-use-cases/fixed-price",
   "version": "1.0.0",
   "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
   "require": {
