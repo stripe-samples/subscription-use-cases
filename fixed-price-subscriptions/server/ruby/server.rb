@@ -2,6 +2,7 @@
 
 require 'stripe'
 require 'sinatra'
+require 'sinatra/cookies'
 require 'dotenv'
 require './config_helper.rb'
 
@@ -16,13 +17,13 @@ set :port, 4242
 
 get '/' do
   content_type 'text/html'
-  send_file File.join(settings.public_folder, 'index.html')
+  send_file File.join(settings.public_folder, 'register.html')
 end
 
 get '/config' do
   content_type 'application/json'
 
-  { 'publishableKey': ENV['STRIPE_PUBLISHABLE_KEY'] }.to_json
+  { publishableKey: ENV['STRIPE_PUBLISHABLE_KEY'] }.to_json
 end
 
 post '/create-customer' do
@@ -32,123 +33,131 @@ post '/create-customer' do
   # Create a new customer object
   customer = Stripe::Customer.create(email: data['email'])
 
+  # Simulate authentication
+  cookies[:customer] = customer.id
+
   { customer: customer }.to_json
 end
 
 post '/create-subscription' do
   content_type 'application/json'
-  data = JSON.parse request.body.read
+  data = JSON.parse(request.body.read)
+
+  # Look up the authenticated customer in your database
+  # this sample uses cookies to simulate a logged in user.
+  customer_id = cookies[:customer]
+
+  # Extract the price ID from environment variables given the name
+  # of the price passed from the front end.
+  #
+  # `price_id` should be an ID of a Price object on your account.
+  # In practice, you can also set a Price's `lookup_key` using
+  # the API when you create a Price, then fetch the list of prices
+  # by ID like so:
+  #
+  #   price_id = Stripe::Price.list(lookup_keys: ['basic']).data.first.id
+  price_id = ENV[data['priceLookupKey'].upcase]
+
   begin
+    # Attach the payment method to the customer related
+    # to the authenticated user.
     payment_method = Stripe::PaymentMethod.attach(
       data['paymentMethodId'],
-      customer: data['customerId']
+      customer: customer_id
     )
   rescue Stripe::CardError => e
-    halt 200,
-         { 'Content-Type' => 'application/json' },
-         { 'error': { message: e.error.message } }.to_json
+    halt 400, { 'Content-Type' => 'application/json' }, { error: { message: e.error.message }}.to_json
   end
 
-  # Set the default payment method on the customer
-  Stripe::Customer.update(
-    data['customerId'],
-    invoice_settings: {
-      default_payment_method: payment_method.id
-    }
-  )
-
-  # Create the subscription
+  # Create the subscription. Note we're using
+  # expand here so that the API will return the Subscription's related
+  # latest invoice, and that latest invoice's payment_intent so that
+  # if SCA is required we can confirm the payment on the front end.
   subscription = Stripe::Subscription.create(
-    customer: data['customerId'],
-    items: [{ price: ENV[data['priceId']] }],
-    expand: %w[latest_invoice.payment_intent]
+    default_payment_method: payment_method.id,
+    customer: customer_id,
+    items: [{
+      price: price_id,
+    }],
+    expand: ['latest_invoice.payment_intent']
   )
 
-  subscription.to_json
+  { subscription: subscription }.to_json
 end
 
-post '/retry-invoice' do
+get '/subscriptions' do
   content_type 'application/json'
-  data = JSON.parse request.body.read
 
-  begin
-    Stripe::PaymentMethod.attach(
-      data['paymentMethodId'],
-      customer: data['customerId']
-    )
-  rescue Stripe::CardError => e
-    halt 200,
-         { 'Content-Type' => 'application/json' },
-         { 'error': { message: e.error.message } }.to_json
-  end
+  # Lookup the Stripe ID for the currently logged in user.  We're simulating
+  # authentication by storing the customer's ID in a cookie.
+  customer_id = cookies[:customer]
 
-  # Set the default payment method on the customer
-  Stripe::Customer.update(
-    data['customerId'],
-    invoice_settings: {
-      default_payment_method: data['paymentMethodId']
-    }
+  # Fetches subscriptions for the current user to display on the /account.html
+  # page.  We expand `data.default_payment_method` to display the last4.
+  subscriptions = Stripe::Subscription.list(
+    customer: customer_id,
+    status: 'all',
+    expand: ['data.default_payment_method'],
   )
 
-  invoice = Stripe::Invoice.retrieve({
-    id: data['invoiceId'],
-    expand: %w[payment_intent]
-  })
-
-  invoice.to_json
-end
-
-post '/retrieve-upcoming-invoice' do
-  content_type 'application/json'
-  data = JSON.parse request.body.read
-
-  subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
-
-  invoice = Stripe::Invoice.upcoming(
-    customer: data['customerId'],
-    subscription: data['subscriptionId'],
-    subscription_items: [
-      { id: subscription.items.data[0].id, deleted: true },
-      { price: ENV[data['newPriceId']], deleted: false }
-    ]
-  )
-
-  invoice.to_json
+  { subscriptions: subscriptions }.to_json
 end
 
 post '/cancel-subscription' do
   content_type 'application/json'
-  data = JSON.parse request.body.read
+  data = JSON.parse(request.body.read)
 
-  deleted_subscription = Stripe::Subscription.delete(data['subscriptionId'])
+  # Be sure to only cancel subscriptions of the logged in user.
+  # This naiively assumes the subscriptionId belongs to the
+  # authenticated user.
+  deleted_subscription = Stripe::Subscription.delete(
+    data['subscriptionId']
+  )
 
-  deleted_subscription.to_json
+  { subscription: deleted_subscription }.to_json
 end
 
 post '/update-subscription' do
   content_type 'application/json'
-  data = JSON.parse request.body.read
+  data = JSON.parse(request.body.read)
 
+  # We're retrieving the Subscription first so that we have the subscription
+  # item ID. In practice, you might want to store the subscription item ID in
+  # your database along side the subscription so that you can avoid this API
+  # call.
   subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
 
   updated_subscription = Stripe::Subscription.update(
     data['subscriptionId'],
     items: [{
       id: subscription.items.data[0].id,
-      price: ENV[data['newPriceId']]
+      price: ENV[data['newPriceId'].upcase]
     }]
   )
 
-  updated_subscription.to_json
+  { subscription: updated_subscription }.to_json
 end
 
-post '/retrieve-customer-payment-method' do
+get '/invoice-preview' do
   content_type 'application/json'
-  data = JSON.parse request.body.read
 
-  payment_method = Stripe::PaymentMethod.retrieve(data['paymentMethodId'])
+  # Simulated authentication with cookie.
+  customer_id = cookies[:customer]
 
-  payment_method.to_json
+  # Fetch the subscription so that we have the subscription item ID
+  # we're updating.
+  subscription = Stripe::Subscription.retrieve(params['subscriptionId'])
+
+  invoice = Stripe::Invoice.upcoming(
+    customer: customer_id,
+    subscription: params['subscriptionId'],
+    subscription_items: [{
+      id: subscription.items.data[0].id,
+      price: ENV[params['newPriceLookupKey'].upcase],
+    }]
+  )
+
+  { invoice: invoice }.to_json
 end
 
 post '/webhook' do

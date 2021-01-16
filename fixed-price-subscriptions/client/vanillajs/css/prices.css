@@ -1,0 +1,7 @@
+.price-list {
+  display: flex;
+}
+
+.price-list > div {
+  flex-grow: 3;
+}

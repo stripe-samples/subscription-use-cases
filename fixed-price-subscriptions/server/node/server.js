@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const { resolve } = require('path');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 // Replace if using a different env file or config
 require('dotenv').config({ path: './.env' });
 
@@ -47,8 +48,13 @@ if (
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
+// Use static to serve static assets.
 app.use(express.static(process.env.STATIC_DIR));
-// Use JSON parser for all non-webhook routes.
+
+// Use cookies to simulate logged in user.
+app.use(cookieParser());
+
+// Use JSON parser for parsing payloads as JSON on all non-webhook routes.
 app.use((req, res, next) => {
   if (req.originalUrl === '/webhook') {
     next();
@@ -58,7 +64,7 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  const path = resolve(process.env.STATIC_DIR + '/index.html');
+  const path = resolve(process.env.STATIC_DIR + '/register.html');
   res.sendFile(path);
 });
 
@@ -74,97 +80,69 @@ app.post('/create-customer', async (req, res) => {
     email: req.body.email,
   });
 
-  // save the customer.id as stripeCustomerId
-  // in your database.
+  // Save the customer.id in your database alongside your user.
+  // We're simulating authentication with a cookie.
+  res.cookie('customer', customer.id, { maxAge: 900000, httpOnly: true });
 
   res.send({ customer });
 });
 
 app.post('/create-subscription', async (req, res) => {
-  // Set the default payment method on the customer
+  const customerId = req.cookies['customer'];
+
   let paymentMethod;
   try {
     paymentMethod = await stripe.paymentMethods.attach(
       req.body.paymentMethodId, {
-        customer: req.body.customerId,
+        customer: customerId,
       }
     );
   } catch (error) {
-    return res.status(200).send({ error: { message: error.message } });
+    return res.status(400).send({ error: { message: error.message } });
   }
 
-  let updateCustomerDefaultPaymentMethod = await stripe.customers.update(
-    req.body.customerId,
-    {
-      invoice_settings: {
-        default_payment_method: paymentMethod.id,
-      },
-    }
-  );
-
   // Create the subscription
+  const priceId = process.env[req.body.priceLookupKey.toUpperCase()];
+
   const subscription = await stripe.subscriptions.create({
-    customer: req.body.customerId,
-    items: [{ price: process.env[req.body.priceId] }],
+    default_payment_method: paymentMethod.id,
+    customer: customerId,
+    items: [{
+      price: priceId,
+    }],
     expand: ['latest_invoice.payment_intent'],
   });
 
-  res.send(subscription);
+  res.send({ subscription });
 });
 
-app.post('/retry-invoice', async (req, res) => {
-  // Set the default payment method on the customer
+app.get('/invoice-preview', async (req, res) => {
+  const customerId = req.cookies['customer'];
+  const priceId = process.env[req.query.newPriceLookupKey.toUpperCase()];
 
-  try {
-    await stripe.paymentMethods.attach(req.body.paymentMethodId, {
-      customer: req.body.customerId,
-    });
-    await stripe.customers.update(req.body.customerId, {
-      invoice_settings: {
-        default_payment_method: req.body.paymentMethodId,
-      },
-    });
-  } catch (error) {
-    // in case card_decline error
-    return res
-      .status('402')
-      .send({ result: { error: { message: error.message } } });
-  }
-
-  const invoice = await stripe.invoices.retrieve(req.body.invoiceId, {
-    expand: ['payment_intent'],
-  });
-  res.send(invoice);
-});
-
-app.post('/retrieve-upcoming-invoice', async (req, res) => {
   const subscription = await stripe.subscriptions.retrieve(
-    req.body.subscriptionId
+    req.query.subscriptionId
   );
 
   const invoice = await stripe.invoices.retrieveUpcoming({
-    customer: req.body.customerId,
-    subscription: req.body.subscriptionId,
-    subscription_items: [
-      {
-        id: subscription.items.data[0].id,
-        deleted: true,
-      },
-      {
-        price: process.env[req.body.newPriceId],
-        deleted: false,
-      },
-    ],
+    customer: customerId,
+    subscription: req.query.subscriptionId,
+    subscription_items: [ {
+      id: subscription.items.data[0].id,
+      price: priceId,
+    }],
   });
-  res.send(invoice);
+
+  res.send({ invoice });
 });
 
 app.post('/cancel-subscription', async (req, res) => {
-  // Delete the subscription
+  // Cancel the subscription
   const deletedSubscription = await stripe.subscriptions.del(
     req.body.subscriptionId
   );
-  res.send(deletedSubscription);
+
+  res.send({ subscription: deletedSubscription });
 });
 
 app.post('/update-subscription', async (req, res) => {
@@ -175,26 +153,16 @@ app.post('/update-subscription', async (req, res) => {
     req.body.subscriptionId,
     {
       cancel_at_period_end: false,
-      items: [
-        {
-          id: subscription.items.data[0].id,
-          price: process.env[req.body.newPriceId],
-        },
-      ],
+      items: [{
+        id: subscription.items.data[0].id,
+        price: process.env[req.body.newPriceLookupKey],
+      }],
     }
   );
 
-  res.send(updatedSubscription);
+  res.send({ subscription: updatedSubscription });
 });
 
-app.post('/retrieve-customer-payment-method', async (req, res) => {
-  const paymentMethod = await stripe.paymentMethods.retrieve(
-    req.body.paymentMethodId
-  );
-
-  res.send(paymentMethod);
-});
-// Webhook handler for asynchronous events.
 app.post(
   '/webhook',
   bodyParser.raw({ type: 'application/json' }),

@@ -34,7 +34,7 @@ $container['stripe'] = function ($c) {
 
 $app->get('/', function (Request $request, Response $response, array $args) {
     // Display checkout page
-    return $response->write(file_get_contents(getenv('STATIC_DIR') . '/index.html'));
+    return $response->write(file_get_contents(getenv('STATIC_DIR') . '/register.html'));
 });
 
 $app->get('/config', function (
@@ -60,6 +60,11 @@ $app->post('/create-customer', function (
         'email' => $body->email,
     ]);
 
+    // Set a cookie for the customer to simulate authentication.
+    // In practice, store the Stripe Customer ID ($customer->id)
+    // in your database along side your user data.
+    setcookie('customer', $customer->id, time()+60*60*24);
+
     return $response->withJson(['customer' => $customer]);
 });
 
@@ -70,102 +75,59 @@ $app->post('/create-subscription', function (
 ) {
     $body = json_decode($request->getBody());
     $stripe = $this->stripe;
+    $customer_id = $_COOKIE['customer'];
 
     try {
         $payment_method = $stripe->paymentMethods->retrieve(
             $body->paymentMethodId
         );
         $payment_method->attach([
-            'customer' => $body->customerId,
+            'customer' => $customer_id,
         ]);
     } catch (\Stripe\Exception\CardException $e) {
       return $response->withJson([
         'error' => [
           'message' => $e->getError()->message,
         ]
-      ]);
+      ], 400);
     }
-
-    // Set the default payment method on the customer
-    $stripe->customers->update($body->customerId, [
-        'invoice_settings' => [
-            'default_payment_method' => $payment_method->id,
-        ],
-    ]);
 
     // Create the subscription
     $subscription = $stripe->subscriptions->create([
-        'customer' => $body->customerId,
+        'customer' => $customer_id,
+        'default_payment_method' => $payment_method->id,
         'items' => [
             [
-                'price' => getenv($body->priceId),
+                'price' => getenv($body->priceLookupKey),
             ],
         ],
         'expand' => ['latest_invoice.payment_intent'],
     ]);
 
-    return $response->withJson($subscription);
+    return $response->withJson(['subscription' => $subscription]);
 });
 
-$app->post('/retry-invoice', function (
+$app->get('/invoice-preview', function (
     Request $request,
     Response $response,
     array $args
 ) {
-    $body = json_decode($request->getBody());
     $stripe = $this->stripe;
-
-    try {
-        $payment_method = $stripe->paymentMethods->retrieve(
-            $body->paymentMethodId
-        );
-        $payment_method->attach([
-            'customer' => $body->customerId,
-        ]);
-    } catch (Exception $e) {
-        return $response->withJson($e->jsonBody);
-    }
-
-    // Set the default payment method on the customer
-    $stripe->customers->update($body->customerId, [
-        'invoice_settings' => [
-            'default_payment_method' => $body->paymentMethodId,
-        ],
-    ]);
-
-    $invoice = $stripe->invoices->retrieve($body->invoiceId, [
-        'expand' => ['payment_intent'],
-    ]);
-
-    return $response->withJson($invoice);
-});
-
-$app->post('/retrieve-upcoming-invoice', function (
-    Request $request,
-    Response $response,
-    array $args
-) {
-    $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
-
-    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
+    $customer_id = $_COOKIE['customer'];
+    $subscription_id = $request->getQueryParam('subscriptionId');
+    $new_price_lookup_key = strtoupper($request->getQueryParam('newPriceLookupKey'));
+    $subscription = $stripe->subscriptions->retrieve($subscription_id);
 
     $invoice = $stripe->invoices->upcoming([
-        "customer" => $body->customerId,
-        "subscription" => $body->subscriptionId,
-        "subscription_items" => [
-            [
-                'id' => $subscription->items->data[0]->id,
-                'deleted' => true,
-            ],
-            [
-                'price' => getenv($body->newPriceId),
-                'deleted' => false,
-            ],
-        ],
+        'customer' => $customer_id,
+        'subscription' => $subscription_id,
+        'subscription_items' => [[
+            'id' => $subscription->items->data[0]->id,
+            'price' => getenv($new_price_lookup_key),
+        ]],
     ]);
 
-    return $response->withJson($invoice);
+    return $response->withJson(['invoice' => $invoice]);
 });
 
 $app->post('/cancel-subscription', function (
@@ -179,7 +141,7 @@ $app->post('/cancel-subscription', function (
     $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
     $subscription->delete();
 
-    return $response->withJson($subscription);
+    return $response->withJson(['subscription' => $subscription]);
 });
 
 $app->post('/update-subscription', function (
@@ -193,31 +155,15 @@ $app->post('/update-subscription', function (
     $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
 
     $updatedSubscription = $stripe->subscriptions->update(
-        $body->subscriptionId,
-        [
-            'items' => [
-                [
-                    'id' => $subscription->items->data[0]->id,
-                    'price' => getenv($body->newPriceId),
-                ],
-            ],
+        $body->subscriptionId, [
+            'items' => [[
+                'id' => $subscription->items->data[0]->id,
+                'price' => getenv($body->newPriceId),
+            ]],
         ]
     );
 
-    return $response->withJson($updatedSubscription);
-});
-
-$app->post('/retrieve-customer-payment-method', function (
-    Request $request,
-    Response $response,
-    array $args
-) {
-    $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
-
-    $paymentMethod = $stripe->paymentMethods->retrieve($body->paymentMethodId);
-
-    return $response->withJson($paymentMethod);
+    return $response->withJson(['subscription' => $updatedSubscription]);
 });
 
 $app->post('/webhook', function (Request $request, Response $response) {
