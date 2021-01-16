@@ -183,7 +183,7 @@ RSpec.describe "full integration path" do
 
       resp, status = post_json("/update-subscription", {
         subscriptionId: subscription_id,
-        newPriceId: 'PREMIUM',
+        newPriceLookupKey: 'PREMIUM',
       })
       expect(status).to eq(200)
       expect(subscription).to have_key("object")

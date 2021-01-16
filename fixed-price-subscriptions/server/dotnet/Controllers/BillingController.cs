@@ -39,6 +39,12 @@ namespace dotnet.Controllers
             };
             var service = new CustomerService();
             var customer = service.Create(options);
+
+            // Set the cookie to simulate an authenticated user.
+            // In practice, this customer.Id is stored along side your
+            // user and retrieved along with the logged in user.
+            HttpContext.Response.Cookies.Append("customer", customer.Id);
+
             return new CreateCustomerResponse
             {
                 Customer = customer,
@@ -46,44 +52,36 @@ namespace dotnet.Controllers
         }
 
         [HttpPost("create-subscription")]
-        public ActionResult<Subscription> CreateSubscription([FromBody] CreateSubscriptionRequest req)
+        public ActionResult<SubscriptionResponse> CreateSubscription([FromBody] CreateSubscriptionRequest req)
         {
+            var customerId = HttpContext.Request.Cookies["customer"];
+
             // Attach payment method
             PaymentMethod paymentMethod;
             try
             {
               var options = new PaymentMethodAttachOptions
               {
-                  Customer = req.Customer,
+                  Customer = customerId,
               };
               var service = new PaymentMethodService();
               paymentMethod = service.Attach(req.PaymentMethod, options);
             }
             catch (StripeException e)
             {
-              return Ok(new { error = new { message = e.Message }});
+              return BadRequest(new { error = new { message = e.Message }});
             }
-
-            // Update customer's default invoice payment method
-            var customerOptions = new CustomerUpdateOptions
-            {
-                InvoiceSettings = new CustomerInvoiceSettingsOptions
-                {
-                    DefaultPaymentMethod = paymentMethod.Id,
-                },
-            };
-            var customerService = new CustomerService();
-            customerService.Update(req.Customer, customerOptions);
 
             // Create subscription
             var subscriptionOptions = new SubscriptionCreateOptions
             {
-                Customer = req.Customer,
+                DefaultPaymentMethod = paymentMethod.Id,
+                Customer = customerId,
                 Items = new List<SubscriptionItemOptions>
                 {
                     new SubscriptionItemOptions
                     {
-                        Price = Environment.GetEnvironmentVariable(req.Price),
+                        Price = Environment.GetEnvironmentVariable(req.Price.ToUpper()),
                     },
                 },
             };
@@ -92,7 +90,11 @@ namespace dotnet.Controllers
             try
             {
                 Subscription subscription = subscriptionService.Create(subscriptionOptions);
-                return subscription;
+
+                return new SubscriptionResponse
+                {
+                  Subscription = subscription
+                };
             }
             catch (StripeException e)
             {
@@ -101,75 +103,46 @@ namespace dotnet.Controllers
             }
         }
 
-        [HttpPost("retry-invoice")]
-        public ActionResult<Invoice> RetryInvoice([FromBody] RetryInvoiceRequest req)
+        [HttpGet("invoice-preview")]
+        public ActionResult<InvoiceResponse> InvoicePreview(string subscriptionId, string newPriceLookupKey)
         {
-            // Attach payment method
-            var options = new PaymentMethodAttachOptions
-            {
-                Customer = req.Customer,
-            };
-            var service = new PaymentMethodService();
-            var paymentMethod = service.Attach(req.PaymentMethod, options);
-
-            // Update customer's default invoice payment method
-            var customerOptions = new CustomerUpdateOptions
-            {
-                InvoiceSettings = new CustomerInvoiceSettingsOptions
-                {
-                    DefaultPaymentMethod = paymentMethod.Id,
-                },
-            };
-            var customerService = new CustomerService();
-            customerService.Update(req.Customer, customerOptions);
-
-            var invoiceOptions = new InvoiceGetOptions();
-            invoiceOptions.AddExpand("payment_intent");
-            var invoiceService = new InvoiceService();
-            Invoice invoice = invoiceService.Get(req.Invoice, invoiceOptions);
-            return invoice;
-        }
-
-        [HttpPost("retrieve-upcoming-invoice")]
-        public ActionResult<Invoice> RetrieveUpcomingInvoice([FromBody] RetrieveUpcomingInvoiceRequest req)
-        {
+            var customerId = HttpContext.Request.Cookies["customer"];
             var service = new SubscriptionService();
-            var subscription = service.Get(req.Subscription);
+            var subscription = service.Get(subscriptionId);
 
             var invoiceService = new InvoiceService();
             var options = new UpcomingInvoiceOptions
             {
-                Customer = req.Customer,
-                Subscription = req.Subscription,
+                Customer = customerId,
+                Subscription = subscriptionId,
                 SubscriptionItems = new List<InvoiceSubscriptionItemOptions>
                 {
                     new InvoiceSubscriptionItemOptions
                     {
                         Id = subscription.Items.Data[0].Id,
-                        Deleted = true,
-                    },
-                    new InvoiceSubscriptionItemOptions
-                    {
-                        // TODO: This should be Price, but isnt in Stripe.net yet.
-                        Plan = Environment.GetEnvironmentVariable(req.NewPrice),
-                        Deleted = false,
+                        Price = Environment.GetEnvironmentVariable(newPriceLookupKey.ToUpper()),
                     },
                 }
             };
             Invoice upcoming = invoiceService.Upcoming(options);
-            return upcoming;
+            return new InvoiceResponse{
+              Invoice = upcoming,
+            };
         }
 
         [HttpPost("cancel-subscription")]
-        public ActionResult<Subscription> CancelSubscription([FromBody] CancelSubscriptionRequest req)
+        public ActionResult<SubscriptionResponse> CancelSubscription([FromBody] CancelSubscriptionRequest req)
         {
             var service = new SubscriptionService();
             var subscription = service.Cancel(req.Subscription, null);
-            return subscription;
+            return new SubscriptionResponse
+            {
+              Subscription = subscription,
+            };
         }
 
         [HttpPost("update-subscription")]
-        public ActionResult<Subscription> UpdateSubscription([FromBody] UpdateSubscriptionRequest req)
+        public ActionResult<SubscriptionResponse> UpdateSubscription([FromBody] UpdateSubscriptionRequest req)
         {
             var service = new SubscriptionService();
             var subscription = service.Get(req.Subscription);
@@ -182,20 +155,15 @@ namespace dotnet.Controllers
                     new SubscriptionItemOptions
                     {
                         Id = subscription.Items.Data[0].Id,
-                        Price = Environment.GetEnvironmentVariable(req.NewPrice),
+                        Price = Environment.GetEnvironmentVariable(req.NewPrice.ToUpper()),
                     }
                 }
             };
             var updatedSubscription = service.Update(req.Subscription, options);
-            return updatedSubscription;
-        }
-
-        [HttpPost("retrieve-customer-payment-method")]
-        public ActionResult<PaymentMethod> RetrieveCustomerPaymentMethod([FromBody] RetrieveCustomerPaymentMethodRequest req)
-        {
-            var service = new PaymentMethodService();
-            var paymentMethod = service.Get(req.PaymentMethod);
-            return paymentMethod;
+            return new SubscriptionResponse
+            {
+              Subscription = updatedSubscription,
+            };
         }
 
         [HttpPost("webhook")]

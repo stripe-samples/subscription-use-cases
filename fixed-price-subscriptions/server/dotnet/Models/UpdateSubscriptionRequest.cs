@@ -5,6 +5,6 @@ public class UpdateSubscriptionRequest
     [JsonProperty("subscriptionId")]
     public string Subscription { get; set; }
 
-    [JsonProperty("newPriceId")]
+    [JsonProperty("newPriceLookupKey")]
     public string NewPrice { get; set; }
 }
