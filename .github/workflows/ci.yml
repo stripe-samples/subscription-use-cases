@@ -1,5 +1,5 @@
 name: CI for stripe-samples/subscription-use-cases
-on: [push, pull_request]
+on: [push]
 
 jobs:
   test:
