@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({
           email: emailInput.value,
         }),
-      });
+      }).then(r => r.json());
 
       // Redirect to the pricing page.
       window.location.href = '/prices.html';

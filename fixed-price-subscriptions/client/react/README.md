@@ -79,8 +79,8 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
 ### Running the React client
 
 1. Go to `/client`
-1. Run `npm run install`
-1. Run `npm run start` and your default browser should now open with the front-end being served from `http://localhost:3000/`.
+1. Run `npm install`
+1. Run `npm start` and your default browser should now open with the front-end being served from `http://localhost:3000/`.
 
 ### Using the sample app
 

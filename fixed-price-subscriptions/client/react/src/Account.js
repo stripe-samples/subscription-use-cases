@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { withRouter } from 'react-router-dom';
 import './App.css';
-import TopNavigationBar from './TopNavigationBar';
-import StripeSampleFooter from './StripeSampleFooter';
 import Product from './Product';
 import PriceChangeForm from './PriceChangeForm';
 
@@ -89,7 +87,6 @@ function Account({ location }) {
 
   return (
     <div className="p-6">
-      <TopNavigationBar />
       {subscriptionCancelled ? (
         <div>
           <div className="flex flex-wrap font-bold text-pasha text-xl mt-6 mb-2">
@@ -190,7 +187,6 @@ function Account({ location }) {
         </div>
       )}
 
-      <StripeSampleFooter />
     </div>
   );
 }
