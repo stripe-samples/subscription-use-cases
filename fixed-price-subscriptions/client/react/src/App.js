@@ -1,10 +1,12 @@
 import React from 'react';
 import './App.css';
 import { BrowserRouter as Switch, Route } from 'react-router-dom';
+
+import Account from './Account';
+import Cancel from './Cancel';
+import Prices from './Prices';
 import Register from './Register';
 import Subscribe from './Subscribe';
-import Prices from './Prices';
-import Account from './Account';
 
 function App(props) {
   return (
@@ -20,6 +22,9 @@ function App(props) {
       </Route>
       <Route path="/account">
         <Account />
+      </Route>
+      <Route path="/cancel">
+        <Cancel />
       </Route>
     </Switch>
   );

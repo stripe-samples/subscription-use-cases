@@ -7,22 +7,18 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
-
-let stripePromise = null;
-(async () => {
-  const {publishableKey} = await fetch("/config").then(r => r.json());
-  stripePromise = loadStripe(publishableKey);
-})();
+import { Redirect } from 'react-router-dom';
 
 const SubscribeForm = ({location}) => {
   // Get the lookup key for the price from the previous page redirect.
   const [priceLookupKey] = useState(location.state.priceLookupKey);
   const [name, setName] = useState('Jenny Rosen');
   const [messages, _setMessages] = useState('');
+  const [subscription, setSubscription] = useState();
 
   // helper for displaying status messages.
   const setMessage = (message) => {
-    _setMessages(`${messages}<br>${message}`);
+    _setMessages(`${messages}\n\n${message}`);
   }
 
   // Initialize an instance of stripe.
@@ -84,6 +80,7 @@ const SubscribeForm = ({location}) => {
     }
 
     setMessage(`Subscription created with status: ${subscription.status}`);
+    setSubscription(subscription);
 
     // This sample only supports a Subscription with payment
     // upfront. If you offer a trial on your subscription, then
@@ -94,7 +91,6 @@ const SubscribeForm = ({location}) => {
       case 'active':
         // Redirect to account page
         setMessage("Success! Redirecting to your account.");
-        window.location.href = 'account.html';
         break;
 
 
@@ -129,7 +125,7 @@ const SubscribeForm = ({location}) => {
           setMessage(error.message);
         } else {
           setMessage("Success! Redirecting to your account.");
-          window.location.href = 'account.html';
+          setSubscription({ status: 'active' });
         }
         break;
 
@@ -137,6 +133,10 @@ const SubscribeForm = ({location}) => {
       default:
         setMessage(`Unknown Subscription status: ${subscription.status}`);
     }
+  }
+
+  if(subscription && subscription.status === 'active') {
+    return <Redirect to={{pathname: '/account'}} />
   }
 
   return (
@@ -158,6 +158,17 @@ const SubscribeForm = ({location}) => {
 }
 
 const Subscribe = (props) => {
+  let stripePromise = null;
+  const [publishableKey, setPublishableKey] = useState(null);
+
+  if(publishableKey) {
+    stripePromise = loadStripe(publishableKey);
+  } else {
+    fetch("/config").then(r => r.json()).then(({publishableKey}) => {
+      setPublishableKey(publishableKey);
+    });
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <h1>Subscribe</h1>
