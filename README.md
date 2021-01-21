@@ -233,7 +233,6 @@ concepts you need to understand. These demos are meant as an educational tool
 that helps you roadmap how to integrate Stripe within your own system
 independent of the framework.
 
-
 ## Get support
 
 If you found a bug or want to suggest a new [feature/use case/sample], please [file an issue](../../issues).
