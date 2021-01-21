@@ -1,16 +1,20 @@
 # Subscriptions using React
 
-This sample shows how to build a custom subscriptions form to take a payment using the [Subscriptions API](https://stripe.com/docs/billing/subscriptions/fixed-price), [Stripe Elements](https://stripe.com/billing/elements) and [React](https://reactjs.org/).
-
-<img src="../../subscription-with-fixed-price.png" alt="Preview of recipe" style="max-width:25%;">
+This sample shows how to build a custom subscriptions form to take a payment
+using the [Subscriptions
+API](https://stripe.com/docs/billing/subscriptions/fixed-price), [Stripe
+Elements](https://stripe.com/billing/elements) and
+[React](https://reactjs.org/).
 
 ## Features
 
-This sample consists of a `client` in React and a `server` piece available in 7 common languages.
+This sample consists of a `client` in React and a `server` piece available in 7
+common languages.
 
-The client is implemented using `create-react-app` to provide the boilerplate for React. Stripe Elements is integrated using [`react-stripe-js`](https://github.com/stripe/react-stripe-js), which is the official React library provided by Stripe.
-
-The server includes [7 server implementations](server/README.md) in Node, Ruby, Python, Java, PHP, GO, and dotnet in the [/server](/server) directory. We included several RESTful server implementations, each with the same endpoints and logic.
+The client is implemented using `create-react-app` to provide the boilerplate
+for React. Stripe Elements is integrated using
+[`react-stripe-js`](https://github.com/stripe/react-stripe-js), which is the
+official React library provided by Stripe.
 
 ## How to run locally
 
@@ -41,7 +45,7 @@ The CLI will walk you through picking your integration type, server and client l
 If you do not want to use the Stripe CLI, you can manually clone and configure the sample yourself:
 
 ```
-git clone https://github.com/stripe-samples/react-elements-card-payment
+git clone https://github.com/stripe-samples/subscription-use-cases
 ```
 
 Copy the .env.example file into a file named .env in the folder of the server you want to use. For example:
@@ -65,12 +69,6 @@ Copy the `.env.example` file into a file named `.env` in the folder of the serve
 cp .env.example client/react/.env
 ```
 
-You will need to take the Stripe publishable key and set only one variable for the React server.
-
-```
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
-```
-
 ### Running the API server
 
 1. Go to `/server`
@@ -87,7 +85,7 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
 When running both servers, you are now ready to use the app running in [http://localhost:3000](http://localhost:3000).
 
 1. Enter your email address
-1. Select your plan price
+1. Select your price
 1. Enter your card details
 1. 🎉
 
@@ -98,6 +96,7 @@ Q: Why did you pick these frameworks?
 A: We chose the most minimal framework to convey the key Stripe calls and concepts you need to understand. These demos are meant as an educational tool that helps you roadmap how to integrate Stripe within your own system independent of the framework.
 
 ## Get support
+
 If you found a bug or want to suggest a new [feature/use case/sample], please [file an issue](../../../../../issues).
 
 If you have questions, comments, or need help with code, we're here to help:
