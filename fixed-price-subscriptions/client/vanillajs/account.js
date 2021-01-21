@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', async () => {
-
+  // Fetch the list of subscriptions for this customer.
   const {subscriptions} = await fetch('/subscriptions').then((r) => r.json());
 
+  // Construct and display each subscription, its status, last4 of the card
+  // used, and the current period end.
   const subscriptionsDiv = document.querySelector('#subscriptions');
-
   subscriptionsDiv.innerHTML = subscriptions.data.map((subscription) => {
     return `
       <hr>
@@ -22,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </p>
 
       <p>
-        Current period end: ${Date(subscription.current_period_end * 1000)}
+        Current period end: ${new Date(subscription.current_period_end * 1000)}
       </p>
 
       <!--<a href="change-payment-method.html?subscription=${subscription.id}"> Update payment method </a><br />

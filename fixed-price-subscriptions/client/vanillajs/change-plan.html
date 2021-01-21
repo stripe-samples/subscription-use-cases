@@ -4,39 +4,42 @@
     <title>Change plan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <link href="css/base.css" rel="stylesheet" />
     <script src="https://js.stripe.com/v3/"></script>
     <script src="account.js" defer></script>
   </head>
   <body>
-    <h1>Change plan</h1>
+    <main>
+      <h1>Change plan</h1>
 
-    Current, new
+      Current, new
 
-    <div class="price-list">
-      <div>
-        <h3>Basic</h3>
+      <div class="price-list">
+        <div>
+          <h3>Basic</h3>
 
-        <p class="">
-          $5.00 / month
-        </p>
+          <p>
+            $5.00 / month
+          </p>
 
-        <a href="subscribe.html?price=basic">
-          Select
-        </a>
+          <a href="subscribe.html?price=basic">
+            Select
+          </a>
+        </div>
+
+        <div>
+          <h3>Premium</h3>
+
+          <p>
+            $15.00 / month
+          </p>
+
+          <a href="subscribe.html?price=premium">
+            Select
+          </a>
+        </div>
       </div>
 
-      <div>
-        <h3>Premium</h3>
-
-        <p class="">
-          $15.00 / month
-        </p>
-
-        <a href="subscribe.html?price=premium">
-          Select
-        </a>
-      </div>
-    </div>
-
+    </main>
   </body>
 </html>

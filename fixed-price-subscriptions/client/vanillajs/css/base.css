@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css?family=Raleway&display=swap');
+
+body {
+  padding: 20px;
+  font-family: 'Raleway';
+  display: flex;
+  justify-content: center;
+  font-size: 1.2em;
+}
+
+form > * {
+  margin: 10px 0;
+}
+
+/* prices.html */
+.price-list {
+  display: flex;
+}
+
+.price-list > div {
+  flex-grow: 3;
+  margin: 0 10px;
+  border: black solid 1px;
+  padding: 20px;
+}
