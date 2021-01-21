@@ -183,13 +183,45 @@ RSpec.describe "full integration path" do
 
       resp, status = post_json("/update-subscription", {
         subscriptionId: subscription_id,
-        newPriceLookupKey: 'PREMIUM',
+        newPriceLookupKey: 'premium',
       })
       expect(status).to eq(200)
       expect(subscription).to have_key("object")
       expect(subscription["object"]).to eq("subscription")
       new_price = resp.dig("items", "data", 0, "price")
       expect(new_price).not_to eq(old_price)
+    end
+  end
+
+  describe '/subscriptions' do
+    it 'retrieves all subscriptions for the customer' do
+      customer_id = Stripe::Customer.create.id
+
+      # Create a subscription
+      resp, _ = authenticated_post_json("/create-subscription", {
+        paymentMethodId: 'pm_card_mastercard',
+        priceLookupKey: 'BASIC',
+      }, customer_id)
+      sub1 = resp['subscription']
+
+      # Create then cancel another subscription for the
+      # same customer.
+      resp, _ = authenticated_post_json("/create-subscription", {
+        paymentMethodId: 'pm_card_visa',
+        priceLookupKey: 'premium',
+      }, customer_id)
+      sub2 = resp['subscription']
+      resp, _ = authenticated_post_json("/cancel-subscription", {
+        subscriptionId: sub2['id'],
+      }, customer_id)
+
+      # Now fetch the list of subscriptions for the customer
+      # given they now have one active and one canceled.
+      resp = authenticated_get_json("/subscriptions", customer_id)
+      expect(resp['subscriptions']['data'].length).to eq(2)
+      expect(resp['subscriptions']['data'][0]).to have_key('default_payment_method')
+      expect(resp['subscriptions']['data'][0]['default_payment_method']).to have_key('id')
+      expect(resp['subscriptions']['data'][0]['default_payment_method']['id']).to start_with('pm_')
     end
   end
 end

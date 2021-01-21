@@ -71,13 +71,43 @@ def create_subscription():
             default_payment_method=payment_method.id,
             customer=customer_id,
             items=[{
-                'price': os.getenv(data['priceLookupKey'])
+                'price': os.getenv(data['priceLookupKey'].upper())
             }],
             expand=['latest_invoice.payment_intent'],
         )
         return jsonify(subscription=subscription)
     except Exception as e:
         return jsonify(error={'message': e.user_message}), 400
+
+
+@app.route('/cancel-subscription', methods=['POST'])
+def cancel_subscription():
+    data = json.loads(request.data)
+    try:
+         # Cancel the subscription by deleting it
+        deletedSubscription = stripe.Subscription.delete(data['subscriptionId'])
+        return jsonify(subscription=deletedSubscription)
+    except Exception as e:
+        return jsonify(error=str(e)), 403
+
+
+@app.route('/subscriptions', methods=['GET'])
+def list_subscriptions():
+    # Simulating authenticated user. Lookup the logged in user in your
+    # database, and set customer_id to the Stripe Customer ID of that user.
+    customer_id = request.cookies.get('customer')
+
+    try:
+         # Cancel the subscription by deleting it
+        subscriptions = stripe.Subscription.list(
+            customer=customer_id,
+            status='all',
+            expand=['data.default_payment_method']
+        )
+        return jsonify(subscriptions=subscriptions)
+    except Exception as e:
+        return jsonify(error=str(e)), 403
+
 
 
 @app.route('/invoice-preview', methods=['GET'])
@@ -107,17 +137,6 @@ def preview_invoice():
         return jsonify(error=str(e)), 403
 
 
-@app.route('/cancel-subscription', methods=['POST'])
-def cancel_subscription():
-    data = json.loads(request.data)
-    try:
-         # Cancel the subscription by deleting it
-        deletedSubscription = stripe.Subscription.delete(data['subscriptionId'])
-        return jsonify(subscription=deletedSubscription)
-    except Exception as e:
-        return jsonify(error=str(e)), 403
-
-
 @app.route('/update-subscription', methods=['POST'])
 def updateSubscription():
     data = json.loads(request.data)
@@ -126,10 +145,9 @@ def updateSubscription():
 
         updatedSubscription = stripe.Subscription.modify(
             data['subscriptionId'],
-            cancel_at_period_end=False,
             items=[{
                 'id': subscription['items']['data'][0].id,
-                'price': os.getenv(data['newPriceId']),
+                'price': os.getenv(data['newPriceLookupKey'].upper()),
             }]
         )
         return jsonify(updatedSubscription)
@@ -153,7 +171,6 @@ def webhook_received():
             data = event['data']
         except Exception as e:
             return e
-        # Get the type of webhook event sent - used to check the status of PaymentIntents.
         event_type = event['type']
     else:
         data = request_data['data']
@@ -166,28 +183,28 @@ def webhook_received():
         # The status of the invoice will show up as paid. Store the status in your
         # database to reference when a user accesses your service to avoid hitting rate
         # limits.
-        print(data)
+        # print(data)
+        print('Invoice paid: %s', event.id)
 
     elif event_type == 'invoice.payment_failed':
         # If the payment fails or the customer does not have a valid payment method,
         # an invoice.payment_failed event is sent, the subscription becomes past_due.
         # Use this webhook to notify your user that their payment has
         # failed and to retrieve new card details.
-        print(data)
+        # print(data)
+        print('Invoice payment failed: %s', event.id)
 
     elif event_type == 'invoice.finalized':
         # If you want to manually send out invoices to your customers
         # or store them locally to reference to avoid hitting Stripe rate limits.
-        print(data)
+        # print(data)
+        print('Invoice payment failed: %s', event.id)
 
     elif event_type == 'customer.subscription.deleted':
         # handle subscription cancelled automatically based
         # upon your subscription settings. Or if the user cancels it.
-        print(data)
-
-    elif event_type == 'customer.subscription.trial_will_end':
-        # Send notification to your user that the trial will end
-        print(data)
+        # print(data)
+        print('Subscription canceled: %s', event.id)
 
     return jsonify({'status': 'success'})
 

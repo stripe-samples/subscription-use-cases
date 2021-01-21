@@ -88,6 +88,8 @@ app.post('/create-customer', async (req, res) => {
 });
 
 app.post('/create-subscription', async (req, res) => {
+  // Simulate authenticated user. In practice this will be the
+  // Stripe Customer ID related to the authenticated user.
   const customerId = req.cookies['customer'];
 
   let paymentMethod;
@@ -150,9 +152,7 @@ app.post('/update-subscription', async (req, res) => {
     req.body.subscriptionId
   );
   const updatedSubscription = await stripe.subscriptions.update(
-    req.body.subscriptionId,
-    {
-      cancel_at_period_end: false,
+    req.body.subscriptionId, {
       items: [{
         id: subscription.items.data[0].id,
         price: process.env[req.body.newPriceLookupKey],
@@ -161,6 +161,20 @@ app.post('/update-subscription', async (req, res) => {
   );
 
   res.send({ subscription: updatedSubscription });
+});
+
+app.get('/subscriptions', async (req, res) => {
+  // Simulate authenticated user. In practice this will be the
+  // Stripe Customer ID related to the authenticated user.
+  const customerId = req.cookies['customer'];
+
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: 'all',
+    expand: ['data.default_payment_method'],
+  });
+
+  res.json({subscriptions});
 });
 
 app.post(

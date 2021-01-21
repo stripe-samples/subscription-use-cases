@@ -166,6 +166,25 @@ namespace dotnet.Controllers
             };
         }
 
+        [HttpGet("subscriptions")]
+        public ActionResult<SubscriptionsResponse> ListSubscriptions()
+        {
+            var customerId = HttpContext.Request.Cookies["customer"];
+            var options = new SubscriptionListOptions
+            {
+                Customer = customerId,
+                Status = "all",
+            };
+            options.AddExpand("data.default_payment_method");
+            var service = new SubscriptionService();
+            var subscriptions = service.List(options);
+
+            return new SubscriptionsResponse{
+              Subscriptions = subscriptions,
+            };
+        }
+
+
         [HttpPost("webhook")]
         public async Task<IActionResult> Webhook()
         {

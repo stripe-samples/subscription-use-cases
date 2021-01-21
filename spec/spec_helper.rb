@@ -135,5 +135,11 @@ def post_json(path, payload, **kwargs)
   )
   [JSON.parse(response.body), response.code]
 rescue => e
-  [JSON.parse(e.http_body), e.http_code]
+  begin
+    [JSON.parse(e.http_body), e.http_code]
+  rescue => e
+    puts "Response:"
+    p response
+    throw "Failed to parse failed response"
+  end
 end

@@ -12,12 +12,12 @@ import (
     "strings"
 
     "github.com/joho/godotenv"
-    "github.com/stripe/stripe-go/v71"
-    "github.com/stripe/stripe-go/v71/customer"
-    "github.com/stripe/stripe-go/v71/invoice"
-    "github.com/stripe/stripe-go/v71/paymentmethod"
-    "github.com/stripe/stripe-go/v71/sub"
-    "github.com/stripe/stripe-go/v71/webhook"
+    "github.com/stripe/stripe-go/v72"
+    "github.com/stripe/stripe-go/v72/customer"
+    "github.com/stripe/stripe-go/v72/invoice"
+    "github.com/stripe/stripe-go/v72/paymentmethod"
+    "github.com/stripe/stripe-go/v72/sub"
+    "github.com/stripe/stripe-go/v72/webhook"
 )
 
 func main() {
@@ -34,6 +34,7 @@ func main() {
     http.HandleFunc("/cancel-subscription", handleCancelSubscription)
     http.HandleFunc("/update-subscription", handleUpdateSubscription)
     http.HandleFunc("/invoice-preview", handleInvoicePreview)
+    http.HandleFunc("/subscriptions", handleListSubscriptions)
     http.HandleFunc("/webhook", handleWebhook)
 
     addr := "0.0.0.0:4242"
@@ -234,7 +235,7 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 
     var req struct {
         SubscriptionID string `json:"subscriptionId"`
-        NewPriceID     string `json:"newPriceId"`
+        NewPriceLookupKey     string `json:"newPriceLookupKey"`
     }
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -243,6 +244,13 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // This is the ID of the Stripe Price object to which the subscription
+    // will be upgraded or downgraded.
+    newPriceID := os.Getenv(strings.ToUpper(req.NewPriceLookupKey))
+
+    // Fetch the subscription to access the related subscription item's ID
+    // that will be updated. In practice, you might want to store the
+    // Subscription Item ID in your database to avoid this API call.
     s, err := sub.Get(req.SubscriptionID, nil)
     if err != nil {
         writeJSON(w, nil, err)
@@ -251,10 +259,9 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
     }
 
     params := &stripe.SubscriptionParams{
-        CancelAtPeriodEnd: stripe.Bool(false),
         Items: []*stripe.SubscriptionItemsParams{{
             ID:    stripe.String(s.Items.Data[0].ID),
-            Price: stripe.String(os.Getenv(req.NewPriceID)),
+            Price: stripe.String(newPriceID),
         }},
     }
 
@@ -266,8 +273,37 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    writeJSON(w, updatedSubscription, nil)
+    writeJSON(w, struct {
+        Subscription *stripe.Subscription `json:"subscription"`
+    }{
+        Subscription: updatedSubscription,
+    }, nil)
+
 }
+
+func handleListSubscriptions(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "GET" {
+        http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+        return
+    }
+    // Read customer from cookie to simulate auth
+    cookie, _ := r.Cookie("customer")
+    customerID := cookie.Value
+
+    params := &stripe.SubscriptionListParams{
+      Customer: customerID,
+      Status: "all",
+    }
+    params.AddExpand("data.default_payment_method")
+    i := sub.List(params)
+
+    writeJSON(w, struct {
+        Subscriptions *stripe.SubscriptionList `json:"subscriptions"`
+    }{
+        Subscriptions: i.SubscriptionList(),
+    }, nil)
+}
+
 
 func handleWebhook(w http.ResponseWriter, r *http.Request) {
     if r.Method != "POST" {
