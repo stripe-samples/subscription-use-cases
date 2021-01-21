@@ -181,6 +181,10 @@ const Subscribe = (props) => {
         Try the test card that requires SCA: <span>4000002500003155</span>.
       </p>
 
+      <p>
+        Use any <i>future</i> expiry date, CVC,5 digit postal code
+      </p>
+
       <hr />
 
       <SubscribeForm {...props} />
