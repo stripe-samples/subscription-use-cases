@@ -31,7 +31,7 @@ const AccountSubscription = ({subscription}) => {
 }
 
 const Account = () => {
-  let [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
