@@ -1,5 +1,8 @@
 name: CI for stripe-samples/subscription-use-cases
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   test:
