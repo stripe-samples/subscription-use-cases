@@ -1,11 +1,7 @@
 #! /usr/bin/env python3.6
-
 """
-server.py
-Stripe Recipe.
 Python 3.6 or newer required.
 """
-
 import stripe
 import json
 import os
@@ -18,15 +14,13 @@ load_dotenv(find_dotenv())
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 stripe.api_version = os.getenv('STRIPE_API_VERSION')
 
-static_dir = str(os.path.abspath(os.path.join(
-    __file__, "..", os.getenv("STATIC_DIR"))))
-app = Flask(__name__, static_folder=static_dir,
-            static_url_path="", template_folder=static_dir)
+static_dir = str(os.path.abspath(os.path.join(__file__, "..", os.getenv("STATIC_DIR"))))
+app = Flask(__name__, static_folder=static_dir, static_url_path="", template_folder=static_dir)
 
 
 @app.route('/', methods=['GET'])
 def get_index():
-    return render_template('index.html')
+    return render_template('register.html')
 
 
 @app.route('/config', methods=['GET'])
@@ -42,109 +36,101 @@ def create_customer():
     data = json.loads(request.data)
     try:
         # Create a new customer object
-        customer = stripe.Customer.create(
-            email=data['email']
-        )
+        customer = stripe.Customer.create(email=data['email'])
+
         # At this point, associate the ID of the Customer object with your
         # own internal representation of a customer, if you have one.
+        resp = jsonify(customer=customer)
 
-        return jsonify(
-            customer=customer,
-        )
+        # We're simulating authentication here by storing the ID of the customer
+        # in a cookie.
+        resp.set_cookie('customer', customer.id)
+        return resp
     except Exception as e:
         return jsonify(error=str(e)), 403
 
 
 @app.route('/create-subscription', methods=['POST'])
-def createSubscription():
+def create_subscription():
     data = json.loads(request.data)
-    try:
 
+    # Simulating authenticated user. Lookup the logged in user in your
+    # database, and set customer_id to the Stripe Customer ID of that user.
+    customer_id = request.cookies.get('customer')
+
+    try:
         payment_method = stripe.PaymentMethod.attach(
             data['paymentMethodId'],
-            customer=data['customerId'],
-        )
-        # Set the default payment method on the customer
-        stripe.Customer.modify(
-            data['customerId'],
-            invoice_settings={
-                'default_payment_method': payment_method.id,
-            },
+            customer=customer_id,
         )
 
         # Create the subscription
         subscription = stripe.Subscription.create(
-            customer=data['customerId'],
+            default_payment_method=payment_method.id,
+            customer=customer_id,
             items=[{
-                'price': os.getenv(data['priceId'])
+                'price': os.getenv(data['priceLookupKey'].upper())
             }],
             expand=['latest_invoice.payment_intent'],
         )
-        return jsonify(subscription)
+        return jsonify(subscription=subscription)
     except Exception as e:
-        return jsonify(error={'message': e.user_message}), 200
-
-
-@app.route('/retry-invoice', methods=['POST'])
-def retrySubscription():
-    data = json.loads(request.data)
-    try:
-
-        payment_method = stripe.PaymentMethod.attach(
-            data['paymentMethodId'],
-            customer=data['customerId'],
-        )
-        # Set the default payment method on the customer
-        stripe.Customer.modify(
-            data['customerId'],
-            invoice_settings={
-                'default_payment_method': payment_method.id,
-            },
-        )
-
-        invoice = stripe.Invoice.retrieve(
-            data['invoiceId'],
-            expand=['payment_intent'],
-        )
-        return jsonify(invoice)
-    except Exception as e:
-        return jsonify(error={'message': str(e)}), 200
-
-
-@app.route('/retrieve-upcoming-invoice', methods=['POST'])
-def retrieveUpcomingInvoice():
-    data = json.loads(request.data)
-    try:
-        # Retrieve the subscription
-        subscription = stripe.Subscription.retrieve(data['subscriptionId'])
-
-        # Retrive the Invoice
-        invoice = stripe.Invoice.upcoming(
-            customer=data['customerId'],
-            subscription=data['subscriptionId'],
-            subscription_items=[
-                {
-                    'id': subscription['items']['data'][0].id,
-                    'deleted': True
-                },
-                {
-                    'price': os.getenv(data['newPriceId']),
-                    'deleted': False
-                }
-            ],
-        )
-        return jsonify(invoice)
-    except Exception as e:
-        return jsonify(error=str(e)), 403
+        return jsonify(error={'message': e.user_message}), 400
 
 
 @app.route('/cancel-subscription', methods=['POST'])
-def cancelSubscription():
+def cancel_subscription():
     data = json.loads(request.data)
     try:
          # Cancel the subscription by deleting it
         deletedSubscription = stripe.Subscription.delete(data['subscriptionId'])
-        return jsonify(deletedSubscription)
+        return jsonify(subscription=deletedSubscription)
+    except Exception as e:
+        return jsonify(error=str(e)), 403
+
+
+@app.route('/subscriptions', methods=['GET'])
+def list_subscriptions():
+    # Simulating authenticated user. Lookup the logged in user in your
+    # database, and set customer_id to the Stripe Customer ID of that user.
+    customer_id = request.cookies.get('customer')
+
+    try:
+         # Cancel the subscription by deleting it
+        subscriptions = stripe.Subscription.list(
+            customer=customer_id,
+            status='all',
+            expand=['data.default_payment_method']
+        )
+        return jsonify(subscriptions=subscriptions)
+    except Exception as e:
+        return jsonify(error=str(e)), 403
+
+
+
+@app.route('/invoice-preview', methods=['GET'])
+def preview_invoice():
+    # Simulating authenticated user. Lookup the logged in user in your
+    # database, and set customer_id to the Stripe Customer ID of that user.
+    customer_id = request.cookies.get('customer')
+
+    subscription_id = request.args.get('subscriptionId')
+    new_price_lookup_key = request.args.get('newPriceLookupKey')
+
+    try:
+        # Retrieve the subscription
+        subscription = stripe.Subscription.retrieve(subscription_id)
+
+        # Retrive the Invoice
+        invoice = stripe.Invoice.upcoming(
+            customer=customer_id,
+            subscription=subscription_id,
+            subscription_items=[{
+                'id': subscription['items']['data'][0].id,
+                'price': os.getenv(new_price_lookup_key),
+            }],
+        )
+        return jsonify(invoice=invoice)
     except Exception as e:
         return jsonify(error=str(e)), 403
 
@@ -157,10 +143,9 @@ def updateSubscription():
 
         updatedSubscription = stripe.Subscription.modify(
             data['subscriptionId'],
-            cancel_at_period_end=False,
             items=[{
                 'id': subscription['items']['data'][0].id,
-                'price': os.getenv(data['newPriceId']),
+                'price': os.getenv(data['newPriceLookupKey'].upper()),
             }]
         )
         return jsonify(updatedSubscription)
@@ -168,21 +153,8 @@ def updateSubscription():
         return jsonify(error=str(e)), 403
 
 
-@app.route('/retrieve-customer-payment-method', methods=['POST'])
-def retrieveCustomerPaymentMethod():
-    data = json.loads(request.data)
-    try:
-        paymentMethod = stripe.PaymentMethod.retrieve(
-            data['paymentMethodId'],
-        )
-        return jsonify(paymentMethod)
-    except Exception as e:
-        return jsonify(error=str(e)), 403
-
-
 @app.route('/webhook', methods=['POST'])
 def webhook_received():
-
     # You can use webhooks to receive information about asynchronous payment events.
     # For more about our webhook events check out https://stripe.com/docs/webhooks.
     webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
@@ -197,7 +169,6 @@ def webhook_received():
             data = event['data']
         except Exception as e:
             return e
-        # Get the type of webhook event sent - used to check the status of PaymentIntents.
         event_type = event['type']
     else:
         data = request_data['data']
@@ -210,31 +181,31 @@ def webhook_received():
         # The status of the invoice will show up as paid. Store the status in your
         # database to reference when a user accesses your service to avoid hitting rate
         # limits.
-        print(data)
+        # print(data)
+        print('Invoice paid: %s', event.id)
 
     elif event_type == 'invoice.payment_failed':
         # If the payment fails or the customer does not have a valid payment method,
         # an invoice.payment_failed event is sent, the subscription becomes past_due.
         # Use this webhook to notify your user that their payment has
         # failed and to retrieve new card details.
-        print(data)
+        # print(data)
+        print('Invoice payment failed: %s', event.id)
 
     elif event_type == 'invoice.finalized':
         # If you want to manually send out invoices to your customers
         # or store them locally to reference to avoid hitting Stripe rate limits.
-        print(data)
+        # print(data)
+        print('Invoice payment failed: %s', event.id)
 
     elif event_type == 'customer.subscription.deleted':
         # handle subscription cancelled automatically based
         # upon your subscription settings. Or if the user cancels it.
-        print(data)
-
-    elif event_type == 'customer.subscription.trial_will_end':
-        # Send notification to your user that the trial will end
-        print(data)
+        # print(data)
+        print('Subscription canceled: %s', event.id)
 
     return jsonify({'status': 'success'})
 
 
 if __name__ == '__main__':
-    app.run(port=4242)
+    app.run(port=4242, debug=True)

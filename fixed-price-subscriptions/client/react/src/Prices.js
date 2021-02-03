@@ -1,65 +1,46 @@
 import React, { useState } from 'react';
 import { withRouter } from 'react-router-dom';
-import TopNavigationBar from './TopNavigationBar';
-import StripeSampleFooter from './StripeSampleFooter';
-import PaymentForm from './PaymentForm';
-import Product from './Product';
+import { Redirect } from 'react-router-dom';
 
-const products = [
-  {
-    key: 0,
-    price: '$5.00',
-    name: 'Basic',
-    interval: 'month',
-    billed: 'monthly',
-  },
-  {
-    key: 1,
-    price: '$15.00',
-    name: 'Premium',
-    interval: 'month',
-    billed: 'monthly',
-  },
-];
+const Prices = () => {
+  const [priceLookupKey, setPriceLookupKey] = useState(null);
 
-function Prices({ location }) {
-  const [productSelected, setProduct] = useState(null);
-  const [customer] = useState(location.state.customer);
-
-  function handleClick(key) {
-    setProduct(products[key]);
+  if (priceLookupKey) {
+    return <Redirect to={{
+      pathname: '/subscribe',
+      state: { priceLookupKey }
+    }} />
   }
 
   return (
-    <div className="p-6">
-      <TopNavigationBar />
-      <div className="flex flex-wrap justify-center">
-        <div className="md:w-1/3 w-full mr-4 md:mb-8">
-          <div className="text-center text-pasha font-bold text-2xl mt-4 mb-6">
-            Subscribe to a plan
-          </div>
+    <div>
+      <h1>Select a plan</h1>
 
-          <div className="flex justify-between mb-8">
-            {products.map((product, index) => {
-              return (
-                <Product
-                  key={index}
-                  product={product}
-                  handleClick={handleClick}
-                />
-              );
-            })}
-          </div>
-          {productSelected ? (
-            <PaymentForm
-              productSelected={productSelected}
-              customer={customer}
-            />
-          ) : null}
+      <div className="price-list">
+        <div>
+          <h3>Basic</h3>
+
+          <p>
+            $5.00 / month
+          </p>
+
+          <button onClick={setPriceLookupKey.bind(null, "basic")}>
+            Select
+          </button>
+        </div>
+
+        <div>
+          <h3>Premium</h3>
+
+          <p>
+            $15.00 / month
+          </p>
+
+          <button onClick={setPriceLookupKey.bind(null, "premium")}>
+            Select
+          </button>
         </div>
       </div>
-
-      <StripeSampleFooter />
     </div>
   );
 }

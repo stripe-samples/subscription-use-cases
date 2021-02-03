@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Register</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="css/base.css" rel="stylesheet" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/register.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Sample Photo Service</h1>
+      <img src="https://picsum.photos/280/320?random=1" width="140" height="160" alt="stock image" />
+
+      <p>
+        Unlimited photo hosting, and more. Cancel anytime.
+      </p>
+
+      <form id="signup-form">
+        <label>
+          Email
+          <input id="email" type="text" placeholder="Email address" value="test@example.com" required />
+        </label>
+
+        <button type="submit">
+          Register
+        </button>
+      </form>
+    </main>
+  </body>
+</html>

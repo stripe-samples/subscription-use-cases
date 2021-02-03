@@ -26,7 +26,8 @@ get '/config' do
   { 'publishableKey': ENV['STRIPE_PUBLISHABLE_KEY'] }.to_json
 end
 
-# Returns information about the subscription and payment method used to display on the account page.
+# Returns information about the subscription and payment method used to display
+# on the account page.
 post '/retrieve-subscription-information' do
   content_type 'application/json'
   data = JSON.parse request.body.read

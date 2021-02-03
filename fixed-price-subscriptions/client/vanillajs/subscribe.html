@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Subscribe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="css/base.css" rel="stylesheet" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="subscribe.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Subscribe</h1>
+
+      <p>
+        Try the successful test card: <span>4242424242424242</span>.
+      </p>
+
+      <p>
+        Try the test card that requires SCA: <span>4000002500003155</span>.
+      </p>
+
+      <p>
+        Use any <i>future</i> expiry date, CVC, and 5 digit postal code.
+      </p>
+
+      <hr />
+
+      <form id="subscribe-form">
+        <label>
+          Full name
+          <input type="text" id="name" value="Jenny Rosen" />
+        </label>
+
+        <div id="card-element">
+          <!-- the card element will be mounted here -->
+        </div>
+
+        <button type="submit">
+          Subscribe
+        </button>
+
+        <div id="messages"></div>
+      </form>
+    </main>
+  </body>
+</html>
