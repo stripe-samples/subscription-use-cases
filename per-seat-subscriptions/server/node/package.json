@@ -1,5 +1,5 @@
 {
-  "name": "subscriptions-with-per-seat-pricing",
+  "name": "stripe-subscriptions-with-per-seat-pricing",
   "version": "1.0.0",
   "description": "A Stripe sample implementing subscriptions with per seat prices.",
   "main": "server.js",
