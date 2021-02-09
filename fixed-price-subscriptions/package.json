@@ -4,8 +4,8 @@
   "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
   "main": "server.js",
   "scripts": {
-    "server": "node server.js",
-    "reactClient": "cd ../../client/react && npm start",
+    "server": "node server/node/server.js",
+    "reactClient": "cd client/react && npm start",
     "startReact": "concurrently \"yarn reactClient\" \"yarn server\"",
     "startVanillajs": "yarn server",
     "start": "yarn server",
