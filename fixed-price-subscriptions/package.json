@@ -1,20 +1,26 @@
 {
   "name": "stripe-subscription-with-fixed-price",
   "version": "1.0.0",
-  "description": "How to create a fixed price monthly subscription and sign up form.",
+  "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
   "main": "server.js",
   "scripts": {
-    "startVanillajs": "node server/node/server.js",
-    "startReact": "",
-    "start": "node server/node/server.js",
+    "server": "node server/node/server.js",
+    "reactClient": "cd client/react && npm start",
+    "startReact": "concurrently \"yarn reactClient\" \"yarn server\"",
+    "startVanillajs": "yarn server",
+    "start": "yarn server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "stripe-demos",
   "license": "ISC",
   "dependencies": {
+    "autoprefixer": "^9.7.6",
     "body-parser": "^1.19.0",
+    "concurrently": "4.1.2",
+    "cookie-parser": "^1.4.5",
     "dotenv": "^8.0.0",
     "express": "^4.17.1",
+    "postcss-cli": "^7.1.1",
     "stripe": "^7.4.0"
   }
 }
