@@ -229,15 +229,15 @@ that helps you roadmap how to integrate Stripe within your own system
 independent of the framework.
 
 ## Get support
-
 If you found a bug or want to suggest a new [feature/use case/sample], please [file an issue](../../issues).
 
 If you have questions, comments, or need help with code, we're here to help:
-
 - on [IRC via freenode](https://webchat.freenode.net/?channel=#stripe)
 - on Twitter at [@StripeDev](https://twitter.com/StripeDev)
 - on Stack Overflow at the [stripe-payments](https://stackoverflow.com/tags/stripe-payments/info) tag
 - by [email](mailto:support+github@stripe.com)
+
+Sign up to stay updated with developer news: https://go.stripe.global/dev-digest.
 
 ## Author(s)
 
