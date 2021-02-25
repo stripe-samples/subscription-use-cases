@@ -15,7 +15,7 @@
     {
       "name": "fixed-price-subscriptions",
       "clients": ["vanillajs", "react"],
-      "servers": ["java", "node", "php", "python", "ruby","go", "dotnet"]
+      "servers": ["java", "node", "php-slim", "python", "ruby","go", "dotnet"]
     }
   ]
 }

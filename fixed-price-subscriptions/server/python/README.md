@@ -29,7 +29,13 @@ python3 -m venv env
 pip install -r requirements.txt
 ```
 
-3. Export and run the application
+3. Configure environment variables (`.env`)
+
+Copy the .env.example file from the root of the project so that it is in the same directory as server.py.
+
+Set the environment variables according to the instructions in the [README](../../README.md) in the root of the project.
+
+4. Export and run the application
 
 **MacOS / Unix**
 
@@ -41,8 +47,8 @@ python3 -m flask run --port=4242
 **Windows (PowerShell)**
 
 ```
-$env:FLASK_APP=“server.py"
+$env:FLASK_APP="server.py"
 python3 -m flask run --port=4242
 ```
 
-4. Go to `localhost:4242` in your browser to see the demo
+5. Go to `http://localhost:4242` in your browser

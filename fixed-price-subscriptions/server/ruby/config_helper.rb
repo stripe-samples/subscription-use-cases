@@ -117,7 +117,7 @@ class ConfigHelper
       return false
     end
 
-    if !File.exists?(File.join(static_dir_path, 'index.html'))
+    if !File.exists?(File.join(static_dir_path, 'register.html'))
       if static_dir == ''
         puts <<~DOC
           No value set for STATIC_DIR. If this sample was installed with the
@@ -127,7 +127,7 @@ class ConfigHelper
         return false
       else
         puts <<~DOC
-          No `index.html` file found in #{static_dir_path}. Please check #{File.join(static_dir_path, 'index.html')}
+          No `register.html` file found in #{static_dir_path}. Please check #{File.join(static_dir_path, 'register.html')}
         DOC
       end
       return false

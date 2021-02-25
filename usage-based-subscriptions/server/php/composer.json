@@ -1,5 +1,5 @@
 {
-  "name": "subscriptions-with-metered-usage",
+  "name": "subscription-use-cases/metered-usage",
   "version": "1.0.0",
   "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
   "require": {
