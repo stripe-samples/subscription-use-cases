@@ -15,14 +15,11 @@ jobs:
           repository: 'stripe-samples/sample-ci'
           path: 'sample-ci'
 
-      - name: Install gettext for envsubst
+      - name: Setup dependencies
         run: |
-          sudo apt install gettext-base
+          source sample-ci/helpers.sh
 
-      - name: Install jq
-        run: |
-          sudo curl -o /usr/bin/jq -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
-          sudo chmod +x /usr/bin/jq
+          setup_dependencies
 
       - name: Run tests
         run: |
@@ -63,8 +60,9 @@ jobs:
         env:
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
           STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
-          PREMIUM: price_1HXyXwCWW2eVYDoPnnTQ02VO
-          BASIC: price_1HXyVBCWW2eVYDoPtXcEdXfw
+          PREMIUM: ${{ secrets.TEST_PREMIUM_PRICE }}
+          BASIC: ${{ secrets.TEST_BASIC_PRICE }}
+
 
       - name: Collect debug information
         if: ${{ failure() }}
@@ -72,9 +70,3 @@ jobs:
           cat docker-compose.yml
           docker-compose ps -a
           docker-compose logs web
-        env:
-          STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
-          PREMIUM: price_1HXyXwCWW2eVYDoPnnTQ02VO
-          BASIC: price_1HXyVBCWW2eVYDoPtXcEdXfw
-
