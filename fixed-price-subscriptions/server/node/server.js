@@ -46,7 +46,9 @@ if (
   process.exit();
 }
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2020-08-27',
+});
 
 // Use static to serve static assets.
 app.use(express.static(process.env.STATIC_DIR));
