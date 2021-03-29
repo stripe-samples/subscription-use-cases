@@ -7,15 +7,13 @@ This sample shows how to create a customer, set up a card for recurring use, and
 
 **Demo**
 
-See a hosted version of the [sample](https://v211e.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/per-seat-subscriptions)
+<img src="./per-seat.gif" alt="Preview of recipe" style="max-width:25%;">
 
-The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
-
-Use the `4000002500003155` test card number to trigger a 3D Secure challenge flow.
+The demo is running in test mode -- use `4242424242424242` as a test card
+number with any CVC + future expiration date.
 
 Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
-<img src="subscription-with-fixed-price.png" alt="Preview of recipe" style="max-width:25%;">
 
 ### Features:
 
@@ -27,15 +25,20 @@ Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
 ## How to run locally
 
-This sample includes [5 server implementations](server/) in our most popular languages. Follow the steps below to run one of the servers locally.
+This sample includes [7 server implementations](server/) in our most popular
+languages. Follow the steps below to run one of the servers locally.
 
 **1. Clone and configure the sample**
 
-The Stripe CLI is the fastest way to clone and configure a sample to run locally.
+The Stripe CLI is the fastest way to clone and configure a sample to run
+locally.
 
 **Using the Stripe CLI**
 
-If you haven't already installed the CLI, follow the [installation steps](https://github.com/stripe/stripe-cli#installation) in the project README. The CLI is useful for cloning samples and locally testing webhooks and Stripe integrations.
+If you haven't already installed the CLI, follow the [installation
+steps](https://github.com/stripe/stripe-cli#installation) in the project
+README. The CLI is useful for cloning samples and locally testing webhooks and
+Stripe integrations.
 
 In your terminal shell, run the Stripe CLI command to clone the sample:
 
