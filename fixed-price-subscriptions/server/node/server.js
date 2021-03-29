@@ -106,16 +106,19 @@ app.post('/create-subscription', async (req, res) => {
   // Create the subscription
   const priceId = process.env[req.body.priceLookupKey.toUpperCase()];
 
-  const subscription = await stripe.subscriptions.create({
-    default_payment_method: paymentMethod.id,
-    customer: customerId,
-    items: [{
-      price: priceId,
-    }],
-    expand: ['latest_invoice.payment_intent'],
-  });
-
-  res.send({ subscription });
+  try {
+    const subscription = await stripe.subscriptions.create({
+      default_payment_method: paymentMethod.id,
+      customer: customerId,
+      items: [{
+        price: priceId,
+      }],
+      expand: ['latest_invoice.payment_intent'],
+    });
+    res.send({ subscription });
+  } catch (error) {
+    return res.status(400).send({ error: { message: error.message } });
+  }
 });
 
 app.get('/invoice-preview', async (req, res) => {
@@ -140,27 +143,35 @@ app.get('/invoice-preview', async (req, res) => {
 
 app.post('/cancel-subscription', async (req, res) => {
   // Cancel the subscription
-  const deletedSubscription = await stripe.subscriptions.del(
-    req.body.subscriptionId
-  );
+  try {
+    const deletedSubscription = await stripe.subscriptions.del(
+      req.body.subscriptionId
+    );
 
-  res.send({ subscription: deletedSubscription });
+    res.send({ subscription: deletedSubscription });
+  } catch (error) {
+    return res.status(400).send({ error: { message: error.message } });
+  }
 });
 
 app.post('/update-subscription', async (req, res) => {
-  const subscription = await stripe.subscriptions.retrieve(
-    req.body.subscriptionId
-  );
-  const updatedSubscription = await stripe.subscriptions.update(
-    req.body.subscriptionId, {
-      items: [{
-        id: subscription.items.data[0].id,
-        price: process.env[req.body.newPriceLookupKey],
-      }],
-    }
-  );
+  try {
+    const subscription = await stripe.subscriptions.retrieve(
+      req.body.subscriptionId
+    );
+    const updatedSubscription = await stripe.subscriptions.update(
+      req.body.subscriptionId, {
+        items: [{
+          id: subscription.items.data[0].id,
+          price: process.env[req.body.newPriceLookupKey],
+        }],
+      }
+    );
 
-  res.send({ subscription: updatedSubscription });
+    res.send({ subscription: updatedSubscription });
+  } catch (error) {
+    return res.status(400).send({ error: { message: error.message } });
+  }
 });
 
 app.get('/subscriptions', async (req, res) => {

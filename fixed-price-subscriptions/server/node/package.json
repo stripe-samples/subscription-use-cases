@@ -1,29 +1,19 @@
 {
   "name": "subscriptions-with-fixed-prices",
   "version": "1.0.0",
-  "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
+  "description": "A Stripe sample for collecting fixed price recurring payments with Stripe subscriptions.",
   "main": "server.js",
   "scripts": {
-    "server": "node server.js",
-    "reactClient": "cd ../../client/react && npm start",
-    "startReact": "concurrently \"yarn reactClient\" \"yarn server\"",
-    "startVanillajs": "yarn server",
-    "start": "yarn server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
   "author": "stripe-demos",
   "license": "ISC",
   "dependencies": {
     "autoprefixer": "^9.7.6",
     "body-parser": "^1.19.0",
-    "concurrently": "4.1.2",
     "cookie-parser": "^1.4.5",
     "dotenv": "^8.0.0",
     "express": "^4.17.1",
-    "postcss-cli": "^7.1.1",
     "stripe": "^7.4.0"
-  },
-  "devDependencies": {
-    "@fullhuman/postcss-purgecss": "^2.1.2"
   }
 }
