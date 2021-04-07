@@ -23,6 +23,8 @@ jobs:
 
       - name: Run tests
         run: |
+          rm -rf usage-based-subscriptions/server/dotnet/ReportUsage # causes "Program.cs(14,28): error CS0017: Program has more than one entry point defined."
+
           source sample-ci/helpers.sh
 
           install_docker_compose_settings
@@ -50,7 +52,6 @@ jobs:
           done
 
           sample=usage-based-subscriptions
-          rm -rf ${sample}/server/dotnet/ReportUsage # causes "Program.cs(14,28): error CS0017: Program has more than one entry point defined."
           for lang in $(cat .cli.json | server_langs_for_integration $sample)
           do
             configure_docker_compose_for_integration "$sample" "$lang" ../../client
