@@ -1,4 +1,4 @@
-module github.com/stripe-examples/checkout-subscription-and-add-on/server/go
+module github.com/stripe-samples/subscription-use-cases/server/go
 
 go 1.13
 
