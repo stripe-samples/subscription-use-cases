@@ -216,8 +216,8 @@ Example configuration file [`.env.example`](./.env.example)
 - **STRIPE_SECRET_KEY**: Found in the dashboard here: https://dashboard.stripe.com/test/apikeys
 - **STRIPE_WEBHOOK_SECRET**: If using the Stripe CLI (recommended) run `stripe listen --print-secret`, otherwise you can find the signing secret for the webhook endpoint in the dashboard by viewing the details of the endpoint here: https://dashboard.stripe.com/test/webhooks.
 - **STATIC_DIR**: The path to the directory containing the client side code. For vanillajs on the client, this will be `../../client/vanillajs`.
-- **BASIC**: The ID of the basic Price. You can find this in the Stripe dashbaord by viewing the basic product created earlier.
-- **PREMIUM**: The ID of the premium Price. You can find this in the Stripe dashbaord by viewing the premium product created earlier.
+- **BASIC**: The ID of the basic Price. You can find this in the Stripe dashboard by viewing the basic product created earlier.
+- **PREMIUM**: The ID of the premium Price. You can find this in the Stripe dashboard by viewing the premium product created earlier.
 
 ## FAQ
 
