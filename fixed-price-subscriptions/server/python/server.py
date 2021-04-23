@@ -136,19 +136,19 @@ def preview_invoice():
 
 
 @app.route('/update-subscription', methods=['POST'])
-def updateSubscription():
+def update_subscription():
     data = json.loads(request.data)
     try:
         subscription = stripe.Subscription.retrieve(data['subscriptionId'])
 
-        updatedSubscription = stripe.Subscription.modify(
+        update_subscription = stripe.Subscription.modify(
             data['subscriptionId'],
             items=[{
                 'id': subscription['items']['data'][0].id,
                 'price': os.getenv(data['newPriceLookupKey'].upper()),
             }]
         )
-        return jsonify(updatedSubscription)
+        return jsonify(update_subscription)
     except Exception as e:
         return jsonify(error=str(e)), 403
 
