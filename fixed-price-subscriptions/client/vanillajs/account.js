@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </p>
 
       <p>
-        Card last4: ${subscription.default_payment_method.card.last4}
+        Card last4: ${subscription.default_payment_method?.card?.last4}
       </p>
 
       <p>

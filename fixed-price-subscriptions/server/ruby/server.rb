@@ -85,21 +85,6 @@ post '/create-subscription' do
   { subscriptionId: subscription.id, clientSecret: subscription.latest_invoice.payment_intent.client_secret }.to_json
 end
 
-post '/complete-subscription' do
-  content_type 'application/json'
-  data = JSON.parse(request.body.read)
-
-  # Retrieve the payment intent used to pay the subscription
-  payment_intent = Stripe::PaymentIntent.retrieve(data['paymentIntentId'])
-
-  # The subscription automatically activates after successful payment
-  # Use the payment method from the first payment as the default payment method
-  # for future payments for this subscription
-  Stripe::Subscription.update(data['subscriptionId'], default_payment_method: payment_intent.payment_method)
-
-  { result: 'success' }.to_json
-end
-
 get '/subscriptions' do
   content_type 'application/json'
 
@@ -205,6 +190,26 @@ post '/webhook' do
 
   data = event['data']
   data_object = data['object']
+
+  if event.type == 'invoice.payment_succeeded'
+    if data_object['billing_reason'] == 'subscription_create'
+    # The subscription automatically activates after successful payment
+    # Set the payment method used to pay the first invoice 
+    # as the default payment method for that subscription
+    subscription_id = data_object['subscription']
+    payment_intent_id = data_object['payment_intent']
+
+    # Retrieve the payment intent used to pay the subscription
+    payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
+
+    # Set the default payment method
+    Stripe::Subscription.update(subscription_id, default_payment_method: payment_intent.payment_method)
+
+    puts "Default payment method set for subscription: #{payment_intent.payment_method}"
+    end
+
+    puts "Payment succeeded for invoice: #{event.id}"
+  end
 
   if event.type == 'invoice.paid'
     # Used to provision services after the trial has ended.

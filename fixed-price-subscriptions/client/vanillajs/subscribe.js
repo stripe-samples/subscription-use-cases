@@ -54,25 +54,9 @@ btn.addEventListener('click', async (e) => {
     if(result.error) {
       alert(result.error.message);
     } else {
-      // Complete subscription setup and redirect the customer to their account page
-      fetch('/complete-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          subscriptionId: subscriptionId,
-          paymentIntentId: result.paymentIntent.id,
-        }),
-      })
-      .then((response) => response.json())
-      .then((data) => {
-        setMessage('Success! Redirecting to your account.');
-        window.location.href = '/account.html';
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+      // Redirect the customer to their account page
+      setMessage('Success! Redirecting to your account.');
+      window.location.href = '/account.html';
     }
   });
 });
