@@ -42,7 +42,7 @@ const createSubscription = (priceId) => {
       const params = new URLSearchParams(window.location.search);
       params.append('subscriptionId', data.subscriptionId);
       params.append('clientSecret', data.clientSecret);
-      window.location.href = '/pay.html?' + params.toString();
+      window.location.href = '/subscribe.html?' + params.toString();
     })
     .catch((error) => {
       console.error('Error:', error);
