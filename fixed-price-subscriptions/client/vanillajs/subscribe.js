@@ -49,27 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       setMessage(`Payment method created ${paymentMethod.id}`);
 
-      // Create the subscription.
-      const {error, subscription} = await fetch('/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceLookupKey,
-          paymentMethodId: paymentMethod.id
-        }),
-      })
-        .then((response) => response.json());
-
-      if(error) {
-        // show error and collect new card details.
-        setMessage(error.message);
-        return;
-      }
-
-      setMessage(`Subscription created with status: ${subscription.status}`);
-
       // This sample only supports a Subscription with payment
       // upfront. If you offer a trial on your subscription, then
       // instead of confirming the subscription's latest_invoice's

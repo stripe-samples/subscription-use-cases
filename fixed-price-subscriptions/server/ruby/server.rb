@@ -21,8 +21,22 @@ end
 
 get '/config' do
   content_type 'application/json'
+  # Retrieves two prices with the lookup_keys
+  # `sample_basic` and `sample_premium`.  To
+  # create these prices, you can use the Stripe
+  # CLI fixtures command with the supplied
+  # `seed.json` fixture file like so:
+  #
+  #    stripe fixtures seed.json
+  #
+  prices = Stripe::Price.list({
+    lookup_keys: ['sample_basic', 'sample_premium']
+  })
 
-  { publishableKey: ENV['STRIPE_PUBLISHABLE_KEY'] }.to_json
+  {
+    publishableKey: ENV['STRIPE_PUBLISHABLE_KEY'],
+    prices: prices.data
+  }.to_json
 end
 
 post '/create-customer' do
