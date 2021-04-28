@@ -37,8 +37,8 @@ const clientSecret = params.get('clientSecret');
 //   the payment information and try again
 // - Stripe Elements automatically handles next actions like 3DSecure that are required for SCA
 // - Complete the subscription flow when the payment succeeds
-const btn = document.querySelector('#submit-payment-btn');
-btn.addEventListener('click', async (e) => {
+const form = document.querySelector('#subscribe-form');
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const nameInput = document.getElementById('name');
 
