@@ -85,6 +85,25 @@ post '/create-subscription' do
   { subscriptionId: subscription.id, clientSecret: subscription.latest_invoice.payment_intent.client_secret }.to_json
 end
 
+post '/complete-subscription' do
+  content_type 'application/json'
+  data = JSON.parse(request.body.read)
+
+  # Look up the authenticated customer in your database
+  # this sample uses cookies to simulate a logged in user.
+  customer_id = cookies[:customer]
+
+  # Retrieve the payment intent used to pay the subscription
+  payment_intent = Stripe::PaymentIntent.retrieve(data['paymentIntentId'])
+
+  # The subscription automatically activates after successful payment
+  # Use the payment method from the first payment as the default payment method
+  # for future payments for this subscription
+  Stripe::Subscription.update(data['subscriptionId'], default_payment_method: payment_intent.payment_method)
+
+  { result: 'success' }.to_json
+end
+
 get '/subscriptions' do
   content_type 'application/json'
 
