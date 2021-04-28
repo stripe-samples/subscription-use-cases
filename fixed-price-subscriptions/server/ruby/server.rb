@@ -89,10 +89,6 @@ post '/complete-subscription' do
   content_type 'application/json'
   data = JSON.parse(request.body.read)
 
-  # Look up the authenticated customer in your database
-  # this sample uses cookies to simulate a logged in user.
-  customer_id = cookies[:customer]
-
   # Retrieve the payment intent used to pay the subscription
   payment_intent = Stripe::PaymentIntent.retrieve(data['paymentIntentId'])
 
