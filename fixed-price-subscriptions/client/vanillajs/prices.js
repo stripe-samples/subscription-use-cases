@@ -5,6 +5,16 @@ fetch('/config')
   .then((response) => response.json())
   .then((data) => {
     pricesDiv.innerHTML = '';
+    if(!data.prices) {
+      pricesDiv.innerHTML = `
+        <h3>No prices found</h3>
+
+        <p>This sample requires two prices, one with the lookup_key sample_basic and another with the lookup_key sample_premium</p>
+
+        <p>You can create these through the API or with the Stripe CLI using the provided seed.json fixture file with: <code>stripe fixtures seed.json</code>
+      `
+    }
+
     data.prices.forEach((price) => {
       pricesDiv.innerHTML += `
         <div>
