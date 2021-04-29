@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // used, and the current period end.
   const subscriptionsDiv = document.querySelector('#subscriptions');
   subscriptionsDiv.innerHTML = subscriptions.data.map((subscription) => {
-    let last4 = subscription.default_payment_method?.card?.last4 || 'unknown';
+    let last4 = subscription.default_payment_method?.card?.last4 || '';
     return `
       <hr>
       <h4>
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <p>
         Card last4: ${last4}
       </p>
-      <small>If the last4 is unknown, ensure webhooks are being handled. The default payment method is set in the webhook handler.</small>
+      <small>If the last4 is blank, ensure webhooks are being handled. The default payment method is set in the webhook handler.</small>
 
       <p>
         Current period end: ${new Date(subscription.current_period_end * 1000)}
