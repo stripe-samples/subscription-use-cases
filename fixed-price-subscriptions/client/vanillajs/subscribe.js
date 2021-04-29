@@ -31,7 +31,7 @@ const clientSecret = params.get('clientSecret');
 // See https://stripe.com/docs/billing/subscriptions/trials
 
 // Payment info collection and confirmation
-// When the submit button is pressed, attempt to confirm the payment intent 
+// When the submit button is pressed, attempt to confirm the payment intent
 // with the information input into the card element form.
 // - handle payment errors by displaying an alert. The customer can update
 //   the payment information and try again
@@ -52,7 +52,7 @@ form.addEventListener('submit', async (e) => {
     }
   }).then((result) => {
     if(result.error) {
-      alert(result.error.message);
+      setMessage(`Payment failed: ${result.error.message}`);
     } else {
       // Redirect the customer to their account page
       setMessage('Success! Redirecting to your account.');

@@ -120,13 +120,11 @@ def get(path, *args, **kwargs)
 end
 
 def get_json(path, *args, **kwargs)
-  puts "Getting json from #{path}"
   response = RestClient.get("#{SERVER_URL}#{path}", *args, **kwargs)
   JSON.parse(response.body)
 end
 
 def post_json(path, payload, **kwargs)
-  puts "Posting json to #{path}"
   defaults = {content_type: :json}
   response = RestClient.post(
     "#{SERVER_URL}#{path}",
