@@ -25,8 +25,22 @@ def get_index():
 
 @app.route('/config', methods=['GET'])
 def get_config():
+    # Retrieves two prices with the lookup_keys
+    # `sample_basic` and `sample_premium`.  To
+    # create these prices, you can use the Stripe
+    # CLI fixtures command with the supplied
+    # `seed.json` fixture file like so:
+    #
+    #    stripe fixtures seed.json
+    #
+
+    prices = stripe.Price.list(
+        lookup_keys=['sample_basic', 'sample_premium']
+    )
+
     return jsonify(
         publishableKey=os.getenv('STRIPE_PUBLISHABLE_KEY'),
+        prices=prices.data,
     )
 
 
@@ -45,7 +59,8 @@ def create_customer():
         # We're simulating authentication here by storing the ID of the customer
         # in a cookie.
         resp.set_cookie('customer', customer.id)
-        return resp
+
+        return jsonify(customer=customer)
     except Exception as e:
         return jsonify(error=str(e)), 403
 
@@ -58,22 +73,31 @@ def create_subscription():
     # database, and set customer_id to the Stripe Customer ID of that user.
     customer_id = request.cookies.get('customer')
 
+
+    # Extract the price ID from environment variables given the name
+    # of the price passed from the front end.
+    #
+    # `price_id` is the an ID of a Price object on your account.
+    # This was populated using Price's `lookup_key` in the /config endpoint
+    price_id = data['priceId']
+
     try:
-        payment_method = stripe.PaymentMethod.attach(
-            data['paymentMethodId'],
-            customer=customer_id,
-        )
+        # Create the subscription. Note we're using
+        # expand here so that the API will return the Subscription's related
+        # latest invoice, and that latest invoice's payment_intent
+        # so we can collect payment information and confirm the payment on the front end.
 
         # Create the subscription
         subscription = stripe.Subscription.create(
-            default_payment_method=payment_method.id,
             customer=customer_id,
             items=[{
-                'price': os.getenv(data['priceLookupKey'].upper())
+                'price': price_id,
             }],
+            payment_behavior='default_incomplete',
             expand=['latest_invoice.payment_intent'],
         )
-        return jsonify(subscription=subscription)
+        return jsonify(subscriptionId=subscription.id, clientSecret=subscription.latest_invoice.payment_intent.client_secret)
+
     except Exception as e:
         return jsonify(error={'message': e.user_message}), 400
 
