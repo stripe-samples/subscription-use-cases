@@ -217,7 +217,7 @@ def webhook_received():
             default_payment_method=payment_intent.payment_method
           )
 
-          print("Default payment method set for subscription: #{payment_intent.payment_method}")
+          print("Default payment method set for subscription:" + payment_intent.payment_method)
     elif event_type == 'invoice.payment_failed':
         # If the payment fails or the customer does not have a valid payment method,
         # an invoice.payment_failed event is sent, the subscription becomes past_due.
