@@ -24,9 +24,22 @@ namespace dotnet.Controllers
         [HttpGet("config")]
         public ActionResult<ConfigResponse> GetConfig()
         {
+
+            var options = new PriceListOptions
+            {
+              LookupKeys = new List<string>
+              {
+                "sample_basic",
+                "sample_premium"
+              }
+            };
+            var service = new PriceService();
+            var prices = service.List(options);
+
             return new ConfigResponse
             {
                 PublishableKey = this.options.Value.PublishableKey,
+                Prices = prices.Data
             };
         }
 
@@ -52,38 +65,22 @@ namespace dotnet.Controllers
         }
 
         [HttpPost("create-subscription")]
-        public ActionResult<SubscriptionResponse> CreateSubscription([FromBody] CreateSubscriptionRequest req)
+        public ActionResult<SubscriptionCreateResponse> CreateSubscription([FromBody] CreateSubscriptionRequest req)
         {
             var customerId = HttpContext.Request.Cookies["customer"];
-
-            // Attach payment method
-            PaymentMethod paymentMethod;
-            try
-            {
-              var options = new PaymentMethodAttachOptions
-              {
-                  Customer = customerId,
-              };
-              var service = new PaymentMethodService();
-              paymentMethod = service.Attach(req.PaymentMethod, options);
-            }
-            catch (StripeException e)
-            {
-              return BadRequest(new { error = new { message = e.Message }});
-            }
 
             // Create subscription
             var subscriptionOptions = new SubscriptionCreateOptions
             {
-                DefaultPaymentMethod = paymentMethod.Id,
                 Customer = customerId,
                 Items = new List<SubscriptionItemOptions>
                 {
                     new SubscriptionItemOptions
                     {
-                        Price = Environment.GetEnvironmentVariable(req.Price.ToUpper()),
+                        Price = req.PriceId,
                     },
                 },
+                PaymentBehavior = "default_incomplete",
             };
             subscriptionOptions.AddExpand("latest_invoice.payment_intent");
             var subscriptionService = new SubscriptionService();
@@ -91,9 +88,10 @@ namespace dotnet.Controllers
             {
                 Subscription subscription = subscriptionService.Create(subscriptionOptions);
 
-                return new SubscriptionResponse
+                return new SubscriptionCreateResponse
                 {
-                  Subscription = subscription
+                  SubscriptionId = subscription.Id,
+                  ClientSecret = subscription.LatestInvoice.PaymentIntent.ClientSecret,
                 };
             }
             catch (StripeException e)
@@ -203,6 +201,31 @@ namespace dotnet.Controllers
             {
                 Console.WriteLine($"Something failed {e}");
                 return BadRequest();
+            }
+
+            if (stripeEvent.Type == "invoice.payment_succeeded") {
+              var invoice = stripeEvent.Data.Object as Invoice;
+
+              if(invoice.BillingReason == "subscription_create") {
+                // The subscription automatically activates after successful payment
+                // Set the payment method used to pay the first invoice
+                // as the default payment method for that subscription
+
+                // Retrieve the payment intent used to pay the subscription
+                var service = new PaymentIntentService();
+                var paymentIntent = service.Get(invoice.PaymentIntentId);
+
+                // Set the default payment method
+                var options = new SubscriptionUpdateOptions
+                {
+                  DefaultPaymentMethod = paymentIntent.PaymentMethodId,
+                };
+                var subscriptionService = new SubscriptionService();
+                subscriptionService.Update(invoice.SubscriptionId, options);
+
+                Console.WriteLine($"Default payment method set for subscription: {paymentIntent.PaymentMethodId}");
+              }
+              Console.WriteLine($"Payment succeeded for invoice: {stripeEvent.Id}");
             }
 
             if (stripeEvent.Type == "invoice.paid")

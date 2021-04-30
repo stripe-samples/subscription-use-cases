@@ -60,7 +60,7 @@ def create_customer():
         # in a cookie.
         resp.set_cookie('customer', customer.id)
 
-        return jsonify(customer=customer)
+        return resp
     except Exception as e:
         return jsonify(error=str(e)), 403
 

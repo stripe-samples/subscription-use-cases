@@ -110,7 +110,7 @@ app.post('/create-subscription', async (req, res) => {
       expand: ['latest_invoice.payment_intent'],
     });
 
-    res.send({ 
+    res.send({
       subscriptionId: subscription.id,
       clientSecret: subscription.latest_invoice.payment_intent.client_secret,
     });
@@ -161,7 +161,7 @@ app.post('/update-subscription', async (req, res) => {
       req.body.subscriptionId, {
         items: [{
           id: subscription.items.data[0].id,
-          price: process.env[req.body.newPriceLookupKey],
+          price: process.env[req.body.newPriceLookupKey.toUpperCase()],
         }],
       }
     );
