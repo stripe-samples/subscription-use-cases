@@ -193,19 +193,19 @@ post '/webhook' do
 
   if event.type == 'invoice.payment_succeeded'
     if data_object['billing_reason'] == 'subscription_create'
-    # The subscription automatically activates after successful payment
-    # Set the payment method used to pay the first invoice
-    # as the default payment method for that subscription
-    subscription_id = data_object['subscription']
-    payment_intent_id = data_object['payment_intent']
+      # The subscription automatically activates after successful payment
+      # Set the payment method used to pay the first invoice
+      # as the default payment method for that subscription
+      subscription_id = data_object['subscription']
+      payment_intent_id = data_object['payment_intent']
 
-    # Retrieve the payment intent used to pay the subscription
-    payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
+      # Retrieve the payment intent used to pay the subscription
+      payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
 
-    # Set the default payment method
-    Stripe::Subscription.update(subscription_id, default_payment_method: payment_intent.payment_method)
+      # Set the default payment method
+      Stripe::Subscription.update(subscription_id, default_payment_method: payment_intent.payment_method)
 
-    puts "Default payment method set for subscription: #{payment_intent.payment_method}"
+      puts "Default payment method set for subscription: #{payment_intent.payment_method}"
     end
 
     puts "Payment succeeded for invoice: #{event.id}"
