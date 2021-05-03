@@ -33,7 +33,7 @@
       "path": "/v1/products",
       "method": "post",
       "params": {
-        "name": "Basic"
+        "name": "Premium"
       }
     },
     {

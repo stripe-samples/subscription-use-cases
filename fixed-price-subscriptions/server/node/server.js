@@ -23,18 +23,6 @@ if (
     ? ''
     : console.log('Add STRIPE_PUBLISHABLE_KEY to your .env file.');
 
-  process.env.BASIC
-    ? ''
-    : console.log(
-        'Add BASIC priceID to your .env file. See repo readme for setup instructions.'
-      );
-
-  process.env.PREMIUM
-    ? ''
-    : console.log(
-        'Add PREMIUM priceID to your .env file. See repo readme for setup instructions.'
-      );
-
   process.env.STATIC_DIR
     ? ''
     : console.log(
@@ -71,6 +59,7 @@ app.get('/', (req, res) => {
 app.get('/config', async (req, res) => {
   const prices = await stripe.prices.list({
     lookup_keys: ['sample_basic', 'sample_premium'],
+    expand: ['data.product']
   });
 
   res.send({
