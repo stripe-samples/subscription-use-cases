@@ -21,8 +21,24 @@ end
 
 get '/config' do
   content_type 'application/json'
+  # Retrieves two prices with the lookup_keys
+  # `sample_basic` and `sample_premium`.  To
+  # create these prices, you can use the Stripe
+  # CLI fixtures command with the supplied
+  # `seed.json` fixture file like so:
+  #
+  #    stripe fixtures seed.json
+  #
 
-  { publishableKey: ENV['STRIPE_PUBLISHABLE_KEY'] }.to_json
+  # Use Price's `lookup_key` using to fetch the list of prices
+  prices = Stripe::Price.list({
+    lookup_keys: ['sample_basic', 'sample_premium']
+  })
+
+  {
+    publishableKey: ENV['STRIPE_PUBLISHABLE_KEY'],
+    prices: prices.data
+  }.to_json
 end
 
 post '/create-customer' do
@@ -49,39 +65,24 @@ post '/create-subscription' do
   # Extract the price ID from environment variables given the name
   # of the price passed from the front end.
   #
-  # `price_id` should be an ID of a Price object on your account.
-  # In practice, you can also set a Price's `lookup_key` using
-  # the API when you create a Price, then fetch the list of prices
-  # by ID like so:
-  #
-  #   price_id = Stripe::Price.list(lookup_keys: ['basic']).data.first.id
-  price_id = ENV[data['priceLookupKey'].upcase]
-
-  begin
-    # Attach the payment method to the customer related
-    # to the authenticated user.
-    payment_method = Stripe::PaymentMethod.attach(
-      data['paymentMethodId'],
-      customer: customer_id
-    )
-  rescue Stripe::CardError => e
-    halt 400, { 'Content-Type' => 'application/json' }, { error: { message: e.error.message }}.to_json
-  end
+  # `price_id` is the an ID of a Price object on your account.
+  # This was populated using Price's `lookup_key` in the /config endpoint
+  price_id = data['priceId']
 
   # Create the subscription. Note we're using
   # expand here so that the API will return the Subscription's related
-  # latest invoice, and that latest invoice's payment_intent so that
-  # if SCA is required we can confirm the payment on the front end.
+  # latest invoice, and that latest invoice's payment_intent
+  # so we can collect payment information and confirm the payment on the front end.
   subscription = Stripe::Subscription.create(
-    default_payment_method: payment_method.id,
     customer: customer_id,
     items: [{
       price: price_id,
     }],
+    payment_behavior: 'default_incomplete',
     expand: ['latest_invoice.payment_intent']
   )
 
-  { subscription: subscription }.to_json
+  { subscriptionId: subscription.id, clientSecret: subscription.latest_invoice.payment_intent.client_secret }.to_json
 end
 
 get '/subscriptions' do
@@ -189,6 +190,26 @@ post '/webhook' do
 
   data = event['data']
   data_object = data['object']
+
+  if event.type == 'invoice.payment_succeeded'
+    if data_object['billing_reason'] == 'subscription_create'
+      # The subscription automatically activates after successful payment
+      # Set the payment method used to pay the first invoice
+      # as the default payment method for that subscription
+      subscription_id = data_object['subscription']
+      payment_intent_id = data_object['payment_intent']
+
+      # Retrieve the payment intent used to pay the subscription
+      payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
+
+      # Set the default payment method
+      Stripe::Subscription.update(subscription_id, default_payment_method: payment_intent.payment_method)
+
+      puts "Default payment method set for subscription: #{payment_intent.payment_method}"
+    end
+
+    puts "Payment succeeded for invoice: #{event.id}"
+  end
 
   if event.type == 'invoice.paid'
     # Used to provision services after the trial has ended.

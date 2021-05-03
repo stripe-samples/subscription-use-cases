@@ -1,0 +1,57 @@
+{
+  "_meta": {
+    "template_version": 0
+  },
+  "fixtures": [
+    {
+      "name": "basic_product",
+      "path": "/v1/products",
+      "method": "post",
+      "params": {
+        "name": "Basic"
+      }
+    },
+    {
+      "name": "basic_price",
+      "path": "/v1/prices",
+      "method": "post",
+      "params": {
+        "product": "${basic_product:id}",
+        "lookup_key": "sample_basic",
+        "currency": "usd",
+        "unit_amount": 500,
+        "recurring": {
+          "interval": "month"
+        },
+        "metadata": {
+          "sample": "fixed-price"
+        }
+      }
+    },
+    {
+      "name": "premium_product",
+      "path": "/v1/products",
+      "method": "post",
+      "params": {
+        "name": "Premium"
+      }
+    },
+    {
+      "name": "premium_price",
+      "path": "/v1/prices",
+      "method": "post",
+      "params": {
+        "product": "${premium_product:id}",
+        "lookup_key": "sample_premium",
+        "currency": "usd",
+        "unit_amount": 1400,
+        "recurring": {
+          "interval": "month"
+        },
+        "metadata": {
+          "sample": "fixed-price"
+        }
+      }
+    }
+  ]
+}

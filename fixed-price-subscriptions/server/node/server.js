@@ -9,8 +9,6 @@ require('dotenv').config({ path: './.env' });
 if (
   !process.env.STRIPE_SECRET_KEY ||
   !process.env.STRIPE_PUBLISHABLE_KEY ||
-  !process.env.BASIC ||
-  !process.env.PREMIUM ||
   !process.env.STATIC_DIR
 ) {
   console.log(
@@ -24,18 +22,6 @@ if (
   process.env.STRIPE_PUBLISHABLE_KEY
     ? ''
     : console.log('Add STRIPE_PUBLISHABLE_KEY to your .env file.');
-
-  process.env.BASIC
-    ? ''
-    : console.log(
-        'Add BASIC priceID to your .env file. See repo readme for setup instructions.'
-      );
-
-  process.env.PREMIUM
-    ? ''
-    : console.log(
-        'Add PREMIUM priceID to your .env file. See repo readme for setup instructions.'
-      );
 
   process.env.STATIC_DIR
     ? ''
@@ -71,8 +57,14 @@ app.get('/', (req, res) => {
 });
 
 app.get('/config', async (req, res) => {
+  const prices = await stripe.prices.list({
+    lookup_keys: ['sample_basic', 'sample_premium'],
+    expand: ['data.product']
+  });
+
   res.send({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    prices: prices.data,
   });
 });
 
@@ -86,7 +78,7 @@ app.post('/create-customer', async (req, res) => {
   // We're simulating authentication with a cookie.
   res.cookie('customer', customer.id, { maxAge: 900000, httpOnly: true });
 
-  res.send({ customer });
+  res.send({ customer: customer });
 });
 
 app.post('/create-subscription', async (req, res) => {
@@ -94,30 +86,23 @@ app.post('/create-subscription', async (req, res) => {
   // Stripe Customer ID related to the authenticated user.
   const customerId = req.cookies['customer'];
 
-  let paymentMethod;
-  try {
-    paymentMethod = await stripe.paymentMethods.attach(
-      req.body.paymentMethodId, {
-        customer: customerId,
-      }
-    );
-  } catch (error) {
-    return res.status(400).send({ error: { message: error.message } });
-  }
-
   // Create the subscription
-  const priceId = process.env[req.body.priceLookupKey.toUpperCase()];
+  const priceId = req.body.priceId;
 
   try {
     const subscription = await stripe.subscriptions.create({
-      default_payment_method: paymentMethod.id,
       customer: customerId,
       items: [{
         price: priceId,
       }],
+      payment_behavior: 'default_incomplete',
       expand: ['latest_invoice.payment_intent'],
     });
-    res.send({ subscription });
+
+    res.send({
+      subscriptionId: subscription.id,
+      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+    });
   } catch (error) {
     return res.status(400).send({ error: { message: error.message } });
   }
@@ -165,7 +150,7 @@ app.post('/update-subscription', async (req, res) => {
       req.body.subscriptionId, {
         items: [{
           id: subscription.items.data[0].id,
-          price: process.env[req.body.newPriceLookupKey],
+          price: process.env[req.body.newPriceLookupKey.toUpperCase()],
         }],
       }
     );
@@ -211,6 +196,7 @@ app.post(
       );
       return res.sendStatus(400);
     }
+
     // Extract the object from the event.
     const dataObject = event.data.object;
 
@@ -219,10 +205,27 @@ app.post(
     // https://stripe.com/docs/billing/webhooks
     // Remove comment to see the various objects sent for this sample
     switch (event.type) {
-      case 'invoice.paid':
-        // Used to provision services after the trial has ended.
-        // The status of the invoice will show up as paid. Store the status in your
-        // database to reference when a user accesses your service to avoid hitting rate limits.
+      case 'invoice.payment_succeeded':
+        if(dataObject['billing_reason'] == 'subscription_create') {
+          // The subscription automatically activates after successful payment
+          // Set the payment method used to pay the first invoice
+          // as the default payment method for that subscription
+          const subscription_id = dataObject['subscription']
+          const payment_intent_id = dataObject['payment_intent']
+
+          // Retrieve the payment intent used to pay the subscription
+          const payment_intent = await stripe.paymentIntents.retrieve(payment_intent_id);
+
+          const subscription = await stripe.subscriptions.update(
+            subscription_id,
+            {
+              default_payment_method: payment_intent.payment_method,
+            },
+          );
+
+          console.log("Default payment method set for subscription:" + payment_intent.payment_method);
+        };
+
         break;
       case 'invoice.payment_failed':
         // If the payment fails or the customer does not have a valid payment method,

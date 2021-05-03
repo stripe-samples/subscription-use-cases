@@ -7,6 +7,7 @@ import static spark.Spark.staticFiles;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+
 import com.stripe.Stripe;
 import com.stripe.exception.CardException;
 import com.stripe.exception.SignatureVerificationException;
@@ -15,6 +16,8 @@ import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
 import com.stripe.model.PaymentMethod;
+import com.stripe.model.Price;
+import com.stripe.model.PriceCollection;
 import com.stripe.model.StripeObject;
 import com.stripe.model.Subscription;
 import com.stripe.model.SubscriptionCollection;
@@ -25,9 +28,11 @@ import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.InvoiceRetrieveParams;
 import com.stripe.param.InvoiceUpcomingParams;
 import com.stripe.param.PaymentMethodAttachParams;
+import com.stripe.param.PriceListParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionListParams;
 import com.stripe.param.SubscriptionUpdateParams;
+
 import io.github.cdimascio.dotenv.Dotenv;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -49,18 +54,11 @@ public class Server {
   }
 
   static class CreateSubscriptionRequest {
-    @SerializedName("priceLookupKey")
-    String priceLookupKey;
+    @SerializedName("priceId")
+    String priceId;
 
-    @SerializedName("paymentMethodId")
-    String paymentMethodId;
-
-    public String getPriceLookupKey() {
-      return priceLookupKey;
-    }
-
-    public String getPaymentMethodId() {
-      return paymentMethodId;
+    public String getPriceId() {
+      return priceId;
     }
   }
 
@@ -109,10 +107,20 @@ public class Server {
       (request, response) -> {
         response.type("application/json");
         Map<String, Object> responseData = new HashMap<>();
+
         responseData.put(
           "publishableKey",
           dotenv.get("STRIPE_PUBLISHABLE_KEY")
         );
+
+        PriceListParams params = PriceListParams
+          .builder()
+          .addLookupKeys("sample_basic")
+          .addLookupKeys("sample_premium")
+          .build();
+        PriceCollection prices = Price.list(params);
+        responseData.put("prices", prices.getData());
+
         return gson.toJson(responseData);
       }
     );
@@ -179,47 +187,27 @@ public class Server {
         // The lookup key like `basic` or `premium` is passed from
         // the front end, then the price ID like price_ab3b23b2321bb46 is
         // looked up in the environment variables.
-        String priceId = dotenv.get(postBody.getPriceLookupKey().toUpperCase());
-
-        PaymentMethod pm = PaymentMethod.retrieve(postBody.getPaymentMethodId());
-
-        try {
-          // Attach the payment method collected on the front end
-          // to the customer.
-          PaymentMethodAttachParams params = PaymentMethodAttachParams
-            .builder()
-            .setCustomer(customerId)
-            .build();
-          pm = pm.attach(params);
-        } catch (CardException e) {
-          // Since it's a decline, CardException will be caught
-          Map<String, String> responseErrorMessage = new HashMap<>();
-          responseErrorMessage.put("message", e.getMessage());
-          Map<String, Object> responseError = new HashMap<>();
-          responseError.put("error", responseErrorMessage);
-
-          response.status(400);
-          return gson.toJson(responseError);
-        }
+        String priceId = postBody.getPriceId();
 
         // Create the subscription
         SubscriptionCreateParams subCreateParams = SubscriptionCreateParams
           .builder()
           .setCustomer(customerId)
-          .setDefaultPaymentMethod(pm.getId())
           .addItem(
             SubscriptionCreateParams
               .Item.builder()
               .setPrice(priceId)
               .build()
           )
+          .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
           .addAllExpand(Arrays.asList("latest_invoice.payment_intent"))
           .build();
 
         Subscription subscription = Subscription.create(subCreateParams);
 
         Map<String, Object> responseData = new HashMap<>();
-        responseData.put("subscription", subscription);
+        responseData.put("subscriptionId", subscription.getId());
+        responseData.put("clientSecret", subscription.getLatestInvoice().getPaymentIntent().getClientSecret());
         return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
       }
     );
@@ -388,6 +376,31 @@ public class Server {
         }
 
         switch (event.getType()) {
+          case "invoice.payment_succeeded":
+            Invoice invoice = (Invoice) stripeObject;
+            if(invoice.getBillingReason().equals("subscription_create")) {
+              // The subscription automatically activates after successful payment
+              // Set the payment method used to pay the first invoice
+              // as the default payment method for that subscription
+              String subscriptionId = invoice.getSubscription();
+              String paymentIntentId = invoice.getPaymentIntent();
+
+              // Retrieve the payment intent used to pay the subscription
+              PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
+
+              // Set the default payment method
+              Subscription subscription = Subscription.retrieve(subscriptionId);
+              SubscriptionUpdateParams param = SubscriptionUpdateParams
+                .builder()
+                .setDefaultPaymentMethod(paymentIntent.getPaymentMethod())
+                .build();
+              Subscription updatedSubscription = subscription.update(params);
+              System.out.println("Default payment method set for subscription: " + paymentIntent.getPaymentMethod());
+            }
+
+            System.out.println("Payment succeeded for invoice: " + event.getId());
+
+            break;
           case "invoice.paid":
             // Used to provision services after the trial has ended.
             // The status of the invoice will show up as paid. Store the status in your

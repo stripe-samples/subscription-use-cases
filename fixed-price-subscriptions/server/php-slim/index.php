@@ -42,9 +42,16 @@ $app->get('/config', function (
     Response $response,
     array $args
 ) {
+    $stripe = $this->stripe;
+
     $pub_key = getenv('STRIPE_PUBLISHABLE_KEY');
 
-    return $response->withJson(['publishableKey' => $pub_key]);
+    $prices = $stripe->prices->all(['lookup_keys' => ['sample_basic', 'sample_premium']]);
+
+    return $response->withJson([
+      'publishableKey' => $pub_key,
+      'prices' => $prices->data,
+    ]);
 });
 
 $app->post('/create-customer', function (
@@ -83,35 +90,22 @@ $app->post('/create-subscription', function (
     # The ID of a Price object in your Stripe account. In this
     # sample, it's stored in the .env file and loaded from environment
     # variables.
-    $price_id = getenv(strtoupper($body->priceLookupKey));
-
-    # Attach the newly created payment method to the customer.
-    try {
-        $payment_method = $stripe->paymentMethods->retrieve(
-            $body->paymentMethodId
-        );
-        $payment_method->attach([
-            'customer' => $customer_id,
-        ]);
-    } catch (\Stripe\Exception\CardException $e) {
-      return $response->withJson([
-        'error' => [
-          'message' => $e->getError()->message,
-        ]
-      ], 400);
-    }
+    $price_id = $body->priceId;
 
     // Create the subscription.
     $subscription = $stripe->subscriptions->create([
         'customer' => $customer_id,
-        'default_payment_method' => $payment_method->id,
         'items' => [[
             'price' => $price_id,
         ]],
+        'payment_behavior' => 'default_incomplete',
         'expand' => ['latest_invoice.payment_intent'],
     ]);
 
-    return $response->withJson(['subscription' => $subscription]);
+    return $response->withJson([
+      'subscriptionId' => $subscription->id,
+      'clientSecret' => $subscription->latest_invoice->payment_intent->client_secret
+    ]);
 });
 
 $app->get('/invoice-preview', function (
@@ -223,11 +217,30 @@ $app->post('/webhook', function (Request $request, Response $response) {
     // https://stripe.com/docs/billing/webhooks
     switch ($type) {
         case 'invoice.paid':
-            // The status of the invoice will show up as paid. Store the status in your
-            // database to reference when a user accesses your service to avoid hitting rate
-            // limits.
-            $logger->info('Invoice paid: ' . $event->id);
-            break;
+          if ($object['billing_reason'] == 'subscription_create') {
+            // The subscription automatically activates after successful payment
+            // Set the payment method used to pay the first invoice
+            // as the default payment method for that subscription
+            $subscription_id = $object['subscription'];
+            $payment_intent_id = $object['payment_intent'];
+
+            # Retrieve the payment intent used to pay the subscription
+            $payment_intent = $stripe->paymentIntents->retrieve(
+              $payment_intent_id,
+              []
+            );
+            $stripe->subscriptions->update(
+              $subscription_id,
+              ['default_payment_method' => $payment_intent->payment_method],
+            );
+
+            $logger->info('Default payment method set for subscription:' + $payment_intent->payment_method);
+          };
+          
+          // database to reference when a user accesses your service to avoid hitting rate
+          // limits.
+          $logger->info('Invoice paid: ' . $event->id);
+          break;
         case 'invoice.payment_failed':
             // If the payment fails or the customer does not have a valid payment method,
             // an invoice.payment_failed event is sent, the subscription becomes past_due.

@@ -1,6 +1,7 @@
 package main
 
 import (
+  "fmt"
     "bytes"
     "encoding/json"
     "errors"
@@ -15,7 +16,8 @@ import (
     "github.com/stripe/stripe-go/v72"
     "github.com/stripe/stripe-go/v72/customer"
     "github.com/stripe/stripe-go/v72/invoice"
-    "github.com/stripe/stripe-go/v72/paymentmethod"
+    "github.com/stripe/stripe-go/v72/price"
+    "github.com/stripe/stripe-go/v72/paymentintent"
     "github.com/stripe/stripe-go/v72/sub"
     "github.com/stripe/stripe-go/v72/webhook"
 )
@@ -47,10 +49,24 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
         http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
         return
     }
+
+    params := &stripe.PriceListParams{
+      LookupKeys: stripe.StringSlice([]string{"sample_basic", "sample_premium"}),
+    }
+
+    prices := make([]*stripe.Price, 0)
+
+    i := price.List(params)
+    for i.Next() {
+      prices = append(prices, i.Price())
+    }
+
     writeJSON(w, struct {
         PublishableKey string `json:"publishableKey"`
+        Prices []*stripe.Price `json:"prices"`
     }{
         PublishableKey: os.Getenv("STRIPE_PUBLISHABLE_KEY"),
+        Prices: prices,
     }, nil)
 }
 
@@ -100,8 +116,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
     }
 
     var req struct {
-        PaymentMethodID string `json:"paymentMethodId"`
-        PriceID         string `json:"priceLookupKey"`
+        PriceID         string `json:"priceId"`
     }
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -114,29 +129,15 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
     cookie, _ := r.Cookie("customer")
     customerID := cookie.Value
 
-    // Attach PaymentMethod
-    params := &stripe.PaymentMethodAttachParams{
-        Customer: stripe.String(customerID),
-    }
-    pm, err := paymentmethod.Attach(
-        req.PaymentMethodID,
-        params,
-    )
-    if err != nil {
-        writeJSON(w, nil, err)
-        log.Printf("paymentmethod.Attach: %v %s", err, pm.ID)
-        return
-    }
-
     // Create subscription
     subscriptionParams := &stripe.SubscriptionParams{
-        DefaultPaymentMethod: stripe.String(pm.ID),
         Customer: stripe.String(customerID),
         Items: []*stripe.SubscriptionItemsParams{
             {
-                Price: stripe.String(os.Getenv(strings.ToUpper(req.PriceID))),
+                Price: stripe.String(req.PriceID),
             },
         },
+        PaymentBehavior: stripe.String("default_incomplete"),
     }
     subscriptionParams.AddExpand("latest_invoice.payment_intent")
     s, err := sub.New(subscriptionParams)
@@ -148,9 +149,11 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
     }
 
     writeJSON(w, struct {
-        Subscription *stripe.Subscription `json:"subscription"`
+        SubscriptionID string `json:"subscriptionId"`
+        ClientSecret string `json:"clientSecret"`
     }{
-        Subscription: s,
+        SubscriptionID: s.ID,
+        ClientSecret: s.LatestInvoice.PaymentIntent.ClientSecret,
     }, nil)
 }
 
@@ -324,23 +327,27 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if event.Type != "checkout.session.completed" {
-        return
-    }
+    if event.Type == "invoice.payment_succeeded" {
+      var invoice stripe.Invoice
+      err := json.Unmarshal(event.Data.Raw, &invoice)
+      if err != nil {
+          fmt.Fprintf(os.Stderr, "Error parsing webhook JSON: %v\n", err)
+          w.WriteHeader(http.StatusBadRequest)
+          return
+      }
 
-    cust, err := customer.Get(event.GetObjectValue("customer"), nil)
-    if err != nil {
-        writeJSON(w, nil, err)
-        log.Printf("customer.Get: %v", err)
-        return
-    }
+      pi, _ := paymentintent.Get(
+        invoice.PaymentIntent.ID,
+        nil,
+      )
 
-    if event.GetObjectValue("display_items", "0", "custom") != "" &&
-    event.GetObjectValue("display_items", "0", "custom", "name") == "Pasha e-book" {
-        log.Printf("🔔 Customer is subscribed and bought an e-book! Send the e-book to %s", cust.Email)
-    } else {
-        log.Printf("🔔 Customer is subscribed but did not buy an e-book.")
+      params := &stripe.SubscriptionParams{
+        DefaultPaymentMethod: stripe.String(pi.PaymentMethod.ID),
+      }
+      sub.Update(invoice.Subscription.ID, params)
+      fmt.Println("Default payment method set for subscription: %s", pi.PaymentMethod)
     }
+    fmt.Println("Payment succeeded for invoice: %s", event.ID)
 }
 
 type errResp struct {
