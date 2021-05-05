@@ -1,5 +1,3 @@
-require 'byebug'
-
 def authenticated_post_json(path, payload, customer_id)
   post_json(path, payload, {
     cookies: {

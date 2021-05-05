@@ -16,6 +16,7 @@ import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
 import com.stripe.model.PaymentMethod;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.StripeObject;
@@ -207,7 +208,7 @@ public class Server {
 
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("subscriptionId", subscription.getId());
-        responseData.put("clientSecret", subscription.getLatestInvoice().getPaymentIntent().getClientSecret());
+        responseData.put("clientSecret", subscription.getLatestInvoiceObject().getPaymentIntentObject().getClientSecret());
         return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
       }
     );
@@ -390,7 +391,7 @@ public class Server {
 
               // Set the default payment method
               Subscription subscription = Subscription.retrieve(subscriptionId);
-              SubscriptionUpdateParams param = SubscriptionUpdateParams
+              SubscriptionUpdateParams params = SubscriptionUpdateParams
                 .builder()
                 .setDefaultPaymentMethod(paymentIntent.getPaymentMethod())
                 .build();
