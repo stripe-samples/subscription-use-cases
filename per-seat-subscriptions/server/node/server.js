@@ -45,7 +45,14 @@ if (
   process.exit();
 }
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2020-08-27',
+  appInfo: { // For sample support and debugging, not required for production:
+    name: "stripe-samples/subscription-use-cases/per-seat-subscriptions",
+    version: "0.0.1",
+    url: "https://github.com/stripe-samples/subscription-use-cases/per-seat-subscriptions"
+  }
+});
 
 app.use(express.static(process.env.STATIC_DIR));
 // Use JSON parser for all non-webhook routes.

@@ -37,6 +37,12 @@ func main() {
 	}
 
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	// For sample support and debugging, not required for production:
+	stripe.SetAppInfo(&stripe.AppInfo{
+		Name:    "stripe-samples/subscription-use-cases/per-seat-subscriptions",
+		Version: "0.0.1",
+		URL:     "https://github.com/stripe-samples/subscription-use-cases/per-seat-subscriptions",
+	})
 
 	http.Handle("/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR"))))
 	http.HandleFunc("/config", handleConfig)
@@ -154,7 +160,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		Customer: stripe.String(req.CustomerID),
 		Items: []*stripe.SubscriptionItemsParams{
 			{
-				Price: stripe.String(os.Getenv(req.PriceID)),
+				Price:    stripe.String(os.Getenv(req.PriceID)),
 				Quantity: stripe.Int64(req.Quantity),
 			},
 		},
@@ -274,7 +280,7 @@ func handleRetrieveSubscriptionInformation(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-  item := s.Items.Data[0]
+	item := s.Items.Data[0]
 	writeJSON(w, struct {
 		Card            *stripe.PaymentMethodCard `json:"card"`
 		Description     string                    `json:"product_description"`
