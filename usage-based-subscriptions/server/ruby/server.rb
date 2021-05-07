@@ -6,6 +6,14 @@ require 'dotenv'
 
 # Replace if using a different env file or config
 Dotenv.load
+
+# For sample support and debugging, not required for production:
+Stripe.set_app_info(
+  'stripe-samples/subscription-use-cases/usage-based-subscriptions',
+  version: '0.0.1',
+  url: 'https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions'
+)
+Stripe.api_version = '2020-08-27'
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
 set :static, true

@@ -28,7 +28,18 @@ $container['logger'] = function ($c) {
 
 /* Initialize the Stripe client */
 $container['stripe'] = function ($c) {
-    $stripe = new \Stripe\StripeClient(getenv('STRIPE_SECRET_KEY'));
+    // For sample support and debugging. Not required for production:
+    \Stripe\Stripe::setAppInfo(
+      "stripe-samples/subscription-use-cases/usage-based-subscriptions",
+      "0.0.1",
+      "https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions"
+    );
+
+    $stripe = new \Stripe\StripeClient([
+      'api_key' => getenv('STRIPE_SECRET_KEY'),
+      'stripe_version' => '2020-08-27',
+    ]);
+
     return $stripe;
 };
 

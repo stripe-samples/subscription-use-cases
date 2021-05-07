@@ -5,7 +5,7 @@ namespace ReportUsage
 {
     class Program
     {
-        static void Main(string[] args)
+        static void ReportUsage(string[] args)
         {
 
             // Set your secret key. Remember to switch to your live secret key in production!
