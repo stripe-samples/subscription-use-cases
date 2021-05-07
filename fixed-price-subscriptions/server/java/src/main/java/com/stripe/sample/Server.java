@@ -91,6 +91,13 @@ public class Server {
   public static void main(String[] args) {
     port(4242);
     Dotenv dotenv = Dotenv.load();
+
+    // For sample support and debugging, not required for production:
+    Stripe.setAppInfo(
+        "stripe-samples/subscription-use-cases/fixed-price",
+        "0.0.1",
+        "https://github.com/stripe-samples/subscription-use-cases/fixed-price"
+    );
     Stripe.apiKey = dotenv.get("STRIPE_SECRET_KEY");
 
     staticFiles.externalLocation(

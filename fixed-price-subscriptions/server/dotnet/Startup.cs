@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Serialization;
+using Stripe;
 
 namespace dotnet
 {
@@ -24,6 +25,13 @@ namespace dotnet
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            StripeConfiguration.AppInfo = new AppInfo
+            {
+                Name = "stripe-samples/subscription-use-cases/fixed-price",
+                Url = "https://github.com/stripe-samples/subscription-use-cases/fixed-price",
+                Version = "0.0.1",
+            };
+
             services.Configure<StripeOptions>(options =>
             {
                 options.PublishableKey = Environment.GetEnvironmentVariable("STRIPE_PUBLISHABLE_KEY");
