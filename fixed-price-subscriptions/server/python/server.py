@@ -6,7 +6,7 @@ import stripe
 import json
 import os
 
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv, find_dotenv
 
 # Setup Stripe python client library
@@ -80,7 +80,6 @@ def create_subscription():
     # database, and set customer_id to the Stripe Customer ID of that user.
     customer_id = request.cookies.get('customer')
 
-
     # Extract the price ID from environment variables given the name
     # of the price passed from the front end.
     #
@@ -113,7 +112,7 @@ def create_subscription():
 def cancel_subscription():
     data = json.loads(request.data)
     try:
-         # Cancel the subscription by deleting it
+        # Cancel the subscription by deleting it
         deletedSubscription = stripe.Subscription.delete(data['subscriptionId'])
         return jsonify(subscription=deletedSubscription)
     except Exception as e:
@@ -127,7 +126,7 @@ def list_subscriptions():
     customer_id = request.cookies.get('customer')
 
     try:
-         # Cancel the subscription by deleting it
+        # Cancel the subscription by deleting it
         subscriptions = stripe.Subscription.list(
             customer=customer_id,
             status='all',
@@ -136,7 +135,6 @@ def list_subscriptions():
         return jsonify(subscriptions=subscriptions)
     except Exception as e:
         return jsonify(error=str(e)), 403
-
 
 
 @app.route('/invoice-preview', methods=['GET'])
@@ -209,22 +207,22 @@ def webhook_received():
 
     if event_type == 'invoice.payment_succeeded':
         if data_object['billing_reason'] == 'subscription_create':
-          # The subscription automatically activates after successful payment
-          # Set the payment method used to pay the first invoice
-          # as the default payment method for that subscription
-          subscription_id = data_object['subscription']
-          payment_intent_id = data_object['payment_intent']
+            # The subscription automatically activates after successful payment
+            # Set the payment method used to pay the first invoice
+            # as the default payment method for that subscription
+            subscription_id = data_object['subscription']
+            payment_intent_id = data_object['payment_intent']
 
-          # Retrieve the payment intent used to pay the subscription
-          payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+            # Retrieve the payment intent used to pay the subscription
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
 
-          # Set the default payment method
-          stripe.Subscription.modify(
-            subscription_id,
-            default_payment_method=payment_intent.payment_method
-          )
+            # Set the default payment method
+            stripe.Subscription.modify(
+              subscription_id,
+              default_payment_method=payment_intent.payment_method
+            )
 
-          print("Default payment method set for subscription:" + payment_intent.payment_method)
+            print("Default payment method set for subscription:" + payment_intent.payment_method)
     elif event_type == 'invoice.payment_failed':
         # If the payment fails or the customer does not have a valid payment method,
         # an invoice.payment_failed event is sent, the subscription becomes past_due.

@@ -10,7 +10,7 @@ import stripe
 import json
 import os
 
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv, find_dotenv
 
 # Setup Stripe python client library
@@ -92,6 +92,7 @@ def createSubscription():
     except Exception as e:
         return jsonify(error={'message': str(e)}), 200
 
+
 @app.route('/retry-invoice', methods=['POST'])
 def retrySubscription():
     data = json.loads(request.data)
@@ -150,7 +151,7 @@ def retrieveUpcomingInvoice():
 def cancelSubscription():
     data = json.loads(request.data)
     try:
-         # Cancel the subscription by deleting it
+        # Cancel the subscription by deleting it
         deletedSubscription = stripe.Subscription.delete(
             data['subscriptionId'])
         return jsonify(deletedSubscription)
@@ -211,8 +212,6 @@ def webhook_received():
     else:
         data = request_data['data']
         event_type = request_data['type']
-
-    data_object = data['object']
 
     if event_type == 'invoice.paid':
         # Used to provision services after the trial has ended.
