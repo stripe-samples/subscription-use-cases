@@ -190,23 +190,50 @@ dashboard](https://stripe.com/docs/webhooks/setup#configure-webhook-settings).
 
 ## How to create Prices
 
-### With the Stripe CLI
+### With Stripe CLI Fixtures
 
-Run the following commands and copy the resulting IDs.
+Use the `seed.json` fixture file:
 
 ```sh
-stripe prices create --unit-amount 500 --currency usd -d "recurring[interval]=month" -d "product_data[name]=basic"
+stripe fixtures seed.json
+```
+
+### With Stripe CLI API calls
+
+Or run the following commands and copy the resulting IDs.
+
+```sh
+stripe prices create --unit-amount 500 --currency usd -d "recurring[interval]=month" -d "product_data[name]=basic" --lookup-key sample_basic
 ```
 
 ```sh
-stripe prices create --unit-amount 900 --currency usd -d "recurring[interval]=month" -d "product_data[name]=premium"
+stripe prices create --unit-amount 900 --currency usd -d "recurring[interval]=month" -d "product_data[name]=premium" --lookup-key sample_premium
 ```
 
-### Or from the Dashbaord
+### With cURL
 
-1. From the Stripe dashboard go to **Products** > [Add product](https://dashboard.stripe.com/test/products/create)
-2. Fill in the product name `Basic` and the value ($5/month) for the price and save
-3. Repeat and create a **SECOND** product and price, this time with `Premium` and ($12/month)
+Replace `sk_test_xxx` with your secret API key:
+
+```sh
+curl https://api.stripe.com/v1/prices \
+  -u sk_test_xxx: \
+  -d "unit_amount"=500 \
+  -d "currency"=usd \
+  -d "recurring[interval]"=month \
+  -d "product_data[name]"=basic \
+  -d "lookup_key"=sample_basic \
+```
+
+```sh
+curl https://api.stripe.com/v1/prices \
+  -u sk_test_xxx: \
+  -d "unit_amount"=900 \
+  -d "currency"=usd \
+  -d "recurring[interval]"=month \
+  -d "product_data[name]"=premium \
+  -d "lookup_key"=sample_premium \
+```
+
 
 ## `.env` config
 
