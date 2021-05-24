@@ -79,7 +79,7 @@ REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
 
 This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
 
-You can create Products and Prices [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
+You can create Prices to work with this sample following [the instructions](../README.md#how-to-create-prices) in the root of the project.
 
 **3. Follow the server instructions on how to run:**
 
