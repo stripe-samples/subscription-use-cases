@@ -75,11 +75,57 @@ You will need to take the Stripe publishable key and set only one variable for t
 REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
 ```
 
-**2. Create Products and Plans on Stripe**
+**2. Create Products and Prices on Stripe**
 
-This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
+This sample requires [Prices](https://stripe.com/docs/api/prices) with
+`lookup_key`s of `sample_basic` and `sample_premium` to render the pricing page
+and create the Subscription. Products and Prices are objects on Stripe that you
+use to model a subscription.
 
-You can create Products and Prices [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
+### With Stripe CLI Fixtures
+
+Use the `seed.json` fixture file:
+
+```sh
+stripe fixtures seed.json
+```
+
+### With Stripe CLI API calls
+
+Or run the following commands and copy the resulting IDs.
+
+```sh
+stripe prices create --unit-amount 500 --currency usd -d "recurring[interval]=month" -d "product_data[name]=basic" --lookup-key sample_basic
+```
+
+```sh
+stripe prices create --unit-amount 900 --currency usd -d "recurring[interval]=month" -d "product_data[name]=premium" --lookup-key sample_premium
+```
+
+### With cURL
+
+Replace `sk_test_xxx` with your secret API key:
+
+```sh
+curl https://api.stripe.com/v1/prices \
+  -u sk_test_xxx: \
+  -d "unit_amount"=500 \
+  -d "currency"=usd \
+  -d "recurring[interval]"=month \
+  -d "product_data[name]"=basic \
+  -d "lookup_key"=sample_basic \
+```
+
+```sh
+curl https://api.stripe.com/v1/prices \
+  -u sk_test_xxx: \
+  -d "unit_amount"=900 \
+  -d "currency"=usd \
+  -d "recurring[interval]"=month \
+  -d "product_data[name]"=premium \
+  -d "lookup_key"=sample_premium \
+```
+
 
 **3. Follow the server instructions on how to run:**
 
@@ -96,7 +142,7 @@ npm start
 ```
 cd server/node # there's a README in this folder with instructions
 npm install
-npm startReact
+npm start
 ```
 
 **4. [Optional] Run a webhook locally:**

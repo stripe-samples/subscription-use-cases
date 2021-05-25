@@ -31,7 +31,7 @@ configuration will vary depending on which way you install._
 
 - **A Stripe account**: You can sign up for a Stripe account here: https://dashboard.stripe.com/register
 - **Stripe API Keys**: Available in your Stripe dashboard here: https://dashboard.stripe.com/test/apikeys
-- **2 Prices**: This sample demonstrates two tiers of pricing. You'll need the IDs for two Price objects from your Stripe account. See [How to create Prices](#how-to-create-prices) below for more information.
+- **2 Prices**: This sample demonstrates two tiers of pricing. You'll need two Price objects on your Stripe account with `lookup_key` set to `sample_basic` and `sample_premium`. See [How to create Prices](#how-to-create-prices) below for more information.
 
 ### Installing the sample
 
@@ -67,17 +67,10 @@ languages, and partially configuring your `.env` file with your Stripe API keys.
 cd subscription-use-cases/server
 ```
 
-5. Open `server/.env` and set the ID values for `BASIC` and `PREMIUM` to the
-   IDs of two Prices from your Stripe account. The API keys should
-   already have been configured by the Stripe CLI. The `STATIC_DIR` value
+5. Open `server/.env`. The `STATIC_DIR` value
    should be `../client` when installed using the Stripe CLI.
 
 ```yml
-# Billing variables
-BASIC=price_12345...
-PREMIUM=price_7890...
-
-
 # Stripe keys
 STRIPE_PUBLISHABLE_KEY=pk_12345
 STRIPE_SECRET_KEY=sk_12345
@@ -243,8 +236,6 @@ Example configuration file [`.env.example`](./.env.example)
 - **STRIPE_SECRET_KEY**: Found in the dashboard here: https://dashboard.stripe.com/test/apikeys
 - **STRIPE_WEBHOOK_SECRET**: If using the Stripe CLI (recommended) run `stripe listen --print-secret`, otherwise you can find the signing secret for the webhook endpoint in the dashboard by viewing the details of the endpoint here: https://dashboard.stripe.com/test/webhooks.
 - **STATIC_DIR**: The path to the directory containing the client side code. For vanillajs on the client, this will be `../../client/vanillajs`.
-- **BASIC**: The ID of the basic Price. You can find this in the Stripe dashboard by viewing the basic product created earlier.
-- **PREMIUM**: The ID of the premium Price. You can find this in the Stripe dashboard by viewing the premium product created earlier.
 
 ## FAQ
 
