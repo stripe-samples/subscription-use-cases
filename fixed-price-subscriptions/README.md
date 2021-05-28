@@ -126,7 +126,6 @@ curl https://api.stripe.com/v1/prices \
   -d "lookup_key"=sample_premium \
 ```
 
-
 **3. Follow the server instructions on how to run:**
 
 Pick the server language you want and follow the instructions in the server folder README on how to run.
