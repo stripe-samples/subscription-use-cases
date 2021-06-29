@@ -1,17 +1,9 @@
 def authenticated_post_json(path, payload, customer_id)
-  post_json(path, payload, {
-    cookies: {
-      customer: customer_id
-    }
-  })
+  post_json(path, payload, cookies: {customer: customer_id})
 end
 
 def authenticated_get_json(path, customer_id)
-  get_json(path, {
-    cookies: {
-      customer: customer_id
-    }
-  })
+  get_json(path, cookies: {customer: customer_id})
 end
 
 def create_and_confirm_subscription(customer_id, price_id)
