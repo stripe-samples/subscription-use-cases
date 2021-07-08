@@ -12,7 +12,7 @@ ConfigHelper.check_env!
 # For sample support and debugging, not required for production:
 Stripe.set_app_info(
   'stripe-samples/subscription-use-cases/fixed-price',
-  version: '0.0.1',
+  version: '0.0.2',
   url: 'https://github.com/stripe-samples/subscription-use-cases/fixed-price'
 )
 Stripe.api_version = '2020-08-27'
@@ -21,6 +21,7 @@ Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 set :static, true
 set :public_folder, File.join(File.dirname(__FILE__), ENV['STATIC_DIR'])
 set :port, 4242
+set :bind, '0.0.0.0'
 
 get '/' do
   content_type 'text/html'
