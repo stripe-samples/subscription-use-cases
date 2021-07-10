@@ -3,9 +3,14 @@ on:
   push:
     branches:
       - master
+env:
+  STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
+  STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
+  PREMIUM: ${{ secrets.TEST_PREMIUM_PRICE }}
+  BASIC: ${{ secrets.TEST_BASIC_PRICE }}
 
 jobs:
-  test:
+  server_test:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -42,7 +47,6 @@ jobs:
             docker-compose exec -T runner bundle exec rspec spec/fixed_price_server_spec.rb
           done
 
-
           sample=per-seat-subscriptions
           for lang in $(cat .cli.json | server_langs_for_integration $sample)
           do
@@ -58,12 +62,6 @@ jobs:
             docker-compose up -d && wait_web_server
             docker-compose exec -T runner bundle exec rspec spec/usage_based_server_spec.rb
           done
-        env:
-          STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
-          PREMIUM: ${{ secrets.TEST_PREMIUM_PRICE }}
-          BASIC: ${{ secrets.TEST_BASIC_PRICE }}
-
 
       - name: Collect debug information
         if: ${{ failure() }}
@@ -71,3 +69,81 @@ jobs:
           cat docker-compose.yml
           docker-compose ps -a
           docker-compose logs web
+
+  e2e_test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/checkout@v2
+        with:
+          repository: 'stripe-samples/sample-ci'
+          path: 'sample-ci'
+
+      - name: Setup dependencies
+        run: |
+          source sample-ci/helpers.sh
+          setup_dependencies
+
+      - name: Prepare tests
+        run: |
+          echo "$(cat fixed-price-subscriptions/client/react/package.json | jq '.proxy = "http://web:4242"')" > fixed-price-subscriptions/client/react/package.json
+          ln -s react-cra sample-ci/docker/react
+
+      - name: Run tests for client/vanillajs
+        if: ${{ always() }}
+        env:
+          SERVER_URL: http://web:4242
+        run: |
+          source sample-ci/helpers.sh
+          install_docker_compose_settings
+          export STRIPE_WEBHOOK_SECRET=$(retrieve_webhook_secret)
+          cat <<EOF >> .env
+          DOMAIN=${SERVER_URL}
+          BASIC=${BASIC}
+          PREMIUM=${PREMIUM}
+          EOF
+          configure_docker_compose_for_integration fixed-price-subscriptions node ../../client/vanillajs
+          docker-compose --profile=e2e up -d && wait_web_server
+          command="docker-compose exec -T runner bundle exec rspec spec/fixed_price_e2e_spec.rb"
+          $command \
+            || $command --only-failures \
+            || $command --only-failures --format RSpec::Github::Formatter --format progress
+
+      - name: Run tests for client/react
+        if: ${{ always() }}
+        env:
+          SERVER_URL: http://frontend:3000
+        run: |
+          source sample-ci/helpers.sh
+          install_docker_compose_settings
+          export STRIPE_WEBHOOK_SECRET=$(retrieve_webhook_secret)
+          cat <<EOF >> .env
+          DOMAIN=${SERVER_URL}
+          BASIC=${BASIC}
+          PREMIUM=${PREMIUM}
+          EOF
+          configure_docker_compose_for_integration fixed-price-subscriptions node ../../client/react
+          docker-compose --profile=frontend up -d && wait_web_server
+          command="docker-compose exec -T runner bundle exec rspec spec/fixed_price_e2e_spec.rb"
+          $command \
+            || $command --only-failures \
+            || $command --only-failures --format RSpec::Github::Formatter --format progress
+
+
+      - name: Collect debug information
+        if: ${{ failure() }}
+        run: |
+          cat docker-compose.yml
+          docker-compose ps -a
+          docker-compose --profile=frontend logs web
+
+          docker cp $(docker-compose ps -qa runner | head -1):/work/tmp .
+
+      - name: Upload capybara screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: screenshots
+          path: |
+            tmp/capybara

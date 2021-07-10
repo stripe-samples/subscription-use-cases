@@ -40,6 +40,7 @@ const Register = (props) => {
           Email
           <input
             type="text"
+            name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required />
