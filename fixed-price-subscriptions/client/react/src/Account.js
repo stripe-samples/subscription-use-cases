@@ -40,7 +40,7 @@ const Account = () => {
       setSubscriptions(subscriptions.data);
     }
     fetchData();
-  }, []);
+  }, [subscriptions]);
 
   if (!subscriptions) {
     return '';
