@@ -18,6 +18,7 @@ bundle install
 2. Run the application
 
 ```
+cd server
 ruby server.rb
 ```
 
