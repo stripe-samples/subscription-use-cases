@@ -9,6 +9,10 @@ env:
   PREMIUM: ${{ secrets.TEST_PREMIUM_PRICE }}
   BASIC: ${{ secrets.TEST_BASIC_PRICE }}
 
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
   server_test:
     runs-on: ubuntu-20.04
