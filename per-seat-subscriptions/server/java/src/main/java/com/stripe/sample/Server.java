@@ -524,7 +524,7 @@ public class Server {
             if (
               invoiceLineItem.getPeriod().getEnd().equals(currentPeriodEnd)
             ) immediateTotal +=
-              invoiceLineItem.getAmount(); else nextInvoiceSum =
+              invoiceLineItem.getAmount(); else nextInvoiceSum +=
               invoiceLineItem.getAmount();
           }
           responseData.put("immediate_total", immediateTotal);
