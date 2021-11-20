@@ -1,7 +1,7 @@
 # Subscriptions with per seat pricing
 
 ## Requirements
-- [.NET Core]https://dotnet.microsoft.com/download)
+- [.NET Core](https://dotnet.microsoft.com/download)
 - [Configured .env file](../../../README.md#env-config)
 
 
