@@ -1,0 +1,82 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # ruby dependencies
+  - package-ecosystem: "bundler"
+    directory: "/fixed-price-subscriptions/server/ruby/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "bundler"
+    directory: "/usage-based-subscriptions/server/ruby/"
+    schedule:
+      interval: "weekly"
+
+  # python dependencies
+  - package-ecosystem: "pip"
+    directory: "/fixed-price-subscriptions/server/python/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/usage-based-subscriptions/server/python/"
+    schedule:
+      interval: "weekly"
+
+  # php dependencies
+  - package-ecosystem: "composer"
+    directory: "/fixed-price-subscriptions/server/php/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "composer"
+    directory: "/usage-based-subscriptions/server/php/"
+    schedule:
+      interval: "weekly"
+
+
+  # node dependencies
+  - package-ecosystem: "npm"
+    directory: "/fixed-price-subscriptions/server/node/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/fixed-price-subscriptions/server/node-typescript/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/usage-based-subscriptions/server/node/"
+    schedule:
+      interval: "weekly"
+
+  # go dependencies
+  - package-ecosystem: "gomod"
+    directory: "/fixed-price-subscriptions/server/go/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/usage-based-subscriptions/server/go/"
+    schedule:
+      interval: "weekly"
+
+  # java dependencies
+  - package-ecosystem: "maven"
+    directory: "/fixed-price-subscriptions/server/java/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "maven"
+    directory: "/usage-based-subscriptions/server/java/"
+    schedule:
+      interval: "weekly"
+
+  # dotnet dependencies
+  - package-ecosystem: "nuget"
+    directory: "/fixed-price-subscriptions/server/dotnet/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "nuget"
+    directory: "/usage-based-subscriptions/server/dotnet/"
+    schedule:
+      interval: "weekly"
+
