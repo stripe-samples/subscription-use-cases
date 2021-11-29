@@ -1,6 +1,6 @@
 certifi==2019.3.9
 chardet==3.0.4
-Click==7.0
+Click==8.0.3
 Flask==1.0.3
 idna==2.8
 itsdangerous==1.1.0
