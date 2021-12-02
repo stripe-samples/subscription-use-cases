@@ -9,7 +9,7 @@
   "author": "stripe-demos",
   "license": "ISC",
   "dependencies": {
-    "autoprefixer": "^9.7.6",
+    "autoprefixer": "^10.4.0",
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.5",
     "dotenv": "^8.0.0",
