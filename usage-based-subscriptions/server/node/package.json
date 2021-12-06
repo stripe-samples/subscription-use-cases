@@ -16,7 +16,7 @@
     "express": "^4.17.1",
     "postcss-cli": "^9.0.2",
     "stripe": "^8.148.0",
-    "tailwindcss": "^1.4.5",
+    "tailwindcss": "^2.2.19",
     "uuid": "^8.1.0"
   },
   "devDependencies": {
