@@ -2,7 +2,7 @@ certifi==2021.10.8
 chardet==3.0.4
 Click==7.0
 Flask==2.0.2
-idna==2.8
+idna==3.3
 itsdangerous==2.0.1
 Jinja2==2.11.3
 MarkupSafe==2.0.1
