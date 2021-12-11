@@ -1,6 +1,6 @@
 certifi==2021.10.8
 chardet==3.0.4
-Click==7.0
+Click==8.0.3
 Flask==2.0.2
 idna==2.8
 itsdangerous==2.0.1
