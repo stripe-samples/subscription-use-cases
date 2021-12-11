@@ -3,12 +3,12 @@ chardet==3.0.4
 Click==8.0.3
 Flask==2.0.2
 idna==2.8
-itsdangerous==1.1.0
+itsdangerous==2.0.1
 Jinja2==2.11.3
 MarkupSafe==1.1.1
 python-dotenv==0.19.2
-requests==2.25.1
+requests==2.26.0
 stripe==2.56.0
-toml==0.9.6
+toml==0.10.2
 urllib3==1.26.5
-Werkzeug==1.0.1
+Werkzeug==2.0.2
