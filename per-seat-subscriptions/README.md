@@ -43,7 +43,13 @@ Stripe integrations.
 In your terminal shell, run the Stripe CLI command to clone the sample:
 
 ```
-stripe samples create subscriptions-with-fixed-price
+$ stripe samples create subscription-use-cases
+⢿ Downloading subscription-use-cases ✔ Finished downloading
+Use the arrow keys to navigate: ↓ ↑ → ←
+? What type of integration would you like to use:
+  ▸ per-seat-subscriptions
+    usage-based-subscriptions
+    fixed-price-subscriptions
 ```
 
 The CLI will walk you through picking your integration type, server and client languages, and configuring your `.env` config file with your Stripe API keys.
@@ -53,7 +59,8 @@ The CLI will walk you through picking your integration type, server and client l
 If you do not want to use the Stripe CLI, you can manually clone and configure the sample:
 
 ```
-git clone git@github.com:stripe-samples/subscription-with-fixed-price.git
+git clone git@github.com:stripe-samples/subscription-use-cases.git
+cd subscription-use-cases//per-seat-subscriptions
 ```
 
 Copy the `.env.example` file into a file named `.env` in the folder of the server you want to use. For example:
