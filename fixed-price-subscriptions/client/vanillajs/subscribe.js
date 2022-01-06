@@ -19,10 +19,8 @@ fetch('/config')
 
 // Extract the client secret query string argument. This is
 // required to confirm the payment intent from the front-end.
-const params = new URLSearchParams(window.location.search);
-const subscriptionId = params.get('subscriptionId');
-const clientSecret = params.get('clientSecret');
-
+const subscriptionId = window.sessionStorage.getItem('subscriptionId');
+const clientSecret = window.sessionStorage.getItem('clientSecret');
 // This sample only supports a Subscription with payment
 // upfront. If you offer a trial on your subscription, then
 // instead of confirming the subscription's latest_invoice's
