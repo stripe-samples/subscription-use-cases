@@ -34,9 +34,6 @@ fetch('/config')
 
 
 const createSubscription = (priceId) => {
-  const params = new URLSearchParams(window.location.search);
-  const customerId = params.get('customerId');
-
   return fetch('/create-subscription', {
     method: 'POST',
     headers: {
@@ -44,7 +41,6 @@ const createSubscription = (priceId) => {
     },
     body: JSON.stringify({
       priceId: priceId,
-      customerId: customerId,
     }),
   })
     .then((response) => response.json())
