@@ -535,7 +535,7 @@ function retrieveUpcomingInvoice(
       customerId: customerId,
       subscriptionId: subscriptionId,
       newPriceId: newPriceId,
-      quantity: quantity,
+      quantity: +quantity,
     }),
   })
     .then((response) => {
@@ -577,7 +577,7 @@ function updateSubscription(priceId, subscriptionId, quantity) {
     body: JSON.stringify({
       subscriptionId: subscriptionId,
       newPriceId: priceId,
-      quantity: quantity,
+      quantity: +quantity,
     }),
   })
     .then((response) => {
@@ -707,7 +707,7 @@ function showSubscriptionInformation() {
       accountInfo.subscriptionId = subscriptionId;
       accountInfo.priceId = currentPrice;
       accountInfo.quantity = currentQuantity;
-      accountInfo.customerId = latestInvoice.customer;
+      accountInfo.customerId = latestInvoice.customer.id;
     });
   }
 }
