@@ -150,8 +150,7 @@ $app->post('/cancel-subscription', function (
     $body = json_decode($request->getBody());
     $stripe = $this->stripe;
 
-    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
-    $subscription->delete();
+    $subscription = $stripe->subscriptions->cancel($body->subscriptionId);
 
     return $response->withJson(['subscription' => $subscription]);
 });
