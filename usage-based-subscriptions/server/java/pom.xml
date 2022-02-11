@@ -12,7 +12,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.7.33</version>
+            <version>1.7.35</version>
         </dependency>
         <dependency>
             <groupId>com.sparkjava</groupId>
@@ -27,7 +27,7 @@
         <dependency>
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
-            <version>20.95.0</version>
+            <version>20.98.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.cdimascio</groupId>
