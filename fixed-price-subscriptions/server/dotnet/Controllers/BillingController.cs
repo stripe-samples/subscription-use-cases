@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using dotnet.Events;
+using dotnet.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Stripe;
@@ -19,6 +21,12 @@ namespace dotnet.Controllers
         {
             this.options = options;
             StripeConfiguration.ApiKey = options.Value.SecretKey;
+            StripeEvents.Invoice_PaymentSucceeded += StripeEventsOnInvoice_PaymentSucceeded;
+			StripeEvents.Invoice_Paid += StripeEventsOnInvoice_Paid;
+            StripeEvents.Invoice_PaymentFailed += StripeEventsOnInvoice_PaymentFailed;
+            StripeEvents.Invoice_Finalized += StripeEventsOnInvoice_Finalized;
+            StripeEvents.Customer_Subscription_Deleted += StripeEventsOnCustomer_Subscription_Deleted;
+            StripeEvents.Customer_Subscription_TrialWillEnd += StripeEventsOnCustomer_Subscription_TrialWillEnd;
         }
 
         [HttpGet("config")]
@@ -203,61 +211,67 @@ namespace dotnet.Controllers
                 return BadRequest();
             }
 
-            if (stripeEvent.Type == "invoice.payment_succeeded") {
-              var invoice = stripeEvent.Data.Object as Invoice;
-
-              if(invoice.BillingReason == "subscription_create") {
-                // The subscription automatically activates after successful payment
-                // Set the payment method used to pay the first invoice
-                // as the default payment method for that subscription
-
-                // Retrieve the payment intent used to pay the subscription
-                var service = new PaymentIntentService();
-                var paymentIntent = service.Get(invoice.PaymentIntentId);
-
-                // Set the default payment method
-                var options = new SubscriptionUpdateOptions
-                {
-                  DefaultPaymentMethod = paymentIntent.PaymentMethodId,
-                };
-                var subscriptionService = new SubscriptionService();
-                subscriptionService.Update(invoice.SubscriptionId, options);
-
-                Console.WriteLine($"Default payment method set for subscription: {paymentIntent.PaymentMethodId}");
-              }
-              Console.WriteLine($"Payment succeeded for invoice: {stripeEvent.Id}");
-            }
-
-            if (stripeEvent.Type == "invoice.paid")
-            {
-                // Used to provision services after the trial has ended.
-                // The status of the invoice will show up as paid. Store the status in your
-                // database to reference when a user accesses your service to avoid hitting rate
-                // limits.
-            }
-            if (stripeEvent.Type == "invoice.payment_failed")
-            {
-                // If the payment fails or the customer does not have a valid payment method,
-                // an invoice.payment_failed event is sent, the subscription becomes past_due.
-                // Use this webhook to notify your user that their payment has
-                // failed and to retrieve new card details.
-            }
-            if (stripeEvent.Type == "invoice.finalized")
-            {
-                // If you want to manually send out invoices to your customers
-                // or store them locally to reference to avoid hitting Stripe rate limits.
-            }
-            if (stripeEvent.Type == "customer.subscription.deleted")
-            {
-                // handle subscription cancelled automatically based
-                // upon your subscription settings. Or if the user cancels it.
-            }
-            if (stripeEvent.Type == "customer.subscription.trial_will_end")
-            {
-                // Send notification to your user that the trial will end
-            }
+            StripeEvents.OnFireEvent(this, stripeEvent.Type.ToEventHandler(), stripeEvent);
 
             return Ok();
+        }
+
+        private void StripeEventsOnInvoice_PaymentSucceeded(object source, Event e)
+        {
+	        var invoice = e.Data.Object as Invoice;
+
+	        if (invoice.BillingReason == "subscription_create")
+	        {
+		        // The subscription automatically activates after successful payment
+		        // Set the payment method used to pay the first invoice
+		        // as the default payment method for that subscription
+
+		        // Retrieve the payment intent used to pay the subscription
+		        var service = new PaymentIntentService();
+		        var paymentIntent = service.Get(invoice.PaymentIntentId);
+
+		        // Set the default payment method
+		        var options = new SubscriptionUpdateOptions
+		        {
+			        DefaultPaymentMethod = paymentIntent.PaymentMethodId,
+		        };
+		        var subscriptionService = new SubscriptionService();
+		        subscriptionService.Update(invoice.SubscriptionId, options);
+
+		        Console.WriteLine($"Default payment method set for subscription: {paymentIntent.PaymentMethodId}");
+	        }
+	        Console.WriteLine($"Payment succeeded for invoice: {e.Id}");
+        }
+
+        private void StripeEventsOnInvoice_Paid(object source, Event e)
+        {
+	        // Used to provision services after the trial has ended.
+	        // The status of the invoice will show up as paid. Store the status in your
+	        // database to reference when a user accesses your service to avoid hitting rate
+	        // limits.
+        }
+
+        private void StripeEventsOnInvoice_PaymentFailed(object source, Event e)
+        {
+	        // If the payment fails or the customer does not have a valid payment method,
+	        // an invoice.payment_failed event is sent, the subscription becomes past_due.
+	        // Use this webhook to notify your user that their payment has
+	        // failed and to retrieve new card details.
+        }
+
+        private void StripeEventsOnInvoice_Finalized(object source, Event e)
+        {
+	        // If you want to manually send out invoices to your customers
+	        // or store them locally to reference to avoid hitting Stripe rate limits.
+        }
+        private void StripeEventsOnCustomer_Subscription_Deleted(object source, Event e)
+        {
+	        // handle subscription cancelled automatically based
+	        // upon your subscription settings. Or if the user cancels it.
+        }
+		private void StripeEventsOnCustomer_Subscription_TrialWillEnd(object source, Event e)
+        {
+	        // Send notification to your user that the trial will end
         }
     }
 }
