@@ -34,9 +34,6 @@ fetch('/config')
 
 
 const createSubscription = (priceId) => {
-  const params = new URLSearchParams(window.location.search);
-  const customerId = params.get('customerId');
-
   return fetch('/create-subscription', {
     method: 'POST',
     headers: {
@@ -44,15 +41,13 @@ const createSubscription = (priceId) => {
     },
     body: JSON.stringify({
       priceId: priceId,
-      customerId: customerId,
     }),
   })
     .then((response) => response.json())
     .then((data) => {
-      const params = new URLSearchParams(window.location.search);
-      params.append('subscriptionId', data.subscriptionId);
-      params.append('clientSecret', data.clientSecret);
-      window.location.href = '/subscribe.html?' + params.toString();
+      window.sessionStorage.setItem('subscriptionId', data.subscriptionId);
+      window.sessionStorage.setItem('clientSecret', data.clientSecret);
+      window.location.href = '/subscribe.html';
     })
     .catch((error) => {
       console.error('Error:', error);

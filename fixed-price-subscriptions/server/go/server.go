@@ -350,9 +350,9 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 			DefaultPaymentMethod: stripe.String(pi.PaymentMethod.ID),
 		}
 		sub.Update(invoice.Subscription.ID, params)
-		fmt.Println("Default payment method set for subscription: %s", pi.PaymentMethod)
+		fmt.Println("Default payment method set for subscription: ", pi.PaymentMethod)
 	}
-	fmt.Println("Payment succeeded for invoice: %s", event.ID)
+	fmt.Println("Payment succeeded for invoice: ", event.ID)
 }
 
 type errResp struct {

@@ -3,10 +3,76 @@ on:
   push:
     branches:
       - master
+env:
+  STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
+  STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
+  PREMIUM: ${{ secrets.TEST_PREMIUM_PRICE }}
+  BASIC: ${{ secrets.TEST_BASIC_PRICE }}
+
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  server_test:
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime:
+          - server_type: ruby
+            server_image: ruby:3.0
+          - server_type: ruby
+            server_image: ruby:2.6
+          - server_type: node
+            server_image: node:14.17
+          - server_type: node
+            server_image: node:12.22
+          - server_type: python
+            server_image: python:3.9
+          - server_type: python
+            server_image: python:3.6
+          - server_type: java
+            server_image: maven:3.8-openjdk-16
+          - server_type: java
+            server_image: maven:3.8-openjdk-8
+          - server_type: go
+            server_image: golang:1.16
+          - server_type: go
+            server_image: golang:1.15
+          - server_type: dotnet
+            server_image: mcr.microsoft.com/dotnet/sdk:5.0
+          - server_type: dotnet
+            server_image: mcr.microsoft.com/dotnet/sdk:3.1
+          - server_type: php-slim
+            server_image: composer:1.10
+        target:
+          - sample: per-seat-subscriptions
+            tests: per_seat_server_spec.rb
+            client_dir: ../../client
+          - sample: usage-based-subscriptions
+            tests: usage_based_server_spec.rb
+            client_dir: ../../client
+          - sample: fixed-price-subscriptions
+            tests: fixed_price_server_spec.rb
+            client_dir: ../../client/vanillajs
+        exclude:
+          - target:
+              sample: per-seat-subscriptions
+            runtime:
+              server_type: go
+          - target:
+              sample: per-seat-subscriptions
+            runtime:
+              server_type: dotnet
+          - target:
+              sample: per-seat-subscriptions
+            runtime:
+              server_type: php-slim
+          - target:
+              sample: usage-based-subscriptions
+            runtime:
+              server_type: php-slim
     steps:
       - uses: actions/checkout@v2
 
@@ -30,44 +96,90 @@ jobs:
           install_docker_compose_settings
           export STRIPE_WEBHOOK_SECRET=$(retrieve_webhook_secret)
           cat <<EOF >> .env
-          BASIC=${BASIC}
-          PREMIUM=${PREMIUM}
+          BASIC=${{ secrets.TEST_BASIC_PRICE }}
+          PREMIUM=${{ secrets.TEST_PREMIUM_PRICE }}
           EOF
 
-          sample=fixed-price-subscriptions
-          for lang in $(cat .cli.json | server_langs_for_integration $sample)
-          do
-            configure_docker_compose_for_integration "$sample" "$lang" ../../client/vanillajs
-            docker-compose up -d && wait_web_server
-            docker-compose exec -T runner bundle exec rspec spec/fixed_price_server_spec.rb
-          done
-
-
-          sample=per-seat-subscriptions
-          for lang in $(cat .cli.json | server_langs_for_integration $sample)
-          do
-            configure_docker_compose_for_integration "$sample" "$lang" ../../client
-            docker-compose up -d && wait_web_server
-            docker-compose exec -T runner bundle exec rspec spec/per_seat_server_spec.rb
-          done
-
-          sample=usage-based-subscriptions
-          for lang in $(cat .cli.json | server_langs_for_integration $sample)
-          do
-            configure_docker_compose_for_integration "$sample" "$lang" ../../client
-            docker-compose up -d && wait_web_server
-            docker-compose exec -T runner bundle exec rspec spec/usage_based_server_spec.rb
-          done
-        env:
-          STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
-          PREMIUM: ${{ secrets.TEST_PREMIUM_PRICE }}
-          BASIC: ${{ secrets.TEST_BASIC_PRICE }}
-
+          configure_docker_compose_for_integration "${{ matrix.target.sample }}" "${{ matrix.runtime.server_type }}" "${{ matrix.target.client_dir }}" "${{ matrix.runtime.server_image }}"
+          docker-compose up -d && wait_web_server
+          docker-compose exec -T runner bundle exec rspec spec/${{ matrix.target.tests }}
 
       - name: Collect debug information
         if: ${{ failure() }}
         run: |
+          cat .env
           cat docker-compose.yml
           docker-compose ps -a
           docker-compose logs web
+
+  e2e_test:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation:
+          - client_type: vanillajs
+            server_url: http://web:4242
+            profile: e2e
+          - client_type: react
+            server_url: http://frontend:3000
+            profile: frontend
+        target:
+          - sample: fixed-price-subscriptions
+            tests: fixed_price_e2e_spec.rb
+    env:
+      SERVER_URL: ${{ matrix.implementation.server_url }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/checkout@v2
+        with:
+          repository: 'stripe-samples/sample-ci'
+          path: 'sample-ci'
+
+      - name: Setup dependencies
+        run: |
+          source sample-ci/helpers.sh
+          setup_dependencies
+
+      - name: Prepare tests
+        run: |
+          echo "$(cat ${{ matrix.target.sample }}/client/react/package.json | jq '.proxy = "http://web:4242"')" > ${{ matrix.target.sample }}/client/react/package.json
+          ln -s react-cra sample-ci/docker/react
+
+      - name: Run tests
+        run: |
+          source sample-ci/helpers.sh
+
+          install_docker_compose_settings
+          export STRIPE_WEBHOOK_SECRET=$(retrieve_webhook_secret)
+          cat <<EOF >> .env
+          DOMAIN=${{ matrix.implementation.server_url }}
+          BASIC=${{ secrets.TEST_BASIC_PRICE }}
+          PREMIUM=${{ secrets.TEST_PREMIUM_PRICE }}
+          EOF
+
+          configure_docker_compose_for_integration "${{ matrix.target.sample }}" node ../../client/${{ matrix.implementation.client_type }} node:14.17
+          docker-compose --profile="${{ matrix.implementation.profile }}" up -d && wait_web_server
+          command="docker-compose exec -T runner bundle exec rspec spec/${{ matrix.target.tests }}"
+          $command \
+            || $command --only-failures \
+            || $command --only-failures --format RSpec::Github::Formatter --format progress
+
+      - name: Collect debug information
+        if: ${{ failure() }}
+        run: |
+          cat .env
+          cat docker-compose.yml
+          docker-compose ps -a
+          docker-compose --profile="${{ matrix.implementation.profile }}" logs web
+
+          docker cp $(docker-compose ps -qa runner | head -1):/work/tmp .
+
+      - name: Upload capybara screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: screenshots
+          path: |
+            tmp/capybara

@@ -292,6 +292,7 @@ func handleRetrieveSubscriptionInformation(w http.ResponseWriter, r *http.Reques
 		Card:            s.Customer.InvoiceSettings.DefaultPaymentMethod.Card,
 		Description:     item.Price.Product.Name,
 		CurrentPriceID:  item.Price.ID,
+		CurrentQuantity: item.Quantity,
 		LatestInvoice:   s.LatestInvoice,
 		UpcomingInvoice: upcomingInvoice,
 	})

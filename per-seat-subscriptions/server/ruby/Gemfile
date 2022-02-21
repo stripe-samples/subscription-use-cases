@@ -8,3 +8,4 @@ gem 'prettier'
 gem 'sinatra'
 gem 'sinatra-contrib', group: :development
 gem 'stripe'
+gem 'webrick'
