@@ -2,6 +2,7 @@ name: CI for stripe-samples/subscription-use-cases
 on:
   push:
     branches:
+      - fix-ci
       - master
 env:
   STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
