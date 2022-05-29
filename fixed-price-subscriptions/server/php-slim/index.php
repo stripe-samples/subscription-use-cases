@@ -239,12 +239,18 @@ $app->post('/webhook', function (Request $request, Response $response) {
               $payment_intent_id,
               []
             );
-            $stripe->subscriptions->update(
-              $subscription_id,
-              ['default_payment_method' => $payment_intent->payment_method],
-            );
 
-            $logger->info('Default payment method set for subscription:' . $payment_intent->payment_method);
+            try {
+                $stripe->subscriptions->update(
+                    $subscription_id,
+                    ['default_payment_method' => $payment_intent->payment_method],
+                );
+
+                $logger->info('Default payment method set for subscription:' . $payment_intent->payment_method);
+            } catch (Exception $e) {
+                $logger->info($e->getMessage());
+                $logger->info('️Falied to update the default payment method for subscription: ' . $subscription_id);
+            }
           };
 
           // database to reference when a user accesses your service to avoid hitting rate

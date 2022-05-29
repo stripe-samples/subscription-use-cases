@@ -221,14 +221,19 @@ app.post(
           // Retrieve the payment intent used to pay the subscription
           const payment_intent = await stripe.paymentIntents.retrieve(payment_intent_id);
 
-          const subscription = await stripe.subscriptions.update(
-            subscription_id,
-            {
-              default_payment_method: payment_intent.payment_method,
-            },
-          );
+          try {
+            const subscription = await stripe.subscriptions.update(
+              subscription_id,
+              {
+                default_payment_method: payment_intent.payment_method,
+              },
+            );
 
-          console.log("Default payment method set for subscription:" + payment_intent.payment_method);
+            console.log("Default payment method set for subscription:" + payment_intent.payment_method);
+          } catch (err) {
+            console.log(err);
+            console.log(`⚠️  Falied to update the default payment method for subscription: ${subscription_id}`);
+          }
         };
 
         break;
