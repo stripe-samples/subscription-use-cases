@@ -244,7 +244,7 @@ $app->post('/webhook', function (Request $request, Response $response) {
               ['default_payment_method' => $payment_intent->payment_method],
             );
 
-            $logger->info('Default payment method set for subscription:' + $payment_intent->payment_method);
+            $logger->info('Default payment method set for subscription:' . $payment_intent->payment_method);
           };
 
           // database to reference when a user accesses your service to avoid hitting rate
