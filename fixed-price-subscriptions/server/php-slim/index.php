@@ -1,6 +1,8 @@
 <?php
-use Slim\Http\Request;
-use Slim\Http\Response;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Factory\AppFactory;
+use DI\Container;
 use Stripe\Stripe;
 require 'vendor/autoload.php';
 
@@ -9,11 +11,15 @@ $dotenv->load();
 
 require './config.php';
 
-$app = new \Slim\App();
+$container = new \DI\Container();
+
+AppFactory::setContainer($container);
+
+$app = AppFactory::create();
 
 // Instantiate the logger as a dependency
 $container = $app->getContainer();
-$container['logger'] = function ($c) {
+$container->set('logger', function ($c) {
     $settings = $c->get('settings')['logger'];
     $logger = new Monolog\Logger($settings['name']);
     $logger->pushProcessor(new Monolog\Processor\UidProcessor());
@@ -24,10 +30,10 @@ $container['logger'] = function ($c) {
         )
     );
     return $logger;
-};
+});
 
 /* Initialize the Stripe client */
-$container['stripe'] = function ($c) {
+$container->set('stripe', function ($c) {
     // For sample support and debugging. Not required for production:
     \Stripe\Stripe::setAppInfo(
       "stripe-samples/subscription-use-cases/fixed-price",
@@ -41,11 +47,12 @@ $container['stripe'] = function ($c) {
     ]);
 
     return $stripe;
-};
+});
 
 $app->get('/', function (Request $request, Response $response, array $args) {
     // Display checkout page
-    return $response->write(file_get_contents(getenv('STATIC_DIR') . '/register.html'));
+    $response->getBody()->write(file_get_contents(getenv('STATIC_DIR') . '/register.html'));
+    return $response;
 });
 
 $app->get('/config', function (
@@ -53,7 +60,7 @@ $app->get('/config', function (
     Response $response,
     array $args
 ) {
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
     $pub_key = getenv('STRIPE_PUBLISHABLE_KEY');
 
@@ -71,7 +78,7 @@ $app->post('/create-customer', function (
     array $args
 ) {
     $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
     // Create a new customer object
     $customer = $stripe->customers->create([
@@ -92,7 +99,7 @@ $app->post('/create-subscription', function (
     array $args
 ) {
     $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
     # Simulates an authenticated user. In practice, you'll
     # use the Stripe Customer ID of the authenticated user.
@@ -124,7 +131,7 @@ $app->get('/invoice-preview', function (
     Response $response,
     array $args
 ) {
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
     $customer_id = $_COOKIE['customer'];
     $subscription_id = $request->getQueryParam('subscriptionId');
     $new_price_lookup_key = strtoupper($request->getQueryParam('newPriceLookupKey'));
@@ -148,7 +155,7 @@ $app->post('/cancel-subscription', function (
     array $args
 ) {
     $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
     $subscription = $stripe->subscriptions->cancel($body->subscriptionId);
 
@@ -161,7 +168,7 @@ $app->post('/update-subscription', function (
     array $args
 ) {
     $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
     $new_price_id = getenv(strtoupper($body->newPriceLookupKey));
 
     $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
@@ -183,7 +190,7 @@ $app->get('/subscriptions', function(
     Response $response,
     array $args
 ) {
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
     # Simulates an authenticated user. In practice, you'll
     # use the Stripe Customer ID of the authenticated user.
     $customer_id = $_COOKIE['customer'];
@@ -200,7 +207,7 @@ $app->get('/subscriptions', function(
 $app->post('/webhook', function (Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
     // Parse the message body (and check the signature if possible)
     $webhookSecret = getenv('STRIPE_WEBHOOK_SECRET');
