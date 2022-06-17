@@ -14,14 +14,14 @@ jobs:
         uses: dependabot/fetch-metadata@v1.1.1
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Enable auto-merge for Stripe SDKs Dependabot PRs
-        if: ${{contains(steps.metadata.outputs.dependency-names, 'github.com/stripe/stripe-go/v72') && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
+      - name: Enable auto-merge for Stripe SDKs
+        if: ${{contains(steps.metadata.outputs.dependency-names, ['github.com/stripe/stripe-go/v72', 'stripe/stripe-php']) && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      - name: Enable auto-merge Stripe.net
-        if: ${{contains(steps.metadata.outputs.dependency-names, 'Stripe.net') && steps.metadata.outputs.update-type == 'version-update:semver-major'}}
+      - name: Enable auto-merge Stripe.net SDK
+        if: ${{contains(steps.metadata.outputs.dependency-names, 'Stripe.net') && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
