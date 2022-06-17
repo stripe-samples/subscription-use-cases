@@ -14,8 +14,12 @@ jobs:
         uses: dependabot/fetch-metadata@v1.1.1
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Info
+        run: >
+          echo 'steps.metadata.outputs.dependency-names:'
+          echo '"${{ steps.metadata.outputs.dependency-names }}"'
       - name: Enable auto-merge for Dependabot PRs on Stripe SDKs
-        if: ${{contains(steps.metadata.outputs.dependency-name, 'Stripe.net') && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
+        if: ${{contains(steps.metadata.outputs.dependency-names, 'Stripe.net') && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
