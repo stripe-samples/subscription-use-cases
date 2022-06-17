@@ -1,5 +1,5 @@
 name: Dependabot auto-merge
-on: pull_request
+on: push
 
 permissions:
   contents: write
@@ -17,9 +17,3 @@ jobs:
       - name: Info
         run: >
           echo ${{steps.metadata.outputs.dependency-names}}
-      - name: Enable auto-merge for Stripe SDKs Dependabot PRs
-        if: ${{contains(steps.metadata.outputs.dependency-names, 'Stripe.net') && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
-        run: gh pr merge --auto --merge "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
