@@ -21,7 +21,7 @@ jobs:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Enable auto-merge Stripe.net
-        if: ${{contains(steps.metadata.outputs.dependency-names, 'Stripe.net') && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
+        if: ${{contains(steps.metadata.outputs.dependency-names, 'Stripe.net') && steps.metadata.outputs.update-type == 'version-update:semver-major'}}
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
