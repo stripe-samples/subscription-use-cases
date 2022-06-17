@@ -15,7 +15,7 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
       - name: Enable auto-merge for Stripe SDKs
-        if: ${{contains(steps.metadata.outputs.dependency-names, "github.com/stripe/stripe-go/v72, stripe/stripe-php") && steps.metadata.outputs.update-type == 'version-update:semver-minor'}}
+        if: ${{contains(steps.metadata.outputs.dependency-names, "github.com/stripe/stripe-go/v72, stripe/stripe-php") && steps.metadata.outputs.update-type == 'version-update:semver-major'}}
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
