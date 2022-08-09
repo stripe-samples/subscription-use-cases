@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - fix-ci
-      - master
+      - main
 env:
   STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
   STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
