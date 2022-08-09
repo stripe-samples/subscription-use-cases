@@ -11,7 +11,7 @@ env:
   BASIC: ${{ secrets.TEST_BASIC_PRICE }}
 
 concurrency:
-  group: ci-${{ github.head_ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
