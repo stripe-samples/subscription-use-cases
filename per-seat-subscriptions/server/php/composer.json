@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A Stripe sample implementing subscriptions with per seat pricing using card payments",
   "require": {
-    "slim/slim": "^3.12",
+    "slim/slim": "^4.10",
     "vlucas/phpdotenv": "^3.4",
     "stripe/stripe-php": "^9.0.0",
     "monolog/monolog": "^1.17"
