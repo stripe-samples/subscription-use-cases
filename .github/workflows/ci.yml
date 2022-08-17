@@ -46,9 +46,6 @@ jobs:
           - server_type: php-slim
             server_image: composer:2.2
         target:
-          - sample: per-seat-subscriptions
-            tests: per_seat_server_spec.rb
-            client_dir: ../../client
           - sample: usage-based-subscriptions
             tests: usage_based_server_spec.rb
             client_dir: ../../client
@@ -56,18 +53,6 @@ jobs:
             tests: fixed_price_server_spec.rb
             client_dir: ../../client/vanillajs
         exclude:
-          - target:
-              sample: per-seat-subscriptions
-            runtime:
-              server_type: go
-          - target:
-              sample: per-seat-subscriptions
-            runtime:
-              server_type: dotnet
-          - target:
-              sample: per-seat-subscriptions
-            runtime:
-              server_type: php-slim
           - target:
               sample: usage-based-subscriptions
             runtime:
