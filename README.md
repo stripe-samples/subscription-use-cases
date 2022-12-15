@@ -262,3 +262,12 @@ Sign up to [stay updated with developer news](https://go.stripe.global/dev-diges
 - [@suz-stripe](https://twitter.com/noopkat)
 - [@dawn-stripe](https://twitter.com/dawnlambeth)
 - [@cjavilla-stripe](https://twitter.com/cjav_dev)
+
+
+## Contributors
+
+<a href="https://github.com/stripe-samples/subscription-use-cases/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=stripe-samples/subscription-use-cases" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
