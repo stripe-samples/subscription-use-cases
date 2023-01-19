@@ -111,7 +111,7 @@ SERVER_URL = ENV.fetch('SERVER_URL', 'http://localhost:4242')
 Dotenv.load
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 Stripe.max_network_retries = 2
-Stripe.api_version = "2020-08-27"
+Stripe.api_version = "2022-08-01"
 
 def server_url
   SERVER_URL

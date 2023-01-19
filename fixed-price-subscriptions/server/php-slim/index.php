@@ -43,7 +43,7 @@ $container->set('stripe', function ($c) {
 
     $stripe = new \Stripe\StripeClient([
       'api_key' => getenv('STRIPE_SECRET_KEY'),
-      'stripe_version' => '2020-08-27',
+      'stripe_version' => '2022-08-01',
     ]);
 
     return $stripe;

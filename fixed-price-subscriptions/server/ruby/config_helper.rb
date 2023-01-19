@@ -196,7 +196,7 @@ class ConfigHelper
   end
 
   def dotenv_exists?
-    return true if File.exists?("./.env")
+    return true if File.exist?("./.env")
 
     env_file_path = File.join(File.dirname(__FILE__), '.env')
     if !ENV['STRIPE_SECRET_KEY'] && !File.exist?("./.env")
