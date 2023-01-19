@@ -58,9 +58,9 @@ jobs:
             runtime:
               server_type: php-slim
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: 'stripe-samples/sample-ci'
           path: 'sample-ci'
@@ -114,9 +114,9 @@ jobs:
     env:
       SERVER_URL: ${{ matrix.implementation.server_url }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: 'stripe-samples/sample-ci'
           path: 'sample-ci'
