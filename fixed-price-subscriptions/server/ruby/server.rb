@@ -119,11 +119,11 @@ post '/cancel-subscription' do
   # Be sure to only cancel subscriptions of the logged in user.
   # This naiively assumes the subscriptionId belongs to the
   # authenticated user.
-  deleted_subscription = Stripe::Subscription.delete(
+  canceled_subscription = Stripe::Subscription.cancel(
     data['subscriptionId']
   )
 
-  { subscription: deleted_subscription }.to_json
+  { subscription: canceled_subscription }.to_json
 end
 
 post '/update-subscription' do
