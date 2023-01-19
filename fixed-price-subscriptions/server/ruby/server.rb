@@ -15,7 +15,7 @@ Stripe.set_app_info(
   version: '0.0.2',
   url: 'https://github.com/stripe-samples/subscription-use-cases/fixed-price'
 )
-Stripe.api_version = '2020-08-27'
+Stripe.api_version = '2022-08-01'
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
 set :static, true
