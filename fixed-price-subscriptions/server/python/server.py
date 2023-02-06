@@ -126,7 +126,7 @@ def list_subscriptions():
     customer_id = request.cookies.get('customer')
 
     try:
-        # Cancel the subscription by deleting it
+        # Retrieve all subscriptions for given customer
         subscriptions = stripe.Subscription.list(
             customer=customer_id,
             status='all',
