@@ -10,8 +10,13 @@ def create_and_confirm_subscription(customer_id, price_id)
   resp, _ = authenticated_post_json("/create-subscription", {
     priceId: price_id
   }, customer_id)
+  puts "Created subscription"
   subscription_id = resp["subscriptionId"]
-  subscription = Stripe::Subscription.retrieve(id: subscription_id, expand: ['latest_invoice.payment_intent'])
+  subscription = Stripe::Subscription.retrieve(
+    id: subscription_id,
+    expand: ['latest_invoice.payment_intent']
+  )
+  puts "Confirming payment intent"
   Stripe::PaymentIntent.confirm(subscription.latest_invoice.payment_intent.id, {
     payment_method: 'pm_card_visa',
   })
@@ -36,11 +41,12 @@ RSpec.describe "full integration path" do
   describe "/create-customer" do
     it "creates a customer with the given email" do
       email = "jenny.rosen@example.com"
+      name = "Jenny Rosen"
 
       # Not using the post_json helper here, because we need access to cookies.
       response = RestClient.post(
         "#{server_url}/create-customer",
-        { email: email }.to_json,
+        { email: email, name: name }.to_json,
         { content_type: :json }
       )
 
@@ -51,6 +57,7 @@ RSpec.describe "full integration path" do
       expect(resp["customer"]).to have_key("id")
       expect(resp["customer"]["id"]).to start_with("cus_")
       expect(resp["customer"]["email"]).to eq(email)
+      expect(resp["customer"]["name"]).to eq(name)
 
       # Test simulated auth.
       expect(response.cookies).to have_key("customer")
@@ -132,10 +139,14 @@ RSpec.describe "full integration path" do
       expect(items.length).to eq(1)
       old_price = items.first.price.id
 
+      puts "Updating subscription"
+
       resp, status = post_json("/update-subscription", {
         subscriptionId: subscription.id,
         newPriceLookupKey: 'premium',
       })
+
+      puts "Updated subscription"
 
       expect(status).to eq(200)
       items = Stripe::Subscription.retrieve(subscription.id).items.data

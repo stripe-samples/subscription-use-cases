@@ -10,6 +10,9 @@
   --headline-color: var(--gray-dark);
   --accent-color: #ed5f74;
   --radius: 6px;
+  --border-color: #e6e6e6;
+  --input-spacing: 0.75em;
+  --font-size-sm: 0.93rem
 }
 
 body {
@@ -64,6 +67,24 @@ button:disabled {
 .price-list > div {
   flex-grow: 3;
   margin: 0 10px;
-  border: black solid 1px;
   padding: 20px;
+  border: 1px var(--border-color) solid;
+  border-radius: var(--radius);
+}
+
+form > div > input {
+  display: block;
+  width: 100%;
+  padding: var(--input-spacing);
+  margin: 0 4px 0 0;
+  border: 1px var(--border-color) solid;
+  border-radius: var(--radius);
+  color: var(--body-color);
+}
+
+form > div > label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--font-size-sm);
+  color: var(--body-color);
 }

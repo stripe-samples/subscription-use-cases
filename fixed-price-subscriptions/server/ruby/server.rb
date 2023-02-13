@@ -12,10 +12,10 @@ ConfigHelper.check_env!
 # For sample support and debugging, not required for production:
 Stripe.set_app_info(
   'stripe-samples/subscription-use-cases/fixed-price',
-  version: '0.0.2',
+  version: '0.0.3',
   url: 'https://github.com/stripe-samples/subscription-use-cases/fixed-price'
 )
-Stripe.api_version = '2022-08-01'
+Stripe.api_version = '2022-11-15'
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
 set :static, true
@@ -55,7 +55,10 @@ post '/create-customer' do
   data = JSON.parse(request.body.read)
 
   # Create a new customer object
-  customer = Stripe::Customer.create(email: data['email'])
+  customer = Stripe::Customer.create(
+    email: data['email'],
+    name: data['name'],
+  )
 
   # Simulate authentication
   cookies[:customer] = customer.id

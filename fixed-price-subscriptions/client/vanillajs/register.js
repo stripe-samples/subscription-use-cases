@@ -4,11 +4,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Grab reference to the emailInput. The email address
-      // entered will be passed to the server and used to create
-      // a customer. Email addresses do NOT uniquely identify
+      // Grab reference to the name and email inputs. The email
+      // address entered will be passed to the server and used to
+      // create a customer. Email addresses do NOT uniquely identify
       // customers in Stripe.
       const emailInput = document.querySelector('#email');
+      const nameInput = document.querySelector('#name');
+
+      // Store the email address for later in the session.
+      window.sessionStorage.setItem('email', emailInput.value);
 
       // Create a customer. This will also set a cookie on the server
       // to simulate having a logged in user.
@@ -19,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         body: JSON.stringify({
           email: emailInput.value,
+          name: nameInput.value,
         }),
       }).then(r => r.json());
 

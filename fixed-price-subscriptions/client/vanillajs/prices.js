@@ -20,7 +20,7 @@ fetch('/config')
         <div>
           <span>
             ${price.unit_amount / 100} /
-            ${price.currency} /
+            ${price.currency.toUpperCase()} /
             ${price.recurring.interval}
           </span>
           <button onclick="createSubscription('${price.id}')">Select</button>

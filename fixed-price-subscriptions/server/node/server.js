@@ -33,10 +33,10 @@ if (
 }
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-08-01',
+  apiVersion: '2022-11-15',
   appInfo: { // For sample support and debugging, not required for production:
     name: "stripe-samples/subscription-use-cases/fixed-price",
-    version: "0.0.1",
+    version: "0.0.3",
     url: "https://github.com/stripe-samples/subscription-use-cases/fixed-price"
   }
 });
