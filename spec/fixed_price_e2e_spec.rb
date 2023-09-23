@@ -10,6 +10,7 @@ RSpec.describe 'Fixed price subscription', type: :system do
 
   example 'happy path' do
     fill_in :email, with: 'test@example.com'
+    fill_in :name, with: 'Jenny Rosen'
     click_on 'Register'
 
     within first('.price-list > div') do
@@ -18,7 +19,7 @@ RSpec.describe 'Fixed price subscription', type: :system do
 
     fill_in :name, with: 'Jenny Rosen'
 
-    within_frame find('iframe[name*=__privateStripeFrame]') do
+    within_frame find('form iframe') do
       fill_in 'cardnumber', with: '4242424242424242'
       fill_in 'exp-date', with: '12 / 33'
       fill_in 'cvc', with: '123'
@@ -41,6 +42,7 @@ RSpec.describe 'Fixed price subscription', type: :system do
 
   example 'with the test card that requires SCA' do
     fill_in :email, with: 'test@example.com'
+    fill_in :name, with: 'Jenny Rosen'
     click_on 'Register'
 
     within first('.price-list > div') do
@@ -49,7 +51,7 @@ RSpec.describe 'Fixed price subscription', type: :system do
 
     fill_in :name, with: 'Jenny Rosen'
 
-    within_frame find('iframe[name*=__privateStripeFrame][src*=elements]') do
+    within_frame find('form iframe') do
       fill_in 'cardnumber', with: '4000002500003155'
       fill_in 'exp-date', with: '12 / 33'
       fill_in 'cvc', with: '123'
@@ -58,7 +60,7 @@ RSpec.describe 'Fixed price subscription', type: :system do
 
     click_on 'Subscribe'
 
-    within_frame first('iframe[name*=__privateStripeFrame][src*=authorize') do
+    within_frame first('form iframe') do
       within_frame first('iframe') do
         within_frame first('iframe') do
           click_on 'Complete authentication'

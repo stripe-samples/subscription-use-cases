@@ -18,10 +18,15 @@
       </p>
 
       <form id="signup-form">
-        <label>
-          Email
-          <input id="email" type="text" placeholder="Email address" value="test@example.com" required />
-        </label>
+        <div>
+          <label id="name"> Name </label>
+          <input id="name" type="text" placeholder="Jenny Rosen" value="Jenny Rosen" />
+        </div>
+
+        <div>
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="jenny.rosen@example.com" value="jenny.rosen@example.com" required />
+        </div>
 
         <button type="submit">
           Register

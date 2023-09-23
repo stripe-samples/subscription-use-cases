@@ -15,10 +15,10 @@ load_dotenv(find_dotenv())
 # For sample support and debugging, not required for production:
 stripe.set_app_info(
     'stripe-samples/subscription-use-cases/fixed-price',
-    version='0.0.1',
+    version='0.0.3',
     url='https://github.com/stripe-samples/subscription-use-cases/fixed-price')
 
-stripe.api_version = '2022-08-01'
+stripe.api_version = '2022-11-15'
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 static_dir = str(os.path.abspath(os.path.join(__file__, "..", os.getenv("STATIC_DIR"))))
