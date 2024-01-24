@@ -11,7 +11,7 @@ Elements](https://stripe.com/billing/elements) and
 This sample consists of a `client` in React and a `server` piece available in 7
 common languages.
 
-The client is implemented using `create-react-app` to provide the boilerplate
+The client is implemented using `Vite` to provide the boilerplate
 for React. Stripe Elements is integrated using
 [`react-stripe-js`](https://github.com/stripe/react-stripe-js), which is the
 official React library provided by Stripe.
@@ -107,4 +107,5 @@ If you have questions, comments, or need help with code, we're here to help:
 
 ## Author(s)
 
+[@hideokamoto-stripe](https://twitter.com/hidetaka_dev)
 [@ctrudeau-stripe](https://twitter.com/trudeaucj)

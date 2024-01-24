@@ -8,7 +8,7 @@ const Register = (props) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const {customer} = await fetch('/create-customer', {
+    const {customer} = await fetch('api/create-customer', {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
