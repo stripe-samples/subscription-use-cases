@@ -35,7 +35,7 @@ const Account = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const {subscriptions} = await fetch('/subscriptions').then(r => r.json());
+      const {subscriptions} = await fetch('api/subscriptions').then(r => r.json());
 
       setSubscriptions(subscriptions.data);
     }

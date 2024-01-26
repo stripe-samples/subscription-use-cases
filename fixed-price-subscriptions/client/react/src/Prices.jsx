@@ -8,14 +8,14 @@ const Prices = () => {
 
   useEffect(() => {
     const fetchPrices = async () => {
-      const {prices} = await fetch('/config').then(r => r.json());
+      const {prices} = await fetch('api/config').then(r => r.json());
       setPrices(prices);
     };
     fetchPrices();
   }, [])
 
   const createSubscription = async (priceId) => {
-    const {subscriptionId, clientSecret} = await fetch('/create-subscription', {
+    const {subscriptionId, clientSecret} = await fetch('api/create-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

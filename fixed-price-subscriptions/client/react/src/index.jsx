@@ -4,7 +4,7 @@ import App from './App';
 import {Elements} from '@stripe/react-stripe-js';
 import {loadStripe} from '@stripe/stripe-js';
 
-fetch('/config')
+fetch('api/config')
   .then((response) => response.json())
   .then((data) => {
     const stripePromise = loadStripe(data.publishableKey);

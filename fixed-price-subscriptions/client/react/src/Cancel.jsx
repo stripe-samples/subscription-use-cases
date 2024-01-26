@@ -9,7 +9,7 @@ const Cancel = ({location}) => {
   const handleClick = async (e) => {
     e.preventDefault();
 
-    await fetch('/cancel-subscription', {
+    await fetch('api/cancel-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
