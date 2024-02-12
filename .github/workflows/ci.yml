@@ -187,7 +187,7 @@ jobs:
       - name: Run tests
         if: ${{ steps.if_running.outputs.running }}
         run: |
-          echo "$(cat ${{ matrix.target.sample }}/client/${{ matrix.implementation.client_type }}/package.json | jq '.proxy = "http://web:4242"')" > ${{ matrix.target.sample }}/client/${{ matrix.implementation.client_type }}/package.json
+          sed -i -E 's/http:\/\/localhost:4242/http:\/\/web:4242/' ${{ matrix.target.sample }}/client/react/vite.config.mjs
           ln -s react-cra sample-ci/docker/react
 
           source sample-ci/helpers.sh
