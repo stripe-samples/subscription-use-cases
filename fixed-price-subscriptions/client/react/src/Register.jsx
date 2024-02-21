@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import './App.css';
-import { Redirect } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-const Register = (props) => {
+const Register = () => {
   const [email, setEmail] = useState('jenny.rosen@example.com');
-  const [customer, setCustomer] = useState(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const {customer} = await fetch('api/create-customer', {
+    await fetch('api/create-customer', {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
@@ -18,12 +18,8 @@ const Register = (props) => {
       }),
     }).then(r => r.json());
 
-    setCustomer(customer);
+    navigate('/prices', { replace: false });
   };
-
-  if(customer) {
-    return <Redirect to={{pathname: '/prices'}} />
-  }
 
   return (
     <main>

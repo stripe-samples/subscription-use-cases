@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { withRouter } from 'react-router-dom';
 import {
   CardElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
-import { Redirect } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-const Subscribe = ({location}) => {
+const Subscribe = () => {
+  const navigate = useNavigate();
+  const {
+    state: {
+      clientSecret,
+    }
+  } = useLocation();
 
-  // Get the lookup key for the price from the previous page redirect.
-  const [clientSecret] = useState(location.state.clientSecret);
-  const [subscriptionId] = useState(location.state.subscriptionId);
   const [name, setName] = useState('Jenny Rosen');
   const [messages, _setMessages] = useState('');
-  const [paymentIntent, setPaymentIntent] = useState();
 
   // helper for displaying status messages.
   const setMessage = (message) => {
@@ -46,7 +46,7 @@ const Subscribe = ({location}) => {
     const cardElement = elements.getElement(CardElement);
 
     // Use card Element to tokenize payment details
-    let { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+    const { error } = await stripe.confirmCardPayment(clientSecret, {
       payment_method: {
         card: cardElement,
         billing_details: {
@@ -60,11 +60,7 @@ const Subscribe = ({location}) => {
       setMessage(error.message);
       return;
     }
-    setPaymentIntent(paymentIntent);
-  }
-
-  if(paymentIntent && paymentIntent.status === 'succeeded') {
-    return <Redirect to={{pathname: '/account'}} />
+    navigate('/account', { replace: false });
   }
 
   return (
@@ -103,4 +99,4 @@ const Subscribe = ({location}) => {
   )
 }
 
-export default withRouter(Subscribe);
+export default Subscribe;
