@@ -58,11 +58,9 @@ RSpec.describe 'Fixed price subscription', type: :system do
 
     click_on 'Subscribe'
 
-    within_frame first('iframe[name*=__privateStripeFrame][src*=authorize') do
-      within_frame first('iframe') do
-        within_frame first('iframe') do
-          click_on 'Complete authentication'
-        end
+    within_frame first('iframe[name*=__privateStripeFrame][src*=three-ds') do
+      within_frame first('iframe#challengeFrame') do
+        click_on 'Complete'
       end
     end
 
