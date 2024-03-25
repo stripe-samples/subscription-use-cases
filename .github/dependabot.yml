@@ -11,11 +11,17 @@ updates:
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "bundler"
     directory: "/usage-based-subscriptions/server/ruby/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # python dependencies
   - package-ecosystem: "pip"
@@ -23,11 +29,17 @@ updates:
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "pip"
     directory: "/usage-based-subscriptions/server/python/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # php dependencies
   - package-ecosystem: "composer"
@@ -35,11 +47,17 @@ updates:
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "composer"
     directory: "/usage-based-subscriptions/server/php/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # node dependencies
   - package-ecosystem: "npm"
@@ -47,16 +65,25 @@ updates:
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "npm"
     directory: "/fixed-price-subscriptions/server/node-typescript/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "npm"
     directory: "/usage-based-subscriptions/server/node/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # go dependencies
   - package-ecosystem: "gomod"
@@ -64,11 +91,17 @@ updates:
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "gomod"
     directory: "/usage-based-subscriptions/server/go/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # java dependencies
   - package-ecosystem: "maven"
@@ -76,11 +109,17 @@ updates:
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "maven"
     directory: "/usage-based-subscriptions/server/java/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # dotnet dependencies
   - package-ecosystem: "nuget"
@@ -88,8 +127,14 @@ updates:
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: "nuget"
     directory: "/usage-based-subscriptions/server/dotnet/"
     schedule:
       interval: "weekly"
       day: "thursday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
