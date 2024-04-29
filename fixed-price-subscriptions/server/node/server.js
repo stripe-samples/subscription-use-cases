@@ -232,7 +232,7 @@ app.post(
             console.log("Default payment method set for subscription:" + payment_intent.payment_method);
           } catch (err) {
             console.log(err);
-            console.log(`⚠️  Falied to update the default payment method for subscription: ${subscription_id}`);
+            console.log(`⚠️  Failed to update the default payment method for subscription: ${subscription_id}`);
           }
         };
 
