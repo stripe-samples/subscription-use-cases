@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { withRouter } from 'react-router-dom';
-import { Redirect } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Prices = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [prices, setPrices] = useState([]);
-  const [subscriptionData, setSubscriptionData] = useState(null);
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -25,15 +25,16 @@ const Prices = () => {
       }),
     }).then(r => r.json());
 
-    setSubscriptionData({ subscriptionId, clientSecret });
+    navigate('/subscribe', {
+      state: {
+        from: location,
+        subscriptionId,
+        clientSecret,
+      },
+      replace: false
+    });
   }
 
-  if(subscriptionData) {
-    return <Redirect to={{
-      pathname: '/subscribe',
-      state: subscriptionData
-    }} />
-  }
 
   return (
     <div>
@@ -60,4 +61,4 @@ const Prices = () => {
   );
 }
 
-export default withRouter(Prices);
+export default Prices;
