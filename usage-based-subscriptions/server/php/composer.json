@@ -6,7 +6,7 @@
     "slim/slim": "^4.9",
     "vlucas/phpdotenv": "^5.4",
     "stripe/stripe-php": "^14.2.0",
-    "monolog/monolog": "^2.3",
+    "monolog/monolog": "^3.6",
     "ramsey/uuid": "^4.0"
   },
   "scripts": {
