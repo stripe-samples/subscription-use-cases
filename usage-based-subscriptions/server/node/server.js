@@ -167,7 +167,7 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
 
 app.post('/cancel-subscription', async (req, res) => {
   // Delete the subscription
-  const deletedSubscription = await stripe.subscriptions.del(
+  const deletedSubscription = await stripe.subscriptions.cancel(
     req.body.subscriptionId
   );
   res.send(deletedSubscription);
