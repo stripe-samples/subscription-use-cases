@@ -23,7 +23,7 @@ jobs:
             server_image: node:latest
           - server_type: node
             server_image: node:lts
-    uses: ./.github/workflows/server_test.yml
+    uses: ./.github/workflows/server_test.yaml
     secrets: inherit
     with:
       server_type: ${{ matrix.runtime.server_type }}

@@ -21,7 +21,7 @@ jobs:
         runtime:
           - server_type: dotnet
             server_image: mcr.microsoft.com/dotnet/sdk:6.0
-    uses: ./.github/workflows/server_test.yml
+    uses: ./.github/workflows/server_test.yaml
     secrets: inherit
     with:
       server_type: ${{ matrix.runtime.server_type }}

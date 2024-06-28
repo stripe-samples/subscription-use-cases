@@ -23,7 +23,7 @@ jobs:
             server_image: golang:latest
           - server_type: go
             server_image: golang:1.17
-    uses: ./.github/workflows/server_test.yml
+    uses: ./.github/workflows/server_test.yaml
     secrets: inherit
     with:
       server_type: ${{ matrix.runtime.server_type }}

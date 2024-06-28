@@ -23,7 +23,7 @@ jobs:
             server_image: ruby:latest
           - server_type: ruby
             server_image: ruby:2.7
-    uses: ./.github/workflows/server_test.yml
+    uses: ./.github/workflows/server_test.yaml
     secrets: inherit
     with:
       server_type: ${{ matrix.runtime.server_type }}

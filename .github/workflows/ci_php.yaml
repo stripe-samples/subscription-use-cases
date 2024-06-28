@@ -21,7 +21,7 @@ jobs:
         runtime:
           - server_type: php-slim
             server_image: composer:2.2
-    uses: ./.github/workflows/server_test.yml
+    uses: ./.github/workflows/server_test.yaml
     secrets: inherit
     with:
       server_type: ${{ matrix.runtime.server_type }}

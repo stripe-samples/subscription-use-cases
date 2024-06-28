@@ -23,7 +23,7 @@ jobs:
             server_image: maven:latest
           - server_type: java
             server_image: maven:3.8-openjdk-8
-    uses: ./.github/workflows/server_test.yml
+    uses: ./.github/workflows/server_test.yaml
     secrets: inherit
     with:
       server_type: ${{ matrix.runtime.server_type }}
