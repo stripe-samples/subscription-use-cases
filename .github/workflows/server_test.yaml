@@ -1,0 +1,67 @@
+name: Server Test
+
+on:
+  workflow_call:
+    inputs:
+      server_type:
+        required: true
+        type: string
+      server_image:
+        required: true
+        type: string
+jobs:
+  server_test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - sample: usage-based-subscriptions
+            tests: usage_based_server_spec.rb
+            client_dir: ../../client
+          - sample: fixed-price-subscriptions
+            tests: fixed_price_server_spec.rb
+            client_dir: ../../client/vanillajs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha }}
+          
+      - name: Checkout CI runner
+        uses: actions/checkout@v4
+        with:
+          repository: 'stripe-samples/sample-ci'
+          path: 'sample-ci'
+
+      - name: Run tests
+        env:
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
+          PRICE: ${{ secrets.TEST_PRICE }}
+          BASIC_PRICE: ${{ secrets.TEST_BASIC_PRICE }}
+          PREMIUM_PRICE: ${{ secrets.TEST_PREMIUM_PRICE }}
+        run: |
+          rm -rf usage-based-subscriptions/server/dotnet/ReportUsage # causes "Program.cs(14,28): error CS0017: Program has more than one entry point defined."
+
+          source sample-ci/helpers.sh
+          setup_dependencies
+
+          install_docker_compose_settings
+          export STRIPE_WEBHOOK_SECRET=$(retrieve_webhook_secret)
+          cat <<EOF >> .env
+          BASIC=${BASIC_PRICE}
+          PREMIUM=${PREMIUM_PRICE}
+          EOF
+
+          configure_docker_compose_for_integration "${{ matrix.target.sample }}" "${{ inputs.server_type }}" "${{ matrix.target.client_dir }}" "${{ inputs.server_image }}"
+          docker-compose up -d && wait_web_server
+          docker-compose exec -T runner bundle exec rspec spec/${{ matrix.target.tests }}
+
+      - name: Collect debug information
+        if: ${{ failure() }}
+        run: |
+          cat .env
+          cat docker-compose.yml
+          docker-compose ps -a
+          docker-compose logs web

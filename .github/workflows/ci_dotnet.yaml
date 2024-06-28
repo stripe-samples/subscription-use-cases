@@ -1,0 +1,38 @@
+name: Server Tests (dotnet)
+on:
+  push:
+    branches:
+      - main
+      - fix-ci
+  workflow_dispatch:
+  pull_request_target:
+    branches:
+      - main
+    paths:
+      - 'usage-based-subscriptions/server/dotnet/**'
+      - 'fixed-price-subscriptions/server/dotnet/**'
+      - '!**.md'
+
+jobs:
+  server_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime:
+          - server_type: dotnet
+            server_image: mcr.microsoft.com/dotnet/sdk:6.0
+    uses: ./.github/workflows/server_test.yaml
+    secrets: inherit
+    with:
+      server_type: ${{ matrix.runtime.server_type }}
+      server_image: ${{ matrix.runtime.server_image }}
+
+
+  dependabot-auto-merge:
+    if: ${{ github.event.pull_request && github.actor == 'dependabot[bot]' }}
+    needs: server_test
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/dependabot.yaml
+    secrets: inherit
