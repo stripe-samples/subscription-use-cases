@@ -22,7 +22,6 @@ env:
 
 jobs:
   e2e_test: 
-    needs: changed_files
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

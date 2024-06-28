@@ -34,5 +34,5 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: ./.github/workflows/dependabot.yml
+    uses: ./.github/workflows/dependabot.yaml
     secrets: inherit
