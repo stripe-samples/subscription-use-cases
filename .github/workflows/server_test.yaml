@@ -50,8 +50,8 @@ jobs:
           install_docker_compose_settings
           export STRIPE_WEBHOOK_SECRET=$(retrieve_webhook_secret)
           cat <<EOF >> .env
-          BASIC=${ BASIC_PRICE }
-          PREMIUM=${ PREMIUM_PRICE }
+          BASIC=${BASIC_PRICE}
+          PREMIUM=${PREMIUM_PRICE}
           EOF
 
           configure_docker_compose_for_integration "${{ matrix.target.sample }}" "${{ inputs.server_type }}" "${{ matrix.target.client_dir }}" "${{ inputs.server_image }}"
