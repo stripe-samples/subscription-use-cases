@@ -22,11 +22,6 @@ jobs:
           - sample: fixed-price-subscriptions
             tests: fixed_price_server_spec.rb
             client_dir: ../../client/vanillajs
-        exclude:
-          - target:
-              sample: usage-based-subscriptions
-            runtime:
-              server_type: php-slim
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
