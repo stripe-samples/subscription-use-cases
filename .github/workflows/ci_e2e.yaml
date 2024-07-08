@@ -1,0 +1,92 @@
+name: E2E Tests
+on:
+  push:
+    branches:
+      - main
+      - fix-ci
+  workflow_dispatch:
+  pull_request_target:
+    branches:
+      - main
+    paths:
+      - 'fixed-price-subscriptions/client/vanillajs/**'
+      - 'fixed-price-subscriptions/client/react/**'
+      - 'usage-based-subscriptions/client/**'
+      - '!**.css'
+      - '!**.md'
+
+env:
+  STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
+  STRIPE_SECRET_KEY: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
+  PRICE: ${{ secrets.TEST_PRICE }}
+
+jobs:
+  e2e_test: 
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation:
+          - client_type: vanillajs
+            server_url: http://web:4242
+            profile: e2e
+          - client_type: react
+            server_url: http://frontend:3000
+            profile: frontend
+        target:
+          - sample: fixed-price-subscriptions
+            tests: fixed_price_e2e_spec.rb
+    env:
+      SERVER_URL: ${{ matrix.implementation.server_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha }}
+          
+      - name: Checkout CI runner
+        uses: actions/checkout@v4
+        with:
+          repository: 'stripe-samples/sample-ci'
+          path: 'sample-ci'
+
+      - name: Run tests
+        run: |
+          sed -i -E 's/http:\/\/localhost:4242/http:\/\/web:4242/' ${{ matrix.target.sample }}/client/react/vite.config.mjs
+          ln -s react-cra sample-ci/docker/react
+
+          source sample-ci/helpers.sh
+          setup_dependencies
+
+          install_docker_compose_settings
+          export STRIPE_WEBHOOK_SECRET=$(retrieve_webhook_secret)
+          cat <<EOF >> .env
+          DOMAIN=${{ matrix.implementation.server_url }}
+          BASIC=${{ secrets.TEST_BASIC_PRICE }}
+          PREMIUM=${{ secrets.TEST_PREMIUM_PRICE }}
+          EOF
+
+          configure_docker_compose_for_integration "${{ matrix.target.sample }}" node ../../client/${{ matrix.implementation.client_type }} node:lts
+          docker-compose --profile="${{ matrix.implementation.profile }}" up -d && wait_web_server
+          command="docker-compose exec -T runner bundle exec rspec spec/${{ matrix.target.tests }}"
+          $command \
+            || $command --only-failures \
+            || $command --only-failures --format RSpec::Github::Formatter --format progress
+
+      - name: Collect debug information
+        if: ${{ failure() }}
+        run: |
+          cat .env
+          cat docker-compose.yml
+          docker-compose ps -a
+          docker-compose --profile="${{ matrix.implementation.profile }}" logs web frontend
+
+          docker cp $(docker-compose ps -qa runner | head -1):/work/tmp .
+
+      - name: Upload capybara screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: |
+            tmp/capybara
