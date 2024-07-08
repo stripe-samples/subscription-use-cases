@@ -20,6 +20,6 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@fullhuman/postcss-purgecss": "^5.0.0"
+    "@fullhuman/postcss-purgecss": "^6.0.0"
   }
 }
