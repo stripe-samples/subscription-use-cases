@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { withRouter } from 'react-router-dom';
+import React from 'react';
 import './App.css';
-import { Redirect } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-const Cancel = ({location}) => {
-  const [cancelled, setCancelled] = useState(false);
+const Cancel = () => {
+  const navigate = useNavigate();
+  const locacion = useLocation();
 
   const handleClick = async (e) => {
     e.preventDefault();
@@ -15,16 +15,12 @@ const Cancel = ({location}) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        subscriptionId: location.state.subscription
+        subscriptionId: locacion.state.subscription
       }),
     })
 
-    setCancelled(true);
+    navigate('/account', { replace: true });
   };
-
-  if(cancelled) {
-    return <Redirect to={`/account`} />
-  }
 
   return (
     <div>
@@ -35,4 +31,4 @@ const Cancel = ({location}) => {
 }
 
 
-export default withRouter(Cancel);
+export default Cancel;

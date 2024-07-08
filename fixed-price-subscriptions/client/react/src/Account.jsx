@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, withRouter } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './App.css';
 
 const AccountSubscription = ({subscription}) => {
@@ -25,7 +25,7 @@ const AccountSubscription = ({subscription}) => {
       </p>
 
       {/* <Link to={{pathname: '/change-plan', state: {subscription: subscription.id }}}>Change plan</Link><br /> */}
-      <Link to={{pathname: '/cancel', state: {subscription: subscription.id }}}>Cancel</Link>
+      <Link to={'/cancel'} state={{subscription: subscription.id }}>Cancel</Link>
     </section>
   )
 }
@@ -64,4 +64,4 @@ const Account = () => {
   );
 }
 
-export default withRouter(Account);
+export default Account;
