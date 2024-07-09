@@ -72,7 +72,7 @@ cp .env.example client/react/.env
 You will need to take the Stripe publishable key and set only one variable for the React server.
 
 ```
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_12345
+VITE_STRIPE_PUBLISHABLE_KEY=pk_12345
 ```
 
 **2. Create Products and Prices on Stripe**
