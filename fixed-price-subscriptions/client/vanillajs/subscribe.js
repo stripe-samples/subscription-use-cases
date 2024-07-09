@@ -5,22 +5,24 @@ const setMessage = (message) => {
 }
 
 // Fetch public key and initialize Stripe.
-let stripe, cardElement;
+let stripe, paymentElement, elements;
+// Extract the client secret query string argument. This is
+// required to confirm the payment intent from the front-end.
+const subscriptionId = window.sessionStorage.getItem('subscriptionId');
+const clientSecret = window.sessionStorage.getItem('clientSecret');
 
 fetch('/config')
   .then((resp) => resp.json())
   .then((resp) => {
     stripe = Stripe(resp.publishableKey);
 
-    const elements = stripe.elements();
-    cardElement = elements.create('card');
-    cardElement.mount('#card-element');
+    elements = stripe.elements({
+      clientSecret
+    });
+    paymentElement = elements.create('payment');
+    paymentElement.mount('#card-element');
   });
 
-// Extract the client secret query string argument. This is
-// required to confirm the payment intent from the front-end.
-const subscriptionId = window.sessionStorage.getItem('subscriptionId');
-const clientSecret = window.sessionStorage.getItem('clientSecret');
 // This sample only supports a Subscription with payment
 // upfront. If you offer a trial on your subscription, then
 // instead of confirming the subscription's latest_invoice's
@@ -41,12 +43,15 @@ form.addEventListener('submit', async (e) => {
   const nameInput = document.getElementById('name');
 
   // Create payment method and confirm payment intent.
-  stripe.confirmCardPayment(clientSecret, {
-    payment_method: {
-      card: cardElement,
-      billing_details: {
-        name: nameInput.value,
-      },
+  stripe.confirmPayment({
+    elements,
+    redirect: 'if_required',
+    confirmParams: {
+      payment_method_data: {
+        billing_details: {
+          name: nameInput.value,
+        },
+      }
     }
   }).then((result) => {
     if(result.error) {
