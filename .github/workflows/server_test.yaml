@@ -55,13 +55,13 @@ jobs:
           EOF
 
           configure_docker_compose_for_integration "${{ matrix.target.sample }}" "${{ inputs.server_type }}" "${{ matrix.target.client_dir }}" "${{ inputs.server_image }}"
-          docker-compose up -d && wait_web_server
-          docker-compose exec -T runner bundle exec rspec spec/${{ matrix.target.tests }}
+          docker compose up -d && wait_web_server
+          docker compose exec -T runner bundle exec rspec spec/${{ matrix.target.tests }}
 
       - name: Collect debug information
         if: ${{ failure() }}
         run: |
           cat .env
-          cat docker-compose.yml
-          docker-compose ps -a
-          docker-compose logs web
+          cat docker compose.yml
+          docker compose ps -a
+          docker compose logs web
