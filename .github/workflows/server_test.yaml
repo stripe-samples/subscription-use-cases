@@ -62,6 +62,6 @@ jobs:
         if: ${{ failure() }}
         run: |
           cat .env
-          cat docker compose.yml
+          cat docker-compose.yml
           docker compose ps -a
           docker compose logs web
