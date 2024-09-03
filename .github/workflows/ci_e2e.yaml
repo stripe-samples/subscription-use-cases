@@ -14,10 +14,6 @@ on:
       - 'usage-based-subscriptions/client/**'
       - '!**.css'
       - '!**.md'
-
-permissions:
-  contents: write
-  pull-requests: write
   
 env:
   STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
