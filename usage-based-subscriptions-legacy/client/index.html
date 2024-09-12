@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Stripe Billing Subscriptions | Card and Direct Debit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A demo of Stripe Billing" />
+
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/global.css" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/script.js" defer></script>
+  </head>
+
+  <body class="antialiased p-6">
+    <nav class="flex items-center justify-between flex-wrap">
+      <div>
+        <button
+          class="bg-white hover:bg-white hover:shadow-outline hover:text-pasha hover:border hover:border-black focus:shadow-outline text-pasha focus:bg-white focus:text-pasha font-light py-2 px-4 rounded"
+          type="button"
+        >
+          Sign in
+        </button>
+      </div>
+    </nav>
+    <div class="flex justify-center">
+      <div class="w-full max-w-sm m-6">
+        <div class="w-1/3 flex items-center mb-8">
+          <img
+            class="flex-1 w-24"
+            src="images/email.svg"
+          />
+        </div>
+        <div class="text-pasha font-semibold text-xl mb-4">
+          Unlimited email sending. Cancel anytime.
+        </div>
+
+        <form id="signup-form">
+          <div class="w-full mb-2">
+            <!-- <label
+              class="block text-gray-500 font-bold mb-2"
+              for="inline-full-name"
+            >
+              Email address
+            </label> -->
+            <input
+              class="appearance-none border-2 border-gray-200 rounded-md w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-pasha"
+              id="email"
+              type="text"
+              placeholder="Email address"
+              required
+            />
+          </div>
+
+          <button
+            id="email-submit"
+            class="w-full bg-pasha hover:bg-red-200 hover:shadow-outline rounded-md hover:text-pasha hover:border hover:border-black focus:shadow-outline text-white focus:bg-white focus:text-pasha font-light py-2 px-4 rounded"
+            type="submit"
+          >
+            <div id="loading" class="hidden">Signing up...</div>
+            <span id="button-text">Sign up</span>
+          </button>
+        </form>
+      </div>
+    </div>
+    <div
+      class="transition transform fixed bottom-0 inset-x-0 px-2 pb-4 sm:px-0 sm:pb-6"
+    >
+      <a
+        href="https://github.com/stripe-samples"
+        class="flex items-center justify-between rounded-lg shadow-lg pl-6 pr-4 py-3 bg-white sm:hidden"
+      >
+        <p class="text-pasha">
+          <strong class="font-medium">
+            View
+          </strong>
+          Stripe sample code
+        </p>
+        <span
+          class="flex items-center justify-center px-3 py-2 border text-base leading-6 font-medium rounded-md text-gray-900 bg-white hover:text-gray-600 focus:outline-none focus:shadow-outline transition ease-in-out duration-150"
+        >
+          →
+        </span>
+      </a>
+      <div class="hidden sm:block max-w-8xl mx-auto px-4 lg:px-6">
+        <div class="py-3 pl-6 pr-3 rounded-lg bg-white shadow-lg">
+          <div class="flex items-center justify-between flex-wrap">
+            <div class="w-full flex-1 flex items-center sm:w-0">
+              <p class="text-white truncate">
+                <strong class="font-medium text-pasha md:hidden">
+                  This is a Stripe Sample
+                </strong>
+                <strong class="hidden md:inline font-medium text-pasha">
+                  This is a Stripe Sample
+                </strong>
+                <span class="lg:hidden text-pasha">
+                  with Metered Usage Subscriptions with Cards. View code on
+                  GitHub.
+                </span>
+                <!-- <span class="hidden md:inline lg:hidden">
+                    to all of the components in Tailwind UI
+                  </span> -->
+                <span class="hidden lg:inline text-pasha">
+                  with Metered Usage Subscriptions with Cards. View code on
+                  GitHub.
+                </span>
+              </p>
+            </div>
+            <div class="flex-shrink-0">
+              <div class="rounded-md shadow-sm">
+                <a
+                  href="https://stripe.com/docs/billing"
+                  class="flex items-center justify-center px-4 py-2 border text-sm leading-5 font-medium rounded text-pasha bg-white hover:text-gray-600 focus:outline-none focus:shadow-outline transition ease-in-out duration-150"
+                >
+                  View the guide →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <footer class="h-24"></footer>
+</html>
