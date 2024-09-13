@@ -1,9 +1,13 @@
 import React from 'react'
+import 'antd/dist/antd.min.css'
+import './App.css'
+
+import UsageBasedSubscriptionFlow from './UsageBasedSubscriptionFlow'
 
 const App = () => {
   return (
-    <div>
-      <h1>Usage-based Subscriptions</h1>
+    <div className="App">
+      <UsageBasedSubscriptionFlow />
     </div>
   )
 }
