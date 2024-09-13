@@ -47,11 +47,12 @@ if (
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-08-01',
-  appInfo: { // For sample support and debugging, not required for production:
-    name: "stripe-samples/subscription-use-cases/usage-based-subscriptions",
-    version: "0.0.1",
-    url: "https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions"
-  }
+  appInfo: {
+    // For sample support and debugging, not required for production:
+    name: 'stripe-samples/subscription-use-cases/usage-based-subscriptions',
+    version: '0.0.1',
+    url: 'https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions',
+  },
 });
 
 app.use(express.static(process.env.STATIC_DIR));
@@ -73,6 +74,17 @@ app.get('/config', async (req, res) => {
   res.send({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
   });
+});
+
+app.post('/create-meter', async (req, res) => {
+  const meter = await stripe.billing.meters.create({
+    display_name: req.body.displayName,
+    event_name: req.body.eventName,
+    default_aggregation: {
+      formula: req.body.aggregationFormula,
+    },
+  });
+  res.send({ meter });
 });
 
 app.post('/create-customer', async (req, res) => {
