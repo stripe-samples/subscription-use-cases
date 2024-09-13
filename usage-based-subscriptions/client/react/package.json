@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "description": "This sample shows how to create a usage based subscription",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test"
+    "start": "parcel ./public/index.html --open"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^2.7.3",
-    "@stripe/stripe-js": "^4.1.0",
     "antd": "^4.21.0",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
-    "react-scripts": "^5.0.1"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "parcel": "^2.12.0",
+    "process": "^0.11.10"
   },
   "author": "seanzhang-stripe",
   "license": "MIT",
@@ -28,6 +27,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "proxy": "http://localhost:4242"
+  }
 }

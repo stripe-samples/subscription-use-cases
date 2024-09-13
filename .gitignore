@@ -46,3 +46,7 @@ build
 
 spec/examples.txt
 sample-ci/
+
+#parcel
+.parcel-cache
+dist
