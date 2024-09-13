@@ -77,14 +77,18 @@ app.get('/config', async (req, res) => {
 });
 
 app.post('/create-meter', async (req, res) => {
-  const meter = await stripe.billing.meters.create({
-    display_name: req.body.displayName,
-    event_name: req.body.eventName,
-    default_aggregation: {
-      formula: req.body.aggregationFormula,
-    },
-  });
-  res.send({ meter });
+  try {
+    const meter = await stripe.billing.meters.create({
+      display_name: req.body.displayName,
+      event_name: req.body.eventName,
+      default_aggregation: {
+        formula: req.body.aggregationFormula,
+      },
+    });
+    res.send({ meter });
+  } catch (error) {
+    res.status(400).send({ error: { message: error.message } });
+  }
 });
 
 app.post('/create-customer', async (req, res) => {

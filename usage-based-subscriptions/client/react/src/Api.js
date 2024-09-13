@@ -1,5 +1,5 @@
 const createMeter = (displayName, eventName, aggregationFormula) => {
-  return fetch('/create-meter', {
+  return fetch('/api/create-meter', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -1,8 +1,10 @@
 import React, { useState, useContext, createContext } from 'react';
-
+import { useMessages } from './components/StatusMessages';
 const SessionContext = createContext(null);
 
 const SessionProvider = ({ children }) => {
+  const [messages, addMessage] = useMessages();
+
   const [customer, setCustomer] = useState(null);
   const [displayName, setDisplayName] = useState(null);
   const [eventName, setEventName] = useState(null);
@@ -11,14 +13,16 @@ const SessionProvider = ({ children }) => {
   return (
     <SessionContext.Provider
       value={{
-        customer,
-        setCustomer,
+        messages,
+        addMessage,
         displayName,
         setDisplayName,
         eventName,
         setEventName,
         aggregationFormula,
         setAggregationFormula,
+        customer,
+        setCustomer,
       }}
     >
       {children}

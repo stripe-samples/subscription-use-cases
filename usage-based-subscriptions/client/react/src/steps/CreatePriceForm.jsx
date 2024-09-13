@@ -6,18 +6,27 @@ import { useSession } from '../Session';
 import { createMeter } from '../Api';
 
 const CreatePriceForm = () => {
-  const { displayName, eventName, aggregationFormula } = useSession();
+  const { displayName, eventName, aggregationFormula, addMessage } =
+    useSession();
 
   React.useEffect(() => {
     async function performCreateMeter() {
-      const meter = await createMeter(
+      addMessage('🔄 Creating a Meter...');
+      const response = await createMeter(
         displayName,
         eventName,
         aggregationFormula
       );
+      const { meter, error } = response;
+      if (meter) {
+        addMessage(`✅ Created meter: ${meter.id}`);
+      }
+      if (error) {
+        addMessage(`❌ Error creating meter: ${error.message}`);
+      }
     }
     performCreateMeter();
-  });
+  }, []);
 
   return (
     <>

@@ -1,18 +1,19 @@
-import React from 'react'
-import FlowContainer from './components/FlowContainer'
-import { useMessages } from './components/StatusMessages'
-import { Typography } from 'antd'
-import CreateMeterForm from './steps/CreateMeterForm'
-import CreatePriceForm from './steps/CreatePriceForm'
-import CreateSubscriptionForm from './steps/CreateSubscriptionForm'
-import CreateMeterEventForm from './steps/CreateMeterEventForm'
-const { Title } = Typography
+import React from 'react';
+import FlowContainer from './components/FlowContainer';
+import { Typography } from 'antd';
+import CreateMeterForm from './steps/CreateMeterForm';
+import CreatePriceForm from './steps/CreatePriceForm';
+import CreateSubscriptionForm from './steps/CreateSubscriptionForm';
+import CreateMeterEventForm from './steps/CreateMeterEventForm';
+const { Title } = Typography;
+
+import { useSession } from './Session';
 
 const UsageBasedSubscriptionFlow = () => {
-  const [messages, addMessage] = useMessages()
-  const [currentStep, setCurrentStep] = React.useState(0)
+  const { messages } = useSession();
+  const [currentStep, setCurrentStep] = React.useState(0);
   const [shouldGoToConfirmStep, setShouldGoToConfirmStep] =
-    React.useState(false)
+    React.useState(false);
 
   const buildSteps = () => {
     return [
@@ -32,8 +33,8 @@ const UsageBasedSubscriptionFlow = () => {
         title: 'Meter Event',
         content: <CreateMeterEventForm />,
       },
-    ]
-  }
+    ];
+  };
 
   return (
     <>
@@ -46,7 +47,7 @@ const UsageBasedSubscriptionFlow = () => {
         shouldGoToConfirmStep={shouldGoToConfirmStep}
       />
     </>
-  )
-}
+  );
+};
 
-export default UsageBasedSubscriptionFlow
+export default UsageBasedSubscriptionFlow;
