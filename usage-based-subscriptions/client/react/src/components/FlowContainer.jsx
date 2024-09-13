@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react'
-import { Steps, Button, message } from 'antd'
-import StatusMessages from './StatusMessages'
+import React, { useEffect } from 'react';
+import { Steps, Button, message } from 'antd';
+import StatusMessages from './StatusMessages';
 
-import './FlowContainer.css'
-import 'antd/dist/antd.min.css'
+import './FlowContainer.css';
+import 'antd/dist/antd.min.css';
 
 const FlowContainer = ({
   steps,
@@ -14,19 +14,19 @@ const FlowContainer = ({
 }) => {
   useEffect(() => {
     if (shouldGoToConfirmStep) {
-      setCurrentStep(steps.map((s) => s.type).indexOf('confirm'))
+      setCurrentStep(steps.map((s) => s.type).indexOf('confirm'));
     }
-  }, [shouldGoToConfirmStep, steps, setCurrentStep])
+  }, [shouldGoToConfirmStep, steps, setCurrentStep]);
 
   const next = () => {
     if (currentStep === 0) {
     }
-    setCurrentStep(currentStep + 1)
-  }
+    setCurrentStep(currentStep + 1);
+  };
 
   const prev = () => {
-    setCurrentStep(currentStep - 1)
-  }
+    setCurrentStep(currentStep - 1);
+  };
 
   return (
     <>
@@ -58,7 +58,7 @@ const FlowContainer = ({
 
       <StatusMessages messages={messages} />
     </>
-  )
-}
+  );
+};
 
-export default FlowContainer
+export default FlowContainer;

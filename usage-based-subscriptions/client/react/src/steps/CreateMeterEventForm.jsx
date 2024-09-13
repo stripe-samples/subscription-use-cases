@@ -1,6 +1,6 @@
-import React from 'react'
-import { Input, InputNumber, DatePicker, Row, Col, Typography } from 'antd'
-const { Title } = Typography
+import React from 'react';
+import { Input, InputNumber, DatePicker, Row, Col, Typography } from 'antd';
+const { Title } = Typography;
 
 const CreateMeterEventForm = () => {
   return (
@@ -38,7 +38,7 @@ const CreateMeterEventForm = () => {
         />
       </Row>
     </>
-  )
-}
+  );
+};
 
-export default CreateMeterEventForm
+export default CreateMeterEventForm;

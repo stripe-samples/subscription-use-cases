@@ -1,6 +1,6 @@
-import React from 'react'
-import { Input, InputNumber, Row, Col, Typography } from 'antd'
-const { Title } = Typography
+import React from 'react';
+import { Input, InputNumber, Row, Col, Typography } from 'antd';
+const { Title } = Typography;
 
 const CreatePriceForm = () => {
   return (
@@ -27,7 +27,7 @@ const CreatePriceForm = () => {
         />
       </Row>
     </>
-  )
-}
+  );
+};
 
-export default CreatePriceForm
+export default CreatePriceForm;

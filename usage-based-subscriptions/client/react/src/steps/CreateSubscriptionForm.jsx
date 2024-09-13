@@ -1,6 +1,6 @@
-import React from 'react'
-import { Input, Row, Col, Typography } from 'antd'
-const { Title } = Typography
+import React from 'react';
+import { Input, Row, Col, Typography } from 'antd';
+const { Title } = Typography;
 
 const CreateSubscriptionForm = () => {
   return (
@@ -29,7 +29,7 @@ const CreateSubscriptionForm = () => {
         />
       </Row>
     </>
-  )
-}
+  );
+};
 
-export default CreateSubscriptionForm
+export default CreateSubscriptionForm;

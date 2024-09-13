@@ -1,6 +1,6 @@
-import React from 'react'
-import { Input, Row, Col, Typography } from 'antd'
-const { Title } = Typography
+import React from 'react';
+import { Input, Row, Col, Typography } from 'antd';
+const { Title } = Typography;
 
 const CreateMeterForm = () => {
   return (
@@ -27,7 +27,7 @@ const CreateMeterForm = () => {
         />
       </Row>
     </>
-  )
-}
+  );
+};
 
-export default CreateMeterForm
+export default CreateMeterForm;

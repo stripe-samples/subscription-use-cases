@@ -1,14 +1,14 @@
 // A small set of helpers for displaying messages while in development.
-import React, { useReducer, useRef, useLayoutEffect } from 'react'
+import React, { useReducer, useRef, useLayoutEffect } from 'react';
 
 const StatusMessages = ({ messages }) => {
-  const scrollRef = useRef(null)
+  const scrollRef = useRef(null);
 
   useLayoutEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  })
+  });
 
   return messages.length ? (
     <div ref={scrollRef} id="messages" role="alert">
@@ -18,19 +18,19 @@ const StatusMessages = ({ messages }) => {
     </div>
   ) : (
     ''
-  )
-}
+  );
+};
 
 const maybeLink = (m) => {
-  let dashboardBase = ''
+  let dashboardBase = '';
   if (m.includes('cus_'))
-    dashboardBase = 'https://dashboard.stripe.com/test/customers/'
+    dashboardBase = 'https://dashboard.stripe.com/test/customers/';
   else if (m.includes('sub_')) {
-    dashboardBase = 'https://dashboard.stripe.com/test/subscriptions/'
+    dashboardBase = 'https://dashboard.stripe.com/test/subscriptions/';
   } else if (m.includes('mtr_')) {
-    dashboardBase = 'https://dashboard.stripe.com/test/meters/'
+    dashboardBase = 'https://dashboard.stripe.com/test/meters/';
   } else if (m.includes('price_')) {
-    dashboardBase = 'https://dashboard.stripe.com/test/prices/'
+    dashboardBase = 'https://dashboard.stripe.com/test/prices/';
   }
   return (
     <span
@@ -41,14 +41,14 @@ const maybeLink = (m) => {
         ),
       }}
     ></span>
-  )
-}
+  );
+};
 
 const useMessages = () => {
   return useReducer((messages, message) => {
-    return [...messages, message]
-  }, [])
-}
+    return [...messages, message];
+  }, []);
+};
 
-export default StatusMessages
-export { useMessages }
+export default StatusMessages;
+export { useMessages };
