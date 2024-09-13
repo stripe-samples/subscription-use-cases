@@ -2,6 +2,10 @@ import React from 'react'
 import FlowContainer from './components/FlowContainer'
 import { useMessages } from './components/StatusMessages'
 import { Typography } from 'antd'
+import CreateMeterForm from './steps/CreateMeterForm'
+import CreatePriceForm from './steps/CreatePriceForm'
+import CreateSubscriptionForm from './steps/CreateSubscriptionForm'
+import CreateMeterEventForm from './steps/CreateMeterEventForm'
 const { Title } = Typography
 
 const UsageBasedSubscriptionFlow = () => {
@@ -14,19 +18,19 @@ const UsageBasedSubscriptionFlow = () => {
     return [
       {
         title: 'Meter',
-        content: <></>,
+        content: <CreateMeterForm />,
       },
       {
         title: 'Price',
-        content: <></>,
+        content: <CreatePriceForm />,
       },
       {
         title: 'Subscription',
-        content: <></>,
+        content: <CreateSubscriptionForm />,
       },
       {
         title: 'Meter Event',
-        content: <></>,
+        content: <CreateMeterEventForm />,
       },
     ]
   }
