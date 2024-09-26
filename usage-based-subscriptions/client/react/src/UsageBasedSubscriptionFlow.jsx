@@ -1,6 +1,7 @@
 import React from 'react';
 import FlowContainer from './components/FlowContainer';
 import { Typography } from 'antd';
+import CreateCustomerForm from './steps/CreateCustomerForm';
 import CreateMeterForm from './steps/CreateMeterForm';
 import CreatePriceForm from './steps/CreatePriceForm';
 import CreateSubscriptionForm from './steps/CreateSubscriptionForm';
@@ -8,26 +9,120 @@ import CreateMeterEventForm from './steps/CreateMeterEventForm';
 const { Title } = Typography;
 
 import { useSession } from './Session';
+import {
+  createMeter,
+  createCustomer,
+  createPrice,
+  createSubscription,
+} from './Api';
 
 const UsageBasedSubscriptionFlow = () => {
-  const { messages } = useSession();
+  const {
+    displayName,
+    eventName,
+    aggregationFormula,
+    setMeterId,
+    meterId,
+    customerName,
+    customerEmail,
+    customerId,
+    setCustomerId,
+    currency,
+    amount,
+    productName,
+    priceId,
+    setPriceId,
+    setSubscriptionId,
+    addMessage,
+    messages,
+  } = useSession();
   const [currentStep, setCurrentStep] = React.useState(0);
-  const [shouldGoToConfirmStep, setShouldGoToConfirmStep] =
-    React.useState(false);
+
+  const performCreateCustomer = async () => {
+    addMessage('🔄 Creating a Customer...');
+    const response = await createCustomer(customerName, customerEmail);
+    const { customer, error } = response;
+    if (customer) {
+      addMessage(`✅ Created customer: ${customer.id}`);
+      setCustomerId(customer.id);
+      return true;
+    }
+    if (error) {
+      addMessage(`❌ Error creating customer: ${error.message}`);
+      return false;
+    }
+  };
+
+  const performCreateMeter = async () => {
+    addMessage('🔄 Creating a Meter...');
+    const response = await createMeter(
+      displayName,
+      eventName,
+      aggregationFormula
+    );
+    const { meter, error } = response;
+    if (meter) {
+      addMessage(`✅ Created meter: ${meter.id}`);
+      setMeterId(meter.id);
+      return true;
+    }
+    if (error) {
+      addMessage(`❌ Error creating meter: ${error.message}`);
+      return false;
+    }
+  };
+
+  const performCreatePrice = async () => {
+    addMessage('🔄 Creating a Price...');
+    const response = await createPrice(meterId, currency, amount, productName);
+    const { price, error } = response;
+    if (price) {
+      addMessage(`✅ Created price: ${price.id}`);
+      setPriceId(price.id);
+      return true;
+    }
+    if (error) {
+      addMessage(`❌ Error creating price: ${error.message}`);
+      return false;
+    }
+  };
+
+  const performCreateSubscription = async () => {
+    addMessage('🔄 Creating a Subscription...');
+    const response = await createSubscription(customerId, priceId);
+    const { subscription, error } = response;
+    if (subscription) {
+      addMessage(`✅ Created subscription: ${subscription.id}`);
+      setSubscriptionId(subscription.id);
+      return true;
+    }
+    if (error) {
+      addMessage(`❌ Error creating subscription: ${error.message}`);
+      return false;
+    }
+  };
 
   const buildSteps = () => {
     return [
       {
+        title: 'Customer',
+        content: <CreateCustomerForm />,
+        task: performCreateCustomer,
+      },
+      {
         title: 'Meter',
         content: <CreateMeterForm />,
+        task: performCreateMeter,
       },
       {
         title: 'Price',
         content: <CreatePriceForm />,
+        task: performCreatePrice,
       },
       {
         title: 'Subscription',
         content: <CreateSubscriptionForm />,
+        task: performCreateSubscription,
       },
       {
         title: 'Meter Event',
@@ -44,7 +139,6 @@ const UsageBasedSubscriptionFlow = () => {
         messages={messages}
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
-        shouldGoToConfirmStep={shouldGoToConfirmStep}
       />
     </>
   );

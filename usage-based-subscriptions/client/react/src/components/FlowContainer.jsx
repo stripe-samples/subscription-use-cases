@@ -5,23 +5,12 @@ import StatusMessages from './StatusMessages';
 import './FlowContainer.css';
 import 'antd/dist/antd.min.css';
 
-const FlowContainer = ({
-  steps,
-  messages,
-  currentStep,
-  setCurrentStep,
-  shouldGoToConfirmStep,
-}) => {
-  useEffect(() => {
-    if (shouldGoToConfirmStep) {
-      setCurrentStep(steps.map((s) => s.type).indexOf('confirm'));
+const FlowContainer = ({ steps, messages, currentStep, setCurrentStep }) => {
+  const next = async () => {
+    const taskResult = await steps[currentStep].task();
+    if (taskResult) {
+      setCurrentStep(currentStep + 1);
     }
-  }, [shouldGoToConfirmStep, steps, setCurrentStep]);
-
-  const next = () => {
-    if (currentStep === 0) {
-    }
-    setCurrentStep(currentStep + 1);
   };
 
   const prev = () => {

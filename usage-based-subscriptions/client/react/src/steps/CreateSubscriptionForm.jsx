@@ -1,8 +1,11 @@
 import React from 'react';
 import { Input, Row, Col, Typography } from 'antd';
 const { Title } = Typography;
+import { useSession } from '../Session';
 
 const CreateSubscriptionForm = () => {
+  const { customerId, priceId } = useSession();
+
   return (
     <>
       <Title level={4}>Create a Subscription</Title>
@@ -15,6 +18,7 @@ const CreateSubscriptionForm = () => {
             width: '50%',
           }}
           disabled
+          value={customerId}
         />
       </Row>
       <Row align="middle">
@@ -26,6 +30,7 @@ const CreateSubscriptionForm = () => {
             width: '50%',
           }}
           disabled
+          value={priceId}
         />
       </Row>
     </>

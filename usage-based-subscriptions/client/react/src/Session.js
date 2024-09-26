@@ -5,24 +5,59 @@ const SessionContext = createContext(null);
 const SessionProvider = ({ children }) => {
   const [messages, addMessage] = useMessages();
 
-  const [customer, setCustomer] = useState(null);
+  // For customer creation
+  const [name, setName] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [customerId, setCustomerId] = useState(null);
+
+  // For meter creation
   const [displayName, setDisplayName] = useState(null);
   const [eventName, setEventName] = useState(null);
   const [aggregationFormula, setAggregationFormula] = useState('sum');
+  const [meterId, setMeterId] = useState(null);
+
+  // For price creation
+  const [currency, setCurrency] = useState('usd');
+  const [amount, setAmount] = useState(null);
+  const [productName, setProductName] = useState(null);
+  const [priceId, setPriceId] = useState(null);
+
+  // For subscription creation
+  const [subscriptionId, setSubscriptionId] = useState(null);
 
   return (
     <SessionContext.Provider
       value={{
         messages,
         addMessage,
+        // customer
+        name,
+        setName,
+        email,
+        setEmail,
+        customerId,
+        setCustomerId,
+        // meter
         displayName,
         setDisplayName,
         eventName,
         setEventName,
         aggregationFormula,
         setAggregationFormula,
-        customer,
-        setCustomer,
+        meterId,
+        setMeterId,
+        // price
+        currency,
+        setCurrency,
+        amount,
+        setAmount,
+        productName,
+        setProductName,
+        priceId,
+        setPriceId,
+        // subscription
+        subscriptionId,
+        setSubscriptionId,
       }}
     >
       {children}
