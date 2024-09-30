@@ -4,16 +4,13 @@ on:
     branches:
       - main
       - fix-ci
-  workflow_dispatch:
-  pull_request_target:
-    branches:
-      - main
     paths:
       - 'fixed-price-subscriptions/client/vanillajs/**'
       - 'fixed-price-subscriptions/client/react/**'
       - 'usage-based-subscriptions/client/**'
       - '!**.css'
       - '!**.md'
+  workflow_dispatch:
   
 env:
   STRIPE_PUBLISHABLE_KEY: ${{ secrets.TEST_STRIPE_PUBLISHABLE_KEY }}
