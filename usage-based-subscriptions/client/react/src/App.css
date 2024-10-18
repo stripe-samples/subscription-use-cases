@@ -114,7 +114,7 @@ form {
   margin: 20px 0;
   border-radius: var(--radius);
   font-size: 0.7em;
-  width: 600px;
+  width: 900px;
   max-height: 150px;
   overflow-y: auto;
 }
