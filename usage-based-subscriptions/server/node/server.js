@@ -144,97 +144,12 @@ app.post('/create-subscription', async (req, res) => {
     const subscription = await stripe.subscriptions.create({
       customer: req.body.customerId,
       items: [{ price: req.body.priceId }],
-      expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+      expand: ['pending_setup_intent'],
     });
     res.send({ subscription });
   } catch (error) {
     res.status(400).send({ error: { message: error.message } });
   }
-});
-
-app.post('/retry-invoice', async (req, res) => {
-  // Set the default payment method on the customer
-
-  try {
-    await stripe.paymentMethods.attach(req.body.paymentMethodId, {
-      customer: req.body.customerId,
-    });
-    await stripe.customers.update(req.body.customerId, {
-      invoice_settings: {
-        default_payment_method: req.body.paymentMethodId,
-      },
-    });
-  } catch (error) {
-    // in case card_decline error
-    return res
-      .status('402')
-      .send({ result: { error: { message: error.message } } });
-  }
-
-  const invoice = await stripe.invoices.retrieve(req.body.invoiceId, {
-    expand: ['payment_intent'],
-  });
-  res.send(invoice);
-});
-
-app.post('/retrieve-upcoming-invoice', async (req, res) => {
-  const subscription = await stripe.subscriptions.retrieve(
-    req.body.subscriptionId
-  );
-
-  const invoice = await stripe.invoices.retrieveUpcoming({
-    subscription_prorate: true,
-    customer: req.body.customerId,
-    subscription: req.body.subscriptionId,
-    subscription_items: [
-      {
-        id: subscription.items.data[0].id,
-        clear_usage: true,
-        deleted: true,
-      },
-      {
-        price: process.env[req.body.newPriceId],
-        deleted: false,
-      },
-    ],
-  });
-  res.send(invoice);
-});
-
-app.post('/cancel-subscription', async (req, res) => {
-  // Delete the subscription
-  const deletedSubscription = await stripe.subscriptions.cancel(
-    req.body.subscriptionId
-  );
-  res.send(deletedSubscription);
-});
-
-app.post('/update-subscription', async (req, res) => {
-  const subscription = await stripe.subscriptions.retrieve(
-    req.body.subscriptionId
-  );
-  const updatedSubscription = await stripe.subscriptions.update(
-    req.body.subscriptionId,
-    {
-      cancel_at_period_end: false,
-      items: [
-        {
-          id: subscription.items.data[0].id,
-          price: process.env[req.body.newPriceId],
-        },
-      ],
-    }
-  );
-
-  res.send(updatedSubscription);
-});
-
-app.post('/retrieve-customer-payment-method', async (req, res) => {
-  const paymentMethod = await stripe.paymentMethods.retrieve(
-    req.body.paymentMethodId
-  );
-
-  res.send(paymentMethod);
 });
 
 app.listen(4242, () => console.log(`Node server listening on port ${4242}!`));

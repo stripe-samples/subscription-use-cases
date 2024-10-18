@@ -4,6 +4,8 @@ const SessionContext = createContext(null);
 
 const SessionProvider = ({ children }) => {
   const [messages, addMessage] = useMessages();
+  // For publishable key
+  const [publishableKey, setPublishableKey] = useState(null);
 
   // For customer creation
   const [name, setName] = useState(null);
@@ -24,12 +26,16 @@ const SessionProvider = ({ children }) => {
 
   // For subscription creation
   const [subscriptionId, setSubscriptionId] = useState(null);
+  const [clientSecret, setClientSecret] = useState(null);
 
   return (
     <SessionContext.Provider
       value={{
         messages,
         addMessage,
+        //publishable key
+        publishableKey,
+        setPublishableKey,
         // customer
         name,
         setName,
@@ -58,6 +64,8 @@ const SessionProvider = ({ children }) => {
         // subscription
         subscriptionId,
         setSubscriptionId,
+        clientSecret,
+        setClientSecret,
       }}
     >
       {children}

@@ -7,8 +7,13 @@ import 'antd/dist/antd.min.css';
 
 const FlowContainer = ({ steps, messages, currentStep, setCurrentStep }) => {
   const next = async () => {
-    const taskResult = await steps[currentStep].task();
-    if (taskResult) {
+    const task = steps[currentStep].task;
+    if (task) {
+      const taskResult = await task();
+      if (taskResult) {
+        setCurrentStep(currentStep + 1);
+      }
+    } else {
       setCurrentStep(currentStep + 1);
     }
   };

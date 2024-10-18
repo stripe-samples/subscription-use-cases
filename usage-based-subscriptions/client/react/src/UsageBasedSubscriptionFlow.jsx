@@ -10,14 +10,17 @@ const { Title } = Typography;
 
 import { useSession } from './Session';
 import {
+  retrievePublishableKey,
   createMeter,
   createCustomer,
   createPrice,
   createSubscription,
 } from './Api';
+import CollectPaymentMethodForm from './steps/CollectPaymentMethodForm';
 
 const UsageBasedSubscriptionFlow = () => {
   const {
+    setPublishableKey,
     displayName,
     eventName,
     aggregationFormula,
@@ -33,9 +36,25 @@ const UsageBasedSubscriptionFlow = () => {
     priceId,
     setPriceId,
     setSubscriptionId,
+    setClientSecret,
     addMessage,
     messages,
   } = useSession();
+
+  React.useEffect(async () => {
+    const response = await retrievePublishableKey();
+    const { publishableKey, error } = response;
+    if (publishableKey) {
+      addMessage('🔑 Retrieved publishable key');
+      setPublishableKey(publishableKey);
+    }
+    if (error) {
+      addMessage(
+        `😱 Failed to retrieve publisable key. Is your server running?`
+      );
+    }
+  }, []);
+
   const [currentStep, setCurrentStep] = React.useState(0);
 
   const performCreateCustomer = async () => {
@@ -94,6 +113,7 @@ const UsageBasedSubscriptionFlow = () => {
     if (subscription) {
       addMessage(`✅ Created subscription: ${subscription.id}`);
       setSubscriptionId(subscription.id);
+      setClientSecret(subscription.pending_setup_intent.client_secret);
       return true;
     }
     if (error) {
@@ -123,6 +143,10 @@ const UsageBasedSubscriptionFlow = () => {
         title: 'Subscription',
         content: <CreateSubscriptionForm />,
         task: performCreateSubscription,
+      },
+      {
+        title: 'Payment Method',
+        content: <CollectPaymentMethodForm />,
       },
       {
         title: 'Meter Event',

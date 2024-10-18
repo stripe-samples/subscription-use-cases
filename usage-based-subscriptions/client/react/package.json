@@ -6,6 +6,8 @@
     "start": "parcel ./public/index.html --open"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^2.8.1",
+    "@stripe/stripe-js": "^4.8.0",
     "antd": "^4.21.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Input,
-  InputNumber,
-  DatePicker,
-  Row,
-  Col,
-  Typography,
-  Button,
-} from 'antd';
+import { Input, InputNumber, Row, Col, Typography, Button } from 'antd';
 const { Title } = Typography;
 import { useSession } from '../Session';
 import { createMeterEvent } from '../Api';
@@ -48,16 +40,7 @@ const CreateMeterEventForm = () => {
           value={eventName}
         />
       </Row>
-      <Row align="middle" style={{ marginBottom: 8 }}>
-        <Col span={8}>
-          <Title level={5}>Timestamp</Title>
-        </Col>
-        <DatePicker
-          style={{
-            width: '50%',
-          }}
-        />
-      </Row>
+
       <Row align="middle">
         <Col span={8}>
           <Title level={5}>Value</Title>

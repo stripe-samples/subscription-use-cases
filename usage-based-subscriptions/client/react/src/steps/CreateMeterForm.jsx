@@ -43,7 +43,7 @@ const CreateMeterForm = () => {
       </Row>
       <Row align="middle">
         <Col span={8}>
-          <Title level={5}>Agreegation formula</Title>
+          <Title level={5}>Aggregation formula</Title>
         </Col>
         <Select
           style={{ width: '50%' }}

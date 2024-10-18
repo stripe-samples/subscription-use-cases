@@ -1,3 +1,17 @@
+const retrievePublishableKey = async () => {
+  try {
+    const res = await fetch('/api/config', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        accepts: 'application/json',
+      },
+    });
+    return await res.json();
+  } catch (error) {
+    return { error };
+  }
+};
 const createCustomer = async (name, email) => {
   try {
     const res = await fetch('/api/create-customer', {
@@ -79,6 +93,7 @@ const createMeterEvent = async (eventName, customerId, value) => {
 };
 
 export {
+  retrievePublishableKey,
   createCustomer,
   createMeter,
   createPrice,
