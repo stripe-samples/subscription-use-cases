@@ -62,4 +62,26 @@ const createSubscription = async (customerId, priceId) => {
   }
 };
 
-export { createCustomer, createMeter, createPrice, createSubscription };
+const createMeterEvent = async (eventName, customerId, value) => {
+  try {
+    const res = await fetch('/api/create-meter-event', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        accepts: 'application/json',
+      },
+      body: JSON.stringify({ eventName, customerId, value }),
+    });
+    return await res.json();
+  } catch (error) {
+    return { error };
+  }
+};
+
+export {
+  createCustomer,
+  createMeter,
+  createPrice,
+  createSubscription,
+  createMeterEvent,
+};

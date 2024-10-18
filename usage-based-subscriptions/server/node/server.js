@@ -46,7 +46,7 @@ if (
 }
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-08-01',
+  apiVersion: '2024-09-30.acacia',
   appInfo: {
     // For sample support and debugging, not required for production:
     name: 'stripe-samples/subscription-use-cases/usage-based-subscriptions',
@@ -98,6 +98,22 @@ app.post('/create-meter', async (req, res) => {
       },
     });
     res.send({ meter });
+  } catch (error) {
+    res.status(400).send({ error: { message: error.message } });
+  }
+});
+
+app.post('/create-meter-event', async (req, res) => {
+  console.log(req.body);
+  try {
+    const meterEvent = await stripe.v2.billing.meterEvents.create({
+      event_name: req.body.eventName,
+      payload: {
+        value: req.body.value + '',
+        stripe_customer_id: req.body.customerId,
+      },
+    });
+    res.send({ meterEvent });
   } catch (error) {
     res.status(400).send({ error: { message: error.message } });
   }
