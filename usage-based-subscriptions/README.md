@@ -1,51 +1,27 @@
 # Subscriptions with metered usage
 
-Create a subscription for an online service with metered usage options, and work with Stripe Elements to host a payment form on your servers.
-This sample shows how to create a customer, set up a card for recurring use, and subscribe them to a subscription plan with
-[Stripe Billing](https://stripe.com/billing).
+This sample shows how to
 
+- 👤 Create a customer
+- 📏 Create a meter
+- 🏷️ Create a price with metered usage option
+- 💰 Create a subscription
+- 💳 Collect a payment method using Stripe Elements
+- 📄 Report usage through v2 endpoint
 
-**Demo**
+Read more about usage-based billing at https://docs.stripe.com/billing/subscriptions/usage-based/implementation-guide
 
-See a hosted version of the [sample](https://l2sny.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/stripe-sample-usage-based-subscriptions-l2sny)
+<img src="ubb-demo.png" alt="Usage Based Subscription Demo" style="max-width:25%;">
 
-The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
+### Pre-requisite:
 
-Use the `4000002500003155` test card number to trigger a 3D Secure challenge flow.
-
-Read more about test cards on Stripe at https://stripe.com/docs/testing.
-
-<img src="subscription-with-metered-usage.png" alt="Preview of recipe" style="max-width:25%;">
-
-### Features:
-
-- 💳Securely collect card details
-- 🔒Save the payment method details to a customer
-- 🚫Handle payment failures
-- 💰Subscribe the customer to a subscription plan
-- ➕Upgrade and downgrade on plans
+Stripe v2 endpoint requires a [Sandbox](https://docs.stripe.com/sandboxes) secret key. Please create a sandbox account and use a Sandbox API key in this project.r
 
 ## How to run locally
 
 This sample includes [5 server implementations](server/) in our most popular languages. Follow the steps below to run one of the servers locally.
 
-**1. Clone and configure the sample**
-
-The Stripe CLI is the fastest way to clone and configure a sample to run locally.
-
-**Using the Stripe CLI**
-
-If you haven't already installed the CLI, follow the [installation steps](https://github.com/stripe/stripe-cli#installation) in the project README. The CLI is useful for cloning samples and locally testing webhooks and Stripe integrations.
-
-In your terminal shell, run the Stripe CLI command to clone the sample:
-
-```
-stripe samples create subscription-use-cases
-```
-
-The CLI will walk you through picking your integration type, server and client languages, and configuring your `.env` config file with your Stripe API keys.
-
-**Installing and cloning manually**
+**1. Clone the project**
 
 ```
 git clone git@github.com:stripe-samples/subscription-use-cases.git
@@ -63,27 +39,27 @@ Copy the `.env.example` file into a file named `.env` in the folder of the serve
 cp .env.example server/node/.env
 ```
 
-You will need a Stripe account in order to run the demo. Once you set up your account, go to the Stripe [developer dashboard](https://stripe.com/docs/development/quickstart#api-keys) to find your API keys.
+You will need a Stripe sandbox account in order to run the demo. Once you set up your account, go to the Stripe [developer dashboard](https://docs.stripe.com/sandboxes/dashboard/manage-access#manage-api-keys) to find your API keys.
 
 ```
-STRIPE_PUBLISHABLE_KEY=<replace-with-your-publishable-key>
-STRIPE_SECRET_KEY=<replace-with-your-secret-key>
+STRIPE_PUBLISHABLE_KEY=<replace-with-your-sandbox-publishable-key>
+STRIPE_SECRET_KEY=<replace-with-your-sandbox-secret-key>
 ```
 
-`STATIC_DIR` tells the server where the client files are located and does not need to be modified unless you move the server files.
-
-**2. Create Products and Prices on Stripe**
-
-This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Prices are objects on Stripe that you use to model a subscription.
-
-You can create Products and Plans [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
-
-**3. Follow the server instructions on how to run:**
+**2. Run the server app**
 
 Pick the server language you want and follow the instructions in the server folder README on how to run.
 
 ```
 cd server/node # there's a README in this folder with instructions
+npm install
+npm start
+```
+
+**3. Run the react client app**
+
+```
+cd client/react
 npm install
 npm start
 ```
@@ -103,24 +79,3 @@ The CLI will print a webhook secret key to the console. Set `STRIPE_WEBHOOK_SECR
 You should see events logged in the console where the CLI is running.
 
 When you are ready to create a live webhook endpoint, follow our guide in the docs on [configuring a webhook endpoint in the dashboard](https://stripe.com/docs/webhooks/setup#configure-webhook-settings).
-
-## FAQ
-
-Q: Why did you pick these frameworks?
-
-A: We chose the most minimal framework to convey the key Stripe calls and concepts you need to understand. These demos are meant as an educational tool that helps you roadmap how to integrate Stripe within your own system independent of the framework.
-
-## Get support
-If you found a bug or want to suggest a new [feature/use case/sample], please [file an issue](../../../issues).
-
-If you have questions, comments, or need help with code, we're here to help:
-- on [Discord](https://stripe.com/go/developer-chat)
-- on Twitter at [@StripeDev](https://twitter.com/StripeDev)
-- on Stack Overflow at the [stripe-payments](https://stackoverflow.com/tags/stripe-payments/info) tag
-- by [email](mailto:support+github@stripe.com)
-
-
-## Author(s)
-
-- [@ctrudeau-stripe](https://twitter.com/trudeaucj)
-- [@suz-stripe](https://twitter.com/noopkat)
