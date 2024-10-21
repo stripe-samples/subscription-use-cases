@@ -5,13 +5,7 @@ const bodyParser = require('body-parser');
 // Replace if using a different env file or config
 require('dotenv').config({ path: './.env' });
 
-if (
-  !process.env.STRIPE_SECRET_KEY ||
-  !process.env.STRIPE_PUBLISHABLE_KEY ||
-  !process.env.BASIC ||
-  !process.env.PREMIUM ||
-  !process.env.STATIC_DIR
-) {
+if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PUBLISHABLE_KEY) {
   console.log(
     'The .env file is not configured. Follow the instructions in the readme to configure the .env file. https://github.com/stripe-samples/subscription-use-cases'
   );
@@ -23,24 +17,6 @@ if (
   process.env.STRIPE_PUBLISHABLE_KEY
     ? ''
     : console.log('Add STRIPE_PUBLISHABLE_KEY to your .env file.');
-
-  process.env.BASIC
-    ? ''
-    : console.log(
-        'Add BASIC priceID to your .env file. See repo readme for setup instructions.'
-      );
-
-  process.env.PREMIUM
-    ? ''
-    : console.log(
-        'Add PREMIUM priceID to your .env file. See repo readme for setup instructions.'
-      );
-
-  process.env.STATIC_DIR
-    ? ''
-    : console.log(
-        'Add STATIC_DIR to your .env file. Check .env.example in the root folder for an example'
-      );
 
   process.exit();
 }
@@ -55,7 +31,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
   },
 });
 
-app.use(express.static(process.env.STATIC_DIR));
 // Use JSON parser for all non-webhook routes.
 app.use((req, res, next) => {
   if (req.originalUrl === '/webhook') {
@@ -151,5 +126,39 @@ app.post('/create-subscription', async (req, res) => {
     res.status(400).send({ error: { message: error.message } });
   }
 });
+
+app.post(
+  '/webhook',
+  bodyParser.raw({ type: 'application/json' }),
+  async (req, res) => {
+    let event;
+    //If STRIPE_WEBHOOK_SECRET is set, verify the signature using the raw body and secret.
+    if (process.env.STRIPE_WEBHOOK_SECRET) {
+      try {
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          req.header('Stripe-Signature'),
+          process.env.STRIPE_WEBHOOK_SECRET
+        );
+      } catch (err) {
+        console.log(err);
+        console.log(`⚠️  Webhook signature verification failed.`);
+        console.log(
+          `⚠️  Check the env file and enter the correct webhook secret.`
+        );
+        res.sendStatus(400);
+        return;
+      }
+    }
+    // Otherwise use the basic event deserialized with JSON.parse
+    else {
+      event = JSON.parse(req.body);
+    }
+
+    // Print out the event to the console
+    console.log(`Received webhook event ${event.type} ${event.id}`);
+    res.sendStatus(200);
+  }
+);
 
 app.listen(4242, () => console.log(`Node server listening on port ${4242}!`));

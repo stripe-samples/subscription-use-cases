@@ -15,7 +15,7 @@ Read more about usage-based billing at https://docs.stripe.com/billing/subscript
 
 ### Pre-requisite:
 
-Stripe v2 endpoint requires a [Sandbox](https://docs.stripe.com/sandboxes) secret key. Please create a sandbox account and use a Sandbox API key in this project.r
+Stripe v2 endpoint requires a [Sandbox](https://docs.stripe.com/sandboxes) secret key. Please create a sandbox account and use a Sandbox API key in this project.
 
 ## How to run locally
 
