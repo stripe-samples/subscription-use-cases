@@ -26,8 +26,8 @@ const UsageBasedSubscriptionFlow = () => {
     aggregationFormula,
     setMeterId,
     meterId,
-    customerName,
-    customerEmail,
+    name,
+    email,
     customerId,
     setCustomerId,
     currency,
@@ -59,7 +59,7 @@ const UsageBasedSubscriptionFlow = () => {
 
   const performCreateCustomer = async () => {
     addMessage('🔄 Creating a Customer...');
-    const response = await createCustomer(customerName, customerEmail);
+    const response = await createCustomer(name, email);
     const { customer, error } = response;
     if (customer) {
       addMessage(`✅ Created customer: ${customer.id}`);
