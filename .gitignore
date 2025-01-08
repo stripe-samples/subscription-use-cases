@@ -50,3 +50,6 @@ sample-ci/
 #parcel
 .parcel-cache
 dist
+
+#idea
+.idea
