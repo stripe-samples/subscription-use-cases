@@ -16,8 +16,9 @@ Stripe.set_app_info(
 Stripe.api_version = '2022-08-01'
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
+client = Stripe::StripeClient.new(ENV['STRIPE_SECRET_KEY'])
+
 set :static, true
-set :public_folder, File.join(File.dirname(__FILE__), ENV['STATIC_DIR'])
 set :port, 4242
 
 get '/' do
@@ -35,10 +36,69 @@ post '/create-customer' do
   content_type 'application/json'
   data = JSON.parse request.body.read
 
-  # Create a new customer object
-  customer = Stripe::Customer.create(email: data['email'])
+  begin
+    # Create a new customer object
+    customer = Stripe::Customer.create({ email: data['email'], name: data['name'] })
 
-  { 'customer': customer }.to_json
+    { 'customer': customer }.to_json
+  rescue Stripe::StripeError => e
+    halt 400,
+         { 'Content-Type' => 'application/json' },
+         { 'error': { message: e.error.message } }.to_json
+  end
+end
+
+post '/create-meter' do
+  content_type 'application/json'
+  data = JSON.parse request.body.read
+
+  begin
+    # Create a new meter object
+    meter = Stripe::Billing::Meter.create(
+      {
+        display_name: data['displayName'],
+        event_name: data['eventName'],
+        default_aggregation: {
+          formula: data['aggregationFormula']
+        }
+      }
+    )
+
+    { 'meter': meter }.to_json
+  rescue Stripe::StripeError => e
+    halt 400,
+         { 'Content-Type' => 'application/json' },
+         { 'error': { message: e.error.message } }.to_json
+  end
+end
+
+post '/create-price' do
+  content_type 'application/json'
+  data = JSON.parse request.body.read
+
+  begin
+    # Create a new price object
+    price = Stripe::Price.create(
+      {
+        currency: data['currency'],
+        unit_amount: data['amount'],
+        recurring: {
+          interval: 'month',
+          meter: data['meterId'],
+          usage_type: 'metered'
+        },
+        product_data: {
+          name: data['productName']
+        }
+      }
+    )
+
+    { 'price': price }.to_json
+  rescue Stripe::StripeError => e
+    halt 400,
+         { 'Content-Type' => 'application/json' },
+         { 'error': { message: e.error.message } }.to_json
+  end
 end
 
 post '/create-subscription' do
@@ -46,115 +106,43 @@ post '/create-subscription' do
   data = JSON.parse request.body.read
 
   begin
-    Stripe::PaymentMethod.attach(
-      data['paymentMethodId'],
-      { customer: data['customerId'] }
+    subscription = Stripe::Subscription.create(
+      {
+        customer: data['customerId'],
+        items: [{ price: data['priceId'] }],
+        expand: ['pending_setup_intent']
+      }
     )
-  rescue Stripe::CardError => e
+
+    { 'subscription': subscription }.to_json
+  rescue Stripe::StripeError => e
     halt 200,
          { 'Content-Type' => 'application/json' },
          { 'error': { message: e.error.message } }.to_json
   end
-
-  # Set the default payment method on the customer
-  Stripe::Customer.update(
-    data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
-  )
-
-  # Create the subscription
-  subscription =
-    Stripe::Subscription.create(
-      customer: data['customerId'],
-      items: [{ price: ENV[data['priceId']] }],
-      expand: %w[latest_invoice.payment_intent pending_setup_intent]
-    )
-
-  subscription.to_json
 end
 
-post '/retry-invoice' do
+post '/create-meter-event' do
   content_type 'application/json'
   data = JSON.parse request.body.read
 
   begin
-    Stripe::PaymentMethod.attach(
-      data['paymentMethodId'],
-      { customer: data['customerId'] }
+    meter_event = client.v2.billing.meter_events.create(
+      {
+        event_name: data['eventName'],
+        payload: {
+          value: (data['value']).to_s,
+          stripe_customer_id: data['customerId']
+        }
+      }
     )
-  rescue Stripe::CardError => e
+
+    { 'meterEvent': meter_event }.to_json
+  rescue Stripe::StripeError => e
     halt 200,
          { 'Content-Type' => 'application/json' },
          { 'error': { message: e.error.message } }.to_json
   end
-
-  # Set the default payment method on the customer
-  Stripe::Customer.update(
-    data['customerId'],
-    invoice_settings: { default_payment_method: data['paymentMethodId'] }
-  )
-
-  invoice =
-    Stripe::Invoice.retrieve(
-      { id: data['invoiceId'], expand: %w[payment_intent] }
-    )
-
-  invoice.to_json
-end
-
-post '/retrieve-upcoming-invoice' do
-  content_type 'application/json'
-  data = JSON.parse request.body.read
-
-  subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
-
-  invoice =
-    Stripe::Invoice.upcoming(
-      customer: data['customerId'],
-      subscription: data['subscriptionId'],
-      subscription_items: [
-        { id: subscription.items.data[0].id, deleted: true, clear_usage: true },
-        { price: ENV[data['newPriceId']], deleted: false }
-      ]
-    )
-
-  invoice.to_json
-end
-
-post '/cancel-subscription' do
-  content_type 'application/json'
-  data = JSON.parse request.body.read
-
-  deleted_subscription = Stripe::Subscription.delete(data['subscriptionId'])
-
-  deleted_subscription.to_json
-end
-
-post '/update-subscription' do
-  content_type 'application/json'
-  data = JSON.parse request.body.read
-
-  subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
-
-  updated_subscription =
-    Stripe::Subscription.update(
-      data['subscriptionId'],
-      cancel_at_period_end: false,
-      items: [
-        { id: subscription.items.data[0].id, price: ENV[data['newPriceId']] }
-      ]
-    )
-
-  updated_subscription.to_json
-end
-
-post '/retrieve-customer-payment-method' do
-  content_type 'application/json'
-  data = JSON.parse request.body.read
-
-  payment_method = Stripe::PaymentMethod.retrieve(data['paymentMethodId'])
-
-  payment_method.to_json
 end
 
 post '/webhook' do
