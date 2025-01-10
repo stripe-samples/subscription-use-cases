@@ -13,7 +13,7 @@ Stripe.set_app_info(
   version: '0.0.1',
   url: 'https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions'
 )
-Stripe.api_version = '2022-08-01'
+Stripe.api_version = '2024-09-30.acacia'
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
 client = Stripe::StripeClient.new(ENV['STRIPE_SECRET_KEY'])
