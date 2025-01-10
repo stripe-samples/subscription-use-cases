@@ -6,8 +6,6 @@ Stripe Recipe.
 Python 3.6 or newer required.
 """
 
-from sys import api_version
-from flask.app import cli
 from stripe import StripeError, StripeClient
 import json
 import os
