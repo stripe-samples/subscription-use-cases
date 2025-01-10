@@ -79,7 +79,6 @@ app.post('/create-meter', async (req, res) => {
 });
 
 app.post('/create-meter-event', async (req, res) => {
-  console.log(req.body);
   try {
     const meterEvent = await stripe.v2.billing.meterEvents.create({
       event_name: req.body.eventName,
