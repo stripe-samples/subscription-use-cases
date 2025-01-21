@@ -8,14 +8,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/stripe/stripe-go/v71"
-	"github.com/stripe/stripe-go/v71/customer"
-	"github.com/stripe/stripe-go/v71/invoice"
-	"github.com/stripe/stripe-go/v71/paymentmethod"
-	"github.com/stripe/stripe-go/v71/sub"
-	"github.com/stripe/stripe-go/v71/webhook"
+	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/billing/meter"
+	"github.com/stripe/stripe-go/v81/customer"
+	"github.com/stripe/stripe-go/v81/price"
+	"github.com/stripe/stripe-go/v81/rawrequest"
+	"github.com/stripe/stripe-go/v81/subscription"
+
+	"github.com/stripe/stripe-go/v81/webhook"
 )
 
 func main() {
@@ -34,12 +37,10 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir(os.Getenv("STATIC_DIR"))))
 	http.HandleFunc("/config", handleConfig)
 	http.HandleFunc("/create-customer", handleCreateCustomer)
-	http.HandleFunc("/retrieve-customer-payment-method", handleRetrieveCustomerPaymentMethod)
+	http.HandleFunc("/create-meter", handleCreateMeter)
+	http.HandleFunc("/create-price", handleCreatePrice)
 	http.HandleFunc("/create-subscription", handleCreateSubscription)
-	http.HandleFunc("/cancel-subscription", handleCancelSubscription)
-	http.HandleFunc("/update-subscription", handleUpdateSubscription)
-	http.HandleFunc("/retry-invoice", handleRetryInvoice)
-	http.HandleFunc("/retrieve-upcoming-invoice", handleRetrieveUpcomingInvoice)
+	http.HandleFunc("/create-meter-event", handleCreateMeterEvent)
 	http.HandleFunc("/webhook", handleWebhook)
 
 	addr := "0.0.0.0:4242"
@@ -59,6 +60,21 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type ErrorResponse struct {
+	Error struct {
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+func constructErrorResponse(message string) string {
+	// Create an instance of ErrorResponse
+	response := ErrorResponse{}
+	response.Error.Message = message
+	// Marshal the response into a JSON string
+	jsonData, _ := json.Marshal(response)
+	return string(jsonData)
+}
+
 func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -66,7 +82,9 @@ func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 	var req struct {
 		Email string `json:"email"`
+		Name  string `json:"name"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("json.NewDecoder.Decode: %v", err)
@@ -79,8 +97,10 @@ func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
 
 	c, err := customer.New(params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("customer.New: %v", err)
+		if stripeErr, ok := err.(*stripe.Error); ok {
+			http.Error(w, constructErrorResponse(stripeErr.Msg), http.StatusBadRequest)
+			log.Printf("customer.New: %v", err)
+		}
 		return
 	}
 
@@ -91,28 +111,95 @@ func handleCreateCustomer(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func handleRetrieveCustomerPaymentMethod(w http.ResponseWriter, r *http.Request) {
+func handleCreateMeter(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
+
 	var req struct {
-		PaymentMethodID string `json:"paymentMethodId"`
+		DisplayName        string `json:"displayName"`
+		EventName          string `json:"eventName"`
+		AggregationFormula string `json:"aggregationFormula"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("json.NewDecoder.Decode: %v", err)
 		return
 	}
 
-	pm, err := paymentmethod.Get(req.PaymentMethodID, nil)
+	params := &stripe.BillingMeterParams{
+		DisplayName: stripe.String(req.DisplayName),
+		EventName: stripe.String(req.EventName),
+		DefaultAggregation: &stripe.BillingMeterDefaultAggregationParams{
+			Formula: stripe.String(req.AggregationFormula),
+		},
+	}
+
+	c, err := meter.New(params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("paymentmethod.Get: %v", err)
+		if stripeErr, ok := err.(*stripe.Error); ok {
+			http.Error(w, constructErrorResponse(stripeErr.Msg), http.StatusBadRequest)
+			log.Printf("meter.New: %v", err)
+		}
 		return
 	}
 
-	writeJSON(w, pm)
+	writeJSON(w, struct {
+		Meter *stripe.BillingMeter `json:"meter"`
+	}{
+		Meter: c,
+	})
+}
+
+func handleCreatePrice(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Currency    string `json:"currency"`
+		Amount      int64 `json:"amount"`
+		MeterId     string `json:"meterId"`
+		ProductName string `json:"productName"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("json.NewDecoder.Decode: %v", err)
+		return
+	}
+
+	// Create a new price
+	params := &stripe.PriceParams{
+		UnitAmount: stripe.Int64(req.Amount),
+		Currency: stripe.String(req.Currency),
+		Recurring: &stripe.PriceRecurringParams{
+			Interval: stripe.String(string(stripe.PriceRecurringIntervalMonth)),
+			Meter: stripe.String(req.MeterId),
+			UsageType: stripe.String(string(stripe.PriceRecurringUsageTypeMetered)),
+		},
+		ProductData: &stripe.PriceProductDataParams{
+			Name: stripe.String(req.ProductName),
+		},
+	}
+
+	p, err := price.New(params)
+	if err != nil {
+		if stripeErr, ok := err.(*stripe.Error); ok {
+			http.Error(w, constructErrorResponse(stripeErr.Msg), http.StatusBadRequest)
+			log.Printf("price.New: %v", err)
+		}
+		return
+	}
+
+	writeJSON(w, struct {
+		Price *stripe.Price `json:"price"`
+	}{
+		Price: p,
+	})
 }
 
 func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
@@ -122,46 +209,13 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		PaymentMethodID string `json:"paymentMethodId"`
-		CustomerID      string `json:"customerId"`
-		PriceID         string `json:"priceId"`
+		CustomerID string `json:"customerId"`
+		PriceID    string `json:"priceId"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("json.NewDecoder.Decode: %v", err)
-		return
-	}
-
-	// Attach PaymentMethod
-	params := &stripe.PaymentMethodAttachParams{
-		Customer: stripe.String(req.CustomerID),
-	}
-	pm, err := paymentmethod.Attach(
-		req.PaymentMethodID,
-		params,
-	)
-	if err != nil {
-		writeJSON(w, struct {
-			Error error `json:"error"`
-		}{err})
-		return
-	}
-
-	// Update invoice settings default
-	customerParams := &stripe.CustomerParams{
-		InvoiceSettings: &stripe.CustomerInvoiceSettingsParams{
-			DefaultPaymentMethod: stripe.String(pm.ID),
-		},
-	}
-	c, err := customer.Update(
-		req.CustomerID,
-		customerParams,
-	)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("customer.Update: %v %s", err, c.ID)
 		return
 	}
 
@@ -170,32 +224,39 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		Customer: stripe.String(req.CustomerID),
 		Items: []*stripe.SubscriptionItemsParams{
 			{
-				Plan: stripe.String(os.Getenv(req.PriceID)),
+				Price: stripe.String(req.PriceID),
 			},
 		},
 	}
-	subscriptionParams.AddExpand("latest_invoice.payment_intent")
 	subscriptionParams.AddExpand("pending_setup_intent")
 
-	s, err := sub.New(subscriptionParams)
+	subscription, err := subscription.New(subscriptionParams)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("sub.New: %v", err)
+		if stripeErr, ok := err.(*stripe.Error); ok {
+			http.Error(w, constructErrorResponse(stripeErr.Msg), http.StatusBadRequest)
+			log.Printf("subscription.New: %v", err)
+		}
 		return
 	}
 
-	writeJSON(w, s)
+	writeJSON(w, struct {
+		Subscription *stripe.Subscription `json:"subscription"`
+	}{
+		Subscription: subscription,
+	})
 }
 
-func handleCancelSubscription(w http.ResponseWriter, r *http.Request) {
+func handleCreateMeterEvent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req struct {
-		SubscriptionID string `json:"subscriptionId"`
+		EventName  string `json:"eventName"`
+		Value      int `json:"value"`
+		CustomerID string `json:"customerId"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -204,171 +265,43 @@ func handleCancelSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := sub.Cancel(req.SubscriptionID, nil)
+	// v2 API support isn't availble in the Stripe Go library yet, so we use the raw request backend
+	b, _ := stripe.GetRawRequestBackend(stripe.APIBackend);
+	c := rawrequest.Client{B: b, Key: os.Getenv("STRIPE_SECRET_KEY")};
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("sub.Cancel: %v", err)
-		return
-	}
-
-	writeJSON(w, s)
-}
-
-func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-	var req struct {
-		SubscriptionID string `json:"subscriptionId"`
-		CustomerID     string `json:"customerId"`
-		NewPriceID     string `json:"newPriceId"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("json.NewDecoder.Decode: %v", err)
-		return
-	}
-
-	s, err := sub.Get(req.SubscriptionID, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("sub.Get: %v", err)
-		return
-	}
-	params := &stripe.InvoiceParams{
-		Customer:     stripe.String(req.CustomerID),
-		Subscription: stripe.String(req.SubscriptionID),
-		SubscriptionItems: []*stripe.SubscriptionItemsParams{{
-			ID:         stripe.String(s.Items.Data[0].ID),
-			Deleted:    stripe.Bool(true),
-			ClearUsage: stripe.Bool(true),
-		}, {
-			Price:   stripe.String(os.Getenv(req.NewPriceID)),
-			Deleted: stripe.Bool(false),
-		}},
-	}
-	in, err := invoice.GetNext(params)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("invoice.GetNext: %v", err)
-		return
-	}
-
-	writeJSON(w, in)
-}
-
-func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
-	var req struct {
-		SubscriptionID string `json:"subscriptionId"`
-		NewPriceID     string `json:"newPriceId"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("json.NewDecoder.Decode: %v", err)
-		return
-	}
-
-	s, err := sub.Get(req.SubscriptionID, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("sub.Get: %v", err)
-		return
-	}
-
-	params := &stripe.SubscriptionParams{
-		CancelAtPeriodEnd: stripe.Bool(false),
-		Items: []*stripe.SubscriptionItemsParams{{
-			ID:    stripe.String(s.Items.Data[0].ID),
-			Price: stripe.String(os.Getenv(req.NewPriceID)),
-		}},
-	}
-
-	updatedSubscription, err := sub.Update(req.SubscriptionID, params)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("sub.Update: %v", err)
-		return
-	}
-
-	writeJSON(w, updatedSubscription)
-}
-
-func handleRetryInvoice(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
-	var req struct {
-		CustomerID      string `json:"customerId"`
-		PaymentMethodID string `json:"paymentMethodId"`
-		InvoiceID       string `json:"invoiceId"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("json.NewDecoder.Decode: %v", err)
-		return
-	}
-
-	// Attach PaymentMethod
-	params := &stripe.PaymentMethodAttachParams{
-		Customer: stripe.String(req.CustomerID),
-	}
-	pm, err := paymentmethod.Attach(
-		req.PaymentMethodID,
-		params,
-	)
-	if err != nil {
-		writeJSON(w, struct {
-			Error error `json:"error"`
-		}{err})
-		return
-	}
-
-	// Update invoice settings default
-	customerParams := &stripe.CustomerParams{
-		InvoiceSettings: &stripe.CustomerInvoiceSettingsParams{
-			DefaultPaymentMethod: stripe.String(pm.ID),
+	params := &map[string]interface{}{
+		"event_name": req.EventName,
+		"payload": map[string]string{
+			"stripe_customer_id": req.CustomerID,
+			"value": strconv.Itoa(req.Value),
 		},
 	}
-	c, err := customer.Update(
-		req.CustomerID,
-		customerParams,
-	)
+
+	content, _ := json.Marshal(params);
+
+	response, err := c.RawRequest(
+		http.MethodPost,
+		"/v2/billing/meter_events",
+		string(content),
+		nil,
+	);
+
+	var responseObject map[string]interface{}
+	json.Unmarshal(response.RawJSON, &responseObject)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("customer.Update: %v %s", err, c.ID)
+		if stripeErr, ok := err.(*stripe.Error); ok {
+			http.Error(w, constructErrorResponse(stripeErr.Msg), http.StatusBadRequest)
+			log.Printf("meterEvent.New: %v", err)
+		}
 		return
 	}
 
-	// Retrieve Invoice
-	invoiceParams := &stripe.InvoiceParams{}
-	invoiceParams.AddExpand("payment_intent")
-	in, err := invoice.Get(
-		req.InvoiceID,
-		invoiceParams,
-	)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("invoice.Get: %v", err)
-		return
-	}
-
-	writeJSON(w, in)
+	writeJSON(w, struct {
+		MeterEvent map[string]interface{} `json:"meterEvent"`
+	}{
+		MeterEvent: responseObject,
+	})
 }
 
 func handleWebhook(w http.ResponseWriter, r *http.Request) {

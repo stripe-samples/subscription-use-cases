@@ -2,12 +2,9 @@
 
 public class CreateSubscriptionRequest
 {
-    [JsonProperty("paymentMethodId")]
-    public string PaymentMethod { get; set; }
-
     [JsonProperty("customerId")]
-    public string Customer { get; set; }
+    public string CustomerId { get; set; }
 
     [JsonProperty("priceId")]
-    public string Price { get; set; }
+    public string PriceId { get; set; }
 }

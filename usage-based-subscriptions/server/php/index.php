@@ -1,19 +1,27 @@
 <?php
-use Slim\Http\Request;
-use Slim\Http\Response;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Factory\AppFactory;
+use DI\Container;
 use Stripe\Stripe;
 require 'vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::create(__DIR__);
+error_reporting(0);
+
+$dotenv = Dotenv\Dotenv::create(__DIR__, null, null);
 $dotenv->load();
 
 require './config.php';
 
-$app = new \Slim\App();
+$container = new \DI\Container();
+
+AppFactory::setContainer($container);
+
+$app = AppFactory::create();
 
 // Instantiate the logger as a dependency
 $container = $app->getContainer();
-$container['logger'] = function ($c) {
+$container->set('logger', function ($c) {
     $settings = $c->get('settings')['logger'];
     $logger = new Monolog\Logger($settings['name']);
     $logger->pushProcessor(new Monolog\Processor\UidProcessor());
@@ -24,28 +32,29 @@ $container['logger'] = function ($c) {
         )
     );
     return $logger;
-};
+});
 
 /* Initialize the Stripe client */
-$container['stripe'] = function ($c) {
+$container->set('stripe', function ($c) {
     // For sample support and debugging. Not required for production:
     \Stripe\Stripe::setAppInfo(
-      "stripe-samples/subscription-use-cases/usage-based-subscriptions",
+      "stripe-samples/subscription-use-cases/fixed-price",
       "0.0.1",
-      "https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions"
+      "https://github.com/stripe-samples/subscription-use-cases/fixed-price"
     );
 
     $stripe = new \Stripe\StripeClient([
       'api_key' => getenv('STRIPE_SECRET_KEY'),
-      'stripe_version' => '2022-08-01',
+      'stripe_version' => '2024-09-30.acacia',
     ]);
 
     return $stripe;
-};
+});
 
 $app->get('/', function (Request $request, Response $response, array $args) {
     // Display checkout page
-    return $response->write(file_get_contents('../../client/index.html'));
+    $response->getBody()->write(file_get_contents(getenv('STATIC_DIR') . '/register.html'));
+    return $response;
 });
 
 $app->get('/config', function (
@@ -53,9 +62,13 @@ $app->get('/config', function (
     Response $response,
     array $args
 ) {
+    $stripe = $this->get('stripe');
+
     $pub_key = getenv('STRIPE_PUBLISHABLE_KEY');
 
-    return $response->withJson(['publishableKey' => $pub_key]);
+    return $response->withJson([
+      'publishableKey' => $pub_key,
+    ]);
 });
 
 $app->post('/create-customer', function (
@@ -64,14 +77,67 @@ $app->post('/create-customer', function (
     array $args
 ) {
     $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
-    // Create a new customer object
-    $customer = $stripe->customers->create([
-        'email' => $body->email,
-    ]);
+    try {
+        // Create a new customer object
+        $customer = $stripe->customers->create([
+            'email' => $body->email,
+            'name' => $body->name,
+        ]);
+        return $response->withJson(['customer' => $customer]);
+    } catch (Exception $e) {
+        return $response->withStatus(400)->withJson(['error' => ['message' => $e->getError()->message]]);
+    }
+});
 
-    return $response->withJson(['customer' => $customer]);
+$app->post('/create-meter', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->get('stripe');
+
+    try {
+        $meter = $stripe->billing->meters->create([
+            'display_name' => $body->displayName,
+            'event_name' => $body->eventName,
+            'default_aggregation' => [
+                'formula' => $body->aggregationFormula
+            ]
+        ]);
+        return $response->withJson(['meter' => $meter]);
+    } catch (Exception $e) {
+        return $response->withStatus(400)->withJson(['error' => ['message' => $e->getError()->message]]);
+    }
+});
+
+$app->post('/create-price', function (
+    Request $request,
+    Response $response,
+    array $args
+) {
+    $body = json_decode($request->getBody());
+    $stripe = $this->get('stripe');
+
+    try {
+        $price = $stripe->prices->create([
+            'currency' => $body->currency,
+            'unit_amount' => $body->amount,
+            'recurring' => [
+                'interval' => 'month',
+                'meter' => $body->meterId,
+                'usage_type' => 'metered'
+            ],
+            'product_data' => [
+                'name' => $body->productName
+            ]
+        ]);
+        return $response->withJson(['price' => $price]);
+    } catch (Exception $e) {
+        return $response->withStatus(400)->withJson(['error' => ['message' => $e->getError()->message]]);
+    }
 });
 
 $app->post('/create-subscription', function (
@@ -80,159 +146,48 @@ $app->post('/create-subscription', function (
     array $args
 ) {
     $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
     try {
-        $payment_method = $stripe->paymentMethods->retrieve(
-            $body->paymentMethodId
-        );
-        $payment_method->attach([
+        $subscription = $stripe->subscriptions->create([
             'customer' => $body->customerId,
-        ]);
-    } catch (Exception $e) {
-        return $response->withJson(['error' => $e->getError()]);
-    }
-
-    // Set the default payment method on the customer
-    $stripe->customers->update($body->customerId, [
-        'invoice_settings' => [
-            'default_payment_method' => $body->paymentMethodId,
-        ],
-    ]);
-
-    // Create the subscription
-    $subscription = $stripe->subscriptions->create([
-        'customer' => $body->customerId,
-        'items' => [
-            [
-                'price' => getenv($body->priceId),
-            ],
-        ],
-        'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
-    ]);
-
-    return $response->withJson($subscription);
-});
-
-$app->post('/retry-invoice', function (
-    Request $request,
-    Response $response,
-    array $args
-) {
-    $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
-
-    try {
-        $payment_method = $stripe->paymentMethods->retrieve(
-            $body->paymentMethodId
-        );
-        $payment_method->attach([
-            'customer' => $body->customerId,
-        ]);
-    } catch (Exception $e) {
-        return $response->withJson($e->jsonBody);
-    }
-
-    // Set the default payment method on the customer
-    $stripe->customers->update($body->customerId, [
-        'invoice_settings' => [
-            'default_payment_method' => $body->paymentMethodId,
-        ],
-    ]);
-
-    $invoice = $stripe->invoices->retrieve($body->invoiceId, [
-        'expand' => ['payment_intent'],
-    ]);
-
-    return $response->withJson($invoice);
-});
-
-$app->post('/retrieve-upcoming-invoice', function (
-    Request $request,
-    Response $response,
-    array $args
-) {
-    $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
-
-    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
-
-    $invoice = $stripe->invoices->upcoming([
-        "customer" => $body->customerId,
-        "subscription_prorate" => true,
-        "subscription" => $body->subscriptionId,
-        "subscription_items" => [
-            [
-                'id' => $subscription->items->data[0]->id,
-                'deleted' => true,
-                'clear_usage' => true,
-            ],
-            [
-                'price' => getenv($body->newPriceId),
-                'deleted' => false,
-            ],
-        ],
-    ]);
-
-    return $response->withJson($invoice);
-});
-
-$app->post('/cancel-subscription', function (
-    Request $request,
-    Response $response,
-    array $args
-) {
-    $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
-
-    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
-    $subscription->delete();
-
-    return $response->withJson($subscription);
-});
-
-$app->post('/update-subscription', function (
-    Request $request,
-    Response $response,
-    array $args
-) {
-    $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
-
-    $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
-
-    $updatedSubscription = $stripe->subscriptions->update(
-        $body->subscriptionId,
-        [
             'items' => [
-                [
-                    'id' => $subscription->items->data[0]->id,
-                    'price' => getenv($body->newPriceId),
-                ],
+                ['price' => $body->priceId]
             ],
-        ]
-    );
-
-    return $response->withJson($updatedSubscription);
+            'expand' => ['pending_setup_intent']
+        ]);
+        return $response->withJson(['subscription' => $subscription]);
+    } catch (Exception $e) {
+        return $response->withStatus(400)->withJson(['error' => ['message' => $e->getError()->message]]);
+    }
 });
 
-$app->post('/retrieve-customer-payment-method', function (
+$app->post('/create-meter-event', function (
     Request $request,
     Response $response,
     array $args
 ) {
     $body = json_decode($request->getBody());
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
-    $paymentMethod = $stripe->paymentMethods->retrieve($body->paymentMethodId);
-
-    return $response->withJson($paymentMethod);
+    try {
+        $meterEvent = $stripe->v2->billing->meterEvents->create([
+            'event_name' => $body->eventName,
+            'payload' => [
+                'value' => strval($body->value),
+                'stripe_customer_id' => $body->customerId
+            ]
+        ]);
+        return $response->withJson(['meterEvent' => $meterEvent]);
+    } catch (Exception $e) {
+        return $response->withStatus(400)->withJson(['error' => ['message' => $e->getError()->message]]);
+    }
 });
 
 $app->post('/webhook', function (Request $request, Response $response) {
     $logger = $this->get('logger');
     $event = $request->getParsedBody();
-    $stripe = $this->stripe;
+    $stripe = $this->get('stripe');
 
     // Parse the message body (and check the signature if possible)
     $webhookSecret = getenv('STRIPE_WEBHOOK_SECRET');
@@ -243,7 +198,7 @@ $app->post('/webhook', function (Request $request, Response $response) {
                 $request->getHeaderLine('stripe-signature'),
                 $webhookSecret
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $response
                 ->withJson(['error' => $e->getMessage()])
                 ->withStatus(403);
@@ -257,35 +212,55 @@ $app->post('/webhook', function (Request $request, Response $response) {
     // Handle the event
     // Review important events for Billing webhooks
     // https://stripe.com/docs/billing/webhooks
-    // Remove comment to see the various objects sent for this sample
     switch ($type) {
         case 'invoice.paid':
-            // The status of the invoice will show up as paid. Store the status in your
-            // database to reference when a user accesses your service to avoid hitting rate
-            // limits.
-            $logger->info('🔔  Webhook received! ' . $object);
-            break;
+          if ($object['billing_reason'] == 'subscription_create') {
+            // The subscription automatically activates after successful payment
+            // Set the payment method used to pay the first invoice
+            // as the default payment method for that subscription
+            $subscription_id = $object['subscription'];
+            $payment_intent_id = $object['payment_intent'];
+
+            # Retrieve the payment intent used to pay the subscription
+            $payment_intent = $stripe->paymentIntents->retrieve(
+              $payment_intent_id,
+              []
+            );
+
+            try {
+                $stripe->subscriptions->update(
+                    $subscription_id,
+                    ['default_payment_method' => $payment_intent->payment_method],
+                );
+
+                $logger->info('Default payment method set for subscription:' . $payment_intent->payment_method);
+            } catch (Exception $e) {
+                $logger->info($e->getMessage());
+                $logger->info('️Falied to update the default payment method for subscription: ' . $subscription_id);
+            }
+          };
+
+          // database to reference when a user accesses your service to avoid hitting rate
+          // limits.
+          $logger->info('Invoice paid: ' . $event->id);
+          break;
         case 'invoice.payment_failed':
             // If the payment fails or the customer does not have a valid payment method,
             // an invoice.payment_failed event is sent, the subscription becomes past_due.
             // Use this webhook to notify your user that their payment has
             // failed and to retrieve new card details.
-            $logger->info('🔔  Webhook received! ' . $object);
+            $logger->info('Invoice payment failed: ' . $event->id);
             break;
         case 'invoice.finalized':
             // If you want to manually send out invoices to your customers
             // or store them locally to reference to avoid hitting Stripe rate limits.
-            $logger->info('🔔  Webhook received! ' . $object);
+            $logger->info('Invoice finalized: ' . $event->id);
             break;
         case 'customer.subscription.deleted':
             // handle subscription cancelled automatically based
             // upon your subscription settings. Or if the user
             // cancels it.
-            $logger->info('🔔  Webhook received! ' . $object);
-            break;
-        case 'customer.subscription.trial_will_end':
-            // Send notification to your user that the trial will end
-            $logger->info('🔔  Webhook received! ' . $object);
+            $logger->info('Subscription canceled: ' . $event->id);
             break;
         // ... handle other event types
         default:

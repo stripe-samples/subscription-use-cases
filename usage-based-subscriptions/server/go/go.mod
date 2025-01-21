@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/stripe/stripe-go v70.15.0+incompatible
-	github.com/stripe/stripe-go/v71 v71.48.0
+	github.com/stripe/stripe-go/v81 v81.2.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

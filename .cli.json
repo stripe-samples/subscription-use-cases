@@ -4,13 +4,13 @@
   "integrations": [
     {
       "name": "usage-based-subscriptions",
-      "clients": ["web"],
-      "servers": ["java", "node", "php", "python", "ruby","go", "dotnet"]
+      "clients": ["react"],
+      "servers": ["java", "node", "php-slim", "python", "ruby", "go", "dotnet"]
     },
     {
       "name": "fixed-price-subscriptions",
       "clients": ["vanillajs", "react"],
-      "servers": ["java", "node", "php-slim", "python", "ruby","go", "dotnet"]
+      "servers": ["java", "node", "php-slim", "python", "ruby", "go", "dotnet"]
     }
   ]
 }

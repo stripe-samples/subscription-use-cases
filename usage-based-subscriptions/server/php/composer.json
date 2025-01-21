@@ -1,15 +1,18 @@
 {
   "name": "subscription-use-cases/metered-usage",
   "version": "1.0.0",
-  "description": "A Stripe sample implementing cards for subscriptions with fixed prices.",
+  "description": "A Stripe sample implementing cards for subscriptions with metered prices.",
   "require": {
-    "slim/slim": "^4.9",
-    "vlucas/phpdotenv": "^5.4",
-    "stripe/stripe-php": "^16.0.0",
+    "slim/slim": "^4.10",
+    "vlucas/phpdotenv": "^3.4",
+    "stripe/stripe-php": "^16.4.0",
     "monolog/monolog": "^2.3",
-    "ramsey/uuid": "^4.0"
+    "ramsey/uuid": "^4.0",
+    "slim/psr7": "^1.7",
+    "php-di/slim-bridge": "^3.2",
+    "slim/http": "^1.4"
   },
   "scripts": {
-    "start": "php -S 0.0.0.0:4242 index.php"
+    "start": "php -S 127.0.0.1:4242 index.php"
   }
 }
