@@ -136,11 +136,11 @@ app.get('/invoice-preview', async (req, res) => {
 app.post('/cancel-subscription', async (req, res) => {
   // Cancel the subscription
   try {
-    const deletedSubscription = await stripe.subscriptions.del(
+    const canceledSubscription = await stripe.subscriptions.cancel(
       req.body.subscriptionId
     );
 
-    res.send({ subscription: deletedSubscription });
+    res.send({ subscription: canceledSubscription });
   } catch (error) {
     return res.status(400).send({ error: { message: error.message } });
   }
