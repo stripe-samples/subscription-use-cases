@@ -192,15 +192,7 @@ Stripe Tax lets you calculate and collect sales tax, VAT, and GST with one line 
    
    Before creating a price, make sure you have Stripe Tax set up in the dashboard: [Docs - Set up Stripe Tax](https://docs.stripe.com/tax/set-up).
 
-   #### Option 1: With Stripe CLI Fixtures
-
-   Use the `seed.json` fixture file:
-   
-   ```sh
-   stripe fixtures seed_with_tax.json
-   ```
-
-   #### Option 2: With Stripe CLI API calls
+   #### Option 1: With Stripe CLI API calls
 
    Stripe needs to know what kind of product you are selling to calculate the taxes. For this example we will submit a tax code describing what kind of product is used: `txcd_10103000` which is 'Software as a service (SaaS) - personal use'. You can find a list of all tax codes here: [Available tax codes](https://docs.stripe.com/tax/tax-codes). If you leave the tax code empty, Stripe will use the default one from your [Tax settings](https://dashboard.stripe.com/test/settings/tax).
 
@@ -238,7 +230,7 @@ Stripe Tax lets you calculate and collect sales tax, VAT, and GST with one line 
      --lookup-key sample_premium_with_tax
    ```
 
-   #### Option 3: With cURL
+   #### Option 2: With cURL
    
    Replace `sk_test_xxx` with your secret API key:
 
