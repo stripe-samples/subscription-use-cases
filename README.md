@@ -182,7 +182,96 @@ dashboard](https://stripe.com/docs/webhooks/setup#configure-webhook-settings).
 
 ## How to create Prices
 
-### With Stripe CLI Fixtures
+### With Stripe Tax
+
+Stripe Tax lets you calculate and collect sales tax, VAT, and GST with one line of code. This is particularly useful for subscriptions as it automatically calculates tax on recurring invoices.
+
+<details>
+<summary>Implementation details</summary>
+   <br/>
+   
+   Before creating a price, make sure you have Stripe Tax set up in the dashboard: [Docs - Set up Stripe Tax](https://docs.stripe.com/tax/set-up).
+
+   #### Option 1: With Stripe CLI Fixtures
+
+   Use the `seed.json` fixture file:
+   
+   ```sh
+   stripe fixtures seed_with_tax.json
+   ```
+
+   #### Option 2: With Stripe CLI API calls
+
+   Stripe needs to know what kind of product you are selling to calculate the taxes. For this example we will submit a tax code describing what kind of product is used: `txcd_10103000` which is 'Software as a service (SaaS) - personal use'. You can find a list of all tax codes here: [Available tax codes](https://docs.stripe.com/tax/tax-codes). If you leave the tax code empty, Stripe will use the default one from your [Tax settings](https://dashboard.stripe.com/test/settings/tax).
+
+   ```sh
+   stripe products create \
+    --name="basic" \
+    --tax-code="txcd_10103000"
+   ```
+
+   ```sh
+   stripe products create \
+    --name="premium" \
+    --tax-code="txcd_10103000"
+   ```
+
+   From the response, copy the resulting `id`s of the products, then create a price with tax behavior. Here, tax behavior can be either `inclusive` (tax is included in the price amount) or `exclusive` (tax is calculated and added on top of the price). For this example, we are using `exclusive`.
+   
+   ```sh
+   stripe prices create \
+     --unit-amount=500 \
+     --currency=usd \
+     --tax-behavior=exclusive \
+     --product=prod_xxxxx \
+     -d "recurring[interval]=month" \
+     --lookup-key sample_basic_with_tax
+   ```
+
+   ```sh
+   stripe prices create \
+     --unit-amount=900 \
+     --currency=usd \
+     --tax-behavior=exclusive \
+     --product=prod_xxxxx \
+     -d "recurring[interval]=month" \
+     --lookup-key sample_premium_with_tax
+   ```
+
+   #### Option 3: With cURL
+   
+   Replace `sk_test_xxx` with your secret API key:
+
+   ```sh
+   curl https://api.stripe.com/v1/prices \
+     -u sk_test_xxx: \
+     -d "unit_amount"=500 \
+     -d "currency"=usd \
+     -d "tax_behavior"=exclusive \
+     -d "recurring[interval]"=month \
+     -d "product_data[name]"=basic \
+     -d "product_data[tax_code]"=txcd_10103000 \
+     -d "lookup_key"=sample_basic_with_tax
+   ```
+
+   ```sh
+   curl https://api.stripe.com/v1/prices \
+     -u sk_test_xxx: \
+     -d "unit_amount"=900 \
+     -d "currency"=usd \
+     -d "tax_behavior"=exclusive \
+     -d "recurring[interval]"=month \
+     -d "product_data[name]"=premium \
+     -d "product_data[tax_code]"=txcd_10103000 \
+     -d "lookup_key"=sample_premium_with_tax
+   ```
+   
+   More Information: [Docs - Collect taxes for recurring payments](https://docs.stripe.com/tax/subscriptions?estimate=before)
+
+</details>
+
+### Without Stripe Tax
+#### Option 1: With Stripe CLI Fixtures
 
 Use the `seed.json` fixture file:
 
@@ -190,7 +279,7 @@ Use the `seed.json` fixture file:
 stripe fixtures seed.json
 ```
 
-### With Stripe CLI API calls
+#### Option 2: With Stripe CLI API calls
 
 Or run the following commands and copy the resulting IDs.
 
@@ -202,7 +291,7 @@ stripe prices create --unit-amount 500 --currency usd -d "recurring[interval]=mo
 stripe prices create --unit-amount 900 --currency usd -d "recurring[interval]=month" -d "product_data[name]=premium" --lookup-key sample_premium
 ```
 
-### With cURL
+#### Option 3: With cURL
 
 Replace `sk_test_xxx` with your secret API key:
 
