@@ -82,16 +82,21 @@ namespace dotnet.Controllers
                 },
                 PaymentBehavior = "default_incomplete",
             };
-            subscriptionOptions.AddExpand("latest_invoice.payment_intent");
+            subscriptionOptions.AddExpand("latest_invoice.payments.data.payment");
             var subscriptionService = new SubscriptionService();
             try
             {
                 Subscription subscription = subscriptionService.Create(subscriptionOptions);
 
+                // Get the payment intent ID and retrieve the full PaymentIntent separately
+                var paymentIntentId = subscription.LatestInvoice.Payments.Data[0].Payment.PaymentIntentId;
+                var paymentIntentService = new PaymentIntentService();
+                var paymentIntent = paymentIntentService.Get(paymentIntentId);
+
                 return new SubscriptionCreateResponse
                 {
                   SubscriptionId = subscription.Id,
-                  ClientSecret = subscription.LatestInvoice.PaymentIntent.ClientSecret,
+                  ClientSecret = paymentIntent.ClientSecret,
                 };
             }
             catch (StripeException e)
@@ -109,20 +114,23 @@ namespace dotnet.Controllers
             var subscription = service.Get(subscriptionId);
 
             var invoiceService = new InvoiceService();
-            var options = new UpcomingInvoiceOptions
+            var options = new InvoiceCreatePreviewOptions
             {
                 Customer = customerId,
                 Subscription = subscriptionId,
-                SubscriptionItems = new List<InvoiceSubscriptionItemOptions>
+                SubscriptionDetails = new InvoiceSubscriptionDetailsOptions
                 {
-                    new InvoiceSubscriptionItemOptions
+                    Items = new List<InvoiceSubscriptionDetailsItemOptions>
                     {
-                        Id = subscription.Items.Data[0].Id,
-                        Price = Environment.GetEnvironmentVariable(newPriceLookupKey.ToUpper()),
-                    },
+                        new InvoiceSubscriptionDetailsItemOptions
+                        {
+                            Id = subscription.Items.Data[0].Id,
+                            Price = Environment.GetEnvironmentVariable(newPriceLookupKey.ToUpper()),
+                        },
+                    }
                 }
             };
-            Invoice upcoming = invoiceService.Upcoming(options);
+            Invoice upcoming = invoiceService.CreatePreview(options);
             return new InvoiceResponse{
               Invoice = upcoming,
             };
@@ -211,19 +219,31 @@ namespace dotnet.Controllers
                 // Set the payment method used to pay the first invoice
                 // as the default payment method for that subscription
 
-                // Retrieve the payment intent used to pay the subscription
-                var service = new PaymentIntentService();
-                var paymentIntent = service.Get(invoice.PaymentIntentId);
-
-                // Set the default payment method
-                var options = new SubscriptionUpdateOptions
+                // Get payment intent ID from the payments collection
+                if (invoice.Payments?.Data?.Count > 0 && invoice.Payments.Data[0].Payment != null)
                 {
-                  DefaultPaymentMethod = paymentIntent.PaymentMethodId,
-                };
-                var subscriptionService = new SubscriptionService();
-                subscriptionService.Update(invoice.SubscriptionId, options);
+                    var paymentIntentId = invoice.Payments.Data[0].Payment.PaymentIntentId;
 
-                Console.WriteLine($"Default payment method set for subscription: {paymentIntent.PaymentMethodId}");
+                    // Retrieve the payment intent used to pay the subscription
+                    var service = new PaymentIntentService();
+                    var paymentIntent = service.Get(paymentIntentId);
+
+                    // Get subscription ID from parent
+                    if (invoice.Parent?.SubscriptionDetails != null)
+                    {
+                        var subscriptionId = invoice.Parent.SubscriptionDetails.SubscriptionId;
+
+                        // Set the default payment method
+                        var options = new SubscriptionUpdateOptions
+                        {
+                          DefaultPaymentMethod = paymentIntent.PaymentMethodId,
+                        };
+                        var subscriptionService = new SubscriptionService();
+                        subscriptionService.Update(subscriptionId, options);
+
+                        Console.WriteLine($"Default payment method set for subscription: {paymentIntent.PaymentMethodId}");
+                    }
+                }
               }
               Console.WriteLine($"Payment succeeded for invoice: {stripeEvent.Id}");
             }

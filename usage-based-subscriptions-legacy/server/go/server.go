@@ -10,12 +10,12 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/stripe/stripe-go/v71"
-	"github.com/stripe/stripe-go/v71/customer"
-	"github.com/stripe/stripe-go/v71/invoice"
-	"github.com/stripe/stripe-go/v71/paymentmethod"
-	"github.com/stripe/stripe-go/v71/sub"
-	"github.com/stripe/stripe-go/v71/webhook"
+	"github.com/stripe/stripe-go/v72"
+	"github.com/stripe/stripe-go/v72/customer"
+	"github.com/stripe/stripe-go/v72/invoice"
+	"github.com/stripe/stripe-go/v72/paymentmethod"
+	"github.com/stripe/stripe-go/v72/sub"
+	"github.com/stripe/stripe-go/v72/webhook"
 )
 
 func main() {

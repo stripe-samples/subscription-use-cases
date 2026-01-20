@@ -6,20 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/joho/godotenv"
-	"github.com/stripe/stripe-go/v72"
-	"github.com/stripe/stripe-go/v72/customer"
-	"github.com/stripe/stripe-go/v72/invoice"
-	"github.com/stripe/stripe-go/v72/paymentintent"
-	"github.com/stripe/stripe-go/v72/price"
-	"github.com/stripe/stripe-go/v72/sub"
-	"github.com/stripe/stripe-go/v72/webhook"
+	"github.com/stripe/stripe-go/v84"
+	"github.com/stripe/stripe-go/v84/customer"
+	"github.com/stripe/stripe-go/v84/invoice"
+	"github.com/stripe/stripe-go/v84/paymentintent"
+	"github.com/stripe/stripe-go/v84/price"
+	"github.com/stripe/stripe-go/v84/subscription"
+	"github.com/stripe/stripe-go/v84/webhook"
 )
 
 func main() {
@@ -145,12 +144,21 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		},
 		PaymentBehavior: stripe.String("default_incomplete"),
 	}
-	subscriptionParams.AddExpand("latest_invoice.payment_intent")
-	s, err := sub.New(subscriptionParams)
+	subscriptionParams.AddExpand("latest_invoice.payments.data.payment")
+	s, err := subscription.New(subscriptionParams)
 
 	if err != nil {
 		writeJSON(w, nil, err)
 		log.Printf("sub.New: %v", err)
+		return
+	}
+
+	// Get the PaymentIntent ID from the payments collection and retrieve it separately
+	paymentIntentID := s.LatestInvoice.Payments.Data[0].Payment.PaymentIntent.ID
+	pi, err := paymentintent.Get(paymentIntentID, nil)
+	if err != nil {
+		writeJSON(w, nil, err)
+		log.Printf("paymentintent.Get: %v", err)
 		return
 	}
 
@@ -159,7 +167,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 		ClientSecret   string `json:"clientSecret"`
 	}{
 		SubscriptionID: s.ID,
-		ClientSecret:   s.LatestInvoice.PaymentIntent.ClientSecret,
+		ClientSecret:   pi.ClientSecret,
 	}, nil)
 }
 
@@ -179,7 +187,7 @@ func handleCancelSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := sub.Cancel(req.SubscriptionID, nil)
+	s, err := subscription.Cancel(req.SubscriptionID, nil)
 
 	if err != nil {
 		writeJSON(w, nil, err)
@@ -207,21 +215,23 @@ func handleInvoicePreview(w http.ResponseWriter, r *http.Request) {
 	subscriptionID := query.Get("subscriptionId")
 	newPriceLookupKey := strings.ToUpper(query.Get("newPriceLookupKey"))
 
-	s, err := sub.Get(subscriptionID, nil)
+	s, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
 		writeJSON(w, nil, err)
-		log.Printf("sub.Get: %v", err)
+		log.Printf("subscription.Get: %v", err)
 		return
 	}
-	params := &stripe.InvoiceParams{
+	params := &stripe.InvoiceCreatePreviewParams{
 		Customer:     stripe.String(customerID),
 		Subscription: stripe.String(subscriptionID),
-		SubscriptionItems: []*stripe.SubscriptionItemsParams{{
-			ID:    stripe.String(s.Items.Data[0].ID),
-			Price: stripe.String(os.Getenv(newPriceLookupKey)),
-		}},
+		SubscriptionDetails: &stripe.InvoiceCreatePreviewSubscriptionDetailsParams{
+			Items: []*stripe.InvoiceCreatePreviewSubscriptionDetailsItemParams{{
+				ID:    stripe.String(s.Items.Data[0].ID),
+				Price: stripe.String(os.Getenv(newPriceLookupKey)),
+			}},
+		},
 	}
-	in, err := invoice.GetNext(params)
+	in, err := invoice.CreatePreview(params)
 
 	if err != nil {
 		writeJSON(w, nil, err)
@@ -260,10 +270,10 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	// Fetch the subscription to access the related subscription item's ID
 	// that will be updated. In practice, you might want to store the
 	// Subscription Item ID in your database to avoid this API call.
-	s, err := sub.Get(req.SubscriptionID, nil)
+	s, err := subscription.Get(req.SubscriptionID, nil)
 	if err != nil {
 		writeJSON(w, nil, err)
-		log.Printf("sub.Get: %v", err)
+		log.Printf("subscription.Get: %v", err)
 		return
 	}
 
@@ -274,7 +284,7 @@ func handleUpdateSubscription(w http.ResponseWriter, r *http.Request) {
 		}},
 	}
 
-	updatedSubscription, err := sub.Update(req.SubscriptionID, params)
+	updatedSubscription, err := subscription.Update(req.SubscriptionID, params)
 
 	if err != nil {
 		writeJSON(w, nil, err)
@@ -300,11 +310,11 @@ func handleListSubscriptions(w http.ResponseWriter, r *http.Request) {
 	customerID := cookie.Value
 
 	params := &stripe.SubscriptionListParams{
-		Customer: customerID,
-		Status:   "all",
+		Customer: stripe.String(customerID),
+		Status:   stripe.String("all"),
 	}
 	params.AddExpand("data.default_payment_method")
-	i := sub.List(params)
+	i := subscription.List(params)
 
 	writeJSON(w, struct {
 		Subscriptions *stripe.SubscriptionList `json:"subscriptions"`
@@ -318,10 +328,10 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeJSON(w, nil, err)
-		log.Printf("ioutil.ReadAll: %v", err)
+		log.Printf("io.ReadAll: %v", err)
 		return
 	}
 
@@ -333,24 +343,30 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if event.Type == "invoice.payment_succeeded" {
-		var invoice stripe.Invoice
-		err := json.Unmarshal(event.Data.Raw, &invoice)
+		var inv stripe.Invoice
+		err := json.Unmarshal(event.Data.Raw, &inv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error parsing webhook JSON: %v\n", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		pi, _ := paymentintent.Get(
-			invoice.PaymentIntent.ID,
-			nil,
-		)
+		// Get payment intent from the payments collection
+		if len(inv.Payments.Data) > 0 && inv.Payments.Data[0].Payment != nil {
+			pi, _ := paymentintent.Get(
+				inv.Payments.Data[0].Payment.PaymentIntent.ID,
+				nil,
+			)
 
-		params := &stripe.SubscriptionParams{
-			DefaultPaymentMethod: stripe.String(pi.PaymentMethod.ID),
+			// Get subscription ID from parent
+			if inv.Parent != nil && inv.Parent.SubscriptionDetails != nil {
+				params := &stripe.SubscriptionParams{
+					DefaultPaymentMethod: stripe.String(pi.PaymentMethod.ID),
+				}
+				subscription.Update(inv.Parent.SubscriptionDetails.Subscription.ID, params)
+				fmt.Println("Default payment method set for subscription: ", pi.PaymentMethod)
+			}
 		}
-		sub.Update(invoice.Subscription.ID, params)
-		fmt.Println("Default payment method set for subscription: ", pi.PaymentMethod)
 	}
 	fmt.Println("Payment succeeded for invoice: ", event.ID)
 }
