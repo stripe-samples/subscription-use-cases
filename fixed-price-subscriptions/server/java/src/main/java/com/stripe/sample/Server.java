@@ -27,7 +27,7 @@ import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.InvoiceRetrieveParams;
-import com.stripe.param.InvoiceUpcomingParams;
+import com.stripe.param.InvoiceCreatePreviewParams;
 import com.stripe.param.PaymentMethodAttachParams;
 import com.stripe.param.PriceListParams;
 import com.stripe.param.SubscriptionCreateParams;
@@ -123,8 +123,8 @@ public class Server {
 
         PriceListParams params = PriceListParams
           .builder()
-          .addLookupKeys("sample_basic")
-          .addLookupKeys("sample_premium")
+          .addLookupKey("sample_basic")
+          .addLookupKey("sample_premium")
           .build();
         PriceCollection prices = Price.list(params);
         responseData.put("prices", prices.getData());
@@ -208,14 +208,19 @@ public class Server {
               .build()
           )
           .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
-          .addAllExpand(Arrays.asList("latest_invoice.payment_intent"))
+          .addAllExpand(Arrays.asList("latest_invoice.payments.data.payment"))
           .build();
 
         Subscription subscription = Subscription.create(subCreateParams);
 
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("subscriptionId", subscription.getId());
-        responseData.put("clientSecret", subscription.getLatestInvoiceObject().getPaymentIntentObject().getClientSecret());
+        Invoice latestInvoice = subscription.getLatestInvoiceObject();
+
+        // Retrieve the payment intent ID from the invoice's payments collection
+        String paymentIntentId = latestInvoice.getPayments().getData().get(0).getPayment().getPaymentIntent();
+        PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
+        responseData.put("clientSecret", paymentIntent.getClientSecret());
         return StripeObject.PRETTY_PRINT_GSON.toJson(responseData);
       }
     );
@@ -245,21 +250,24 @@ public class Server {
         Subscription subscription = Subscription.retrieve(subscriptionId);
 
         // Build the params for retrieving the invoice preview.
-        InvoiceUpcomingParams invoiceParams = InvoiceUpcomingParams
+        InvoiceCreatePreviewParams invoiceParams = InvoiceCreatePreviewParams
           .builder()
           .setCustomer(customerId)
           .setSubscription(subscriptionId)
-          .addSubscriptionItem(
-            InvoiceUpcomingParams
-              .SubscriptionItem.builder()
-              .setId(subscription.getItems().getData().get(0).getId())
-              .setPrice(newPriceId)
+          .setSubscriptionDetails(
+            InvoiceCreatePreviewParams.SubscriptionDetails.builder()
+              .addItem(
+                InvoiceCreatePreviewParams.SubscriptionDetails.Item.builder()
+                  .setId(subscription.getItems().getData().get(0).getId())
+                  .setPrice(newPriceId)
+                  .build()
+              )
               .build()
           )
           .build();
 
         // Fetch the invoice preview.
-        Invoice invoice = Invoice.upcoming(invoiceParams);
+        Invoice invoice = Invoice.createPreview(invoiceParams);
 
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("invoice", invoice);
@@ -390,8 +398,8 @@ public class Server {
               // The subscription automatically activates after successful payment
               // Set the payment method used to pay the first invoice
               // as the default payment method for that subscription
-              String subscriptionId = invoice.getSubscription();
-              String paymentIntentId = invoice.getPaymentIntent();
+              String subscriptionId = invoice.getParent().getSubscriptionDetails().getSubscription();
+              String paymentIntentId = invoice.getPayments().getData().get(0).getPayment().getPaymentIntent();
 
               // Retrieve the payment intent used to pay the subscription
               PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);

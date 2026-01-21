@@ -41,18 +41,21 @@ const UsageBasedSubscriptionFlow = () => {
     messages,
   } = useSession();
 
-  React.useEffect(async () => {
-    const response = await retrievePublishableKey();
-    const { publishableKey, error } = response;
-    if (publishableKey) {
-      addMessage('🔑 Retrieved publishable key');
-      setPublishableKey(publishableKey);
-    }
-    if (error) {
-      addMessage(
-        `😱 Failed to retrieve publisable key. Is your server running?`
-      );
-    }
+  React.useEffect(() => {
+    const fetchPublishableKey = async () => {
+      const response = await retrievePublishableKey();
+      const { publishableKey, error } = response;
+      if (publishableKey) {
+        addMessage('🔑 Retrieved publishable key');
+        setPublishableKey(publishableKey);
+      }
+      if (error) {
+        addMessage(
+          `😱 Failed to retrieve publisable key. Is your server running?`
+        );
+      }
+    };
+    fetchPublishableKey();
   }, []);
 
   const [currentStep, setCurrentStep] = React.useState(0);

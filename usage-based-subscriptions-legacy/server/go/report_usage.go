@@ -1,8 +1,8 @@
 package main
 
 import (
-  "github.com/stripe/stripe-go"
-  "github.com/stripe/stripe-go/usagerecord"
+  "github.com/stripe/stripe-go/v72"
+  "github.com/stripe/stripe-go/v72/usagerecord"
 )
 
 func main() {

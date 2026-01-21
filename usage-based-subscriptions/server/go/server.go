@@ -11,14 +11,14 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/stripe/stripe-go/v81"
-	"github.com/stripe/stripe-go/v81/billing/meter"
-	"github.com/stripe/stripe-go/v81/customer"
-	"github.com/stripe/stripe-go/v81/price"
-	"github.com/stripe/stripe-go/v81/rawrequest"
-	"github.com/stripe/stripe-go/v81/subscription"
+	"github.com/stripe/stripe-go/v84"
+	"github.com/stripe/stripe-go/v84/billing/meter"
+	"github.com/stripe/stripe-go/v84/customer"
+	"github.com/stripe/stripe-go/v84/price"
+	"github.com/stripe/stripe-go/v84/rawrequest"
+	"github.com/stripe/stripe-go/v84/subscription"
 
-	"github.com/stripe/stripe-go/v81/webhook"
+	"github.com/stripe/stripe-go/v84/webhook"
 )
 
 func main() {

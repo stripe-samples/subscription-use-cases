@@ -22,9 +22,12 @@ const FlowContainer = ({ steps, messages, currentStep, setCurrentStep }) => {
     setCurrentStep(currentStep - 1);
   };
 
+  // Map steps to only include properties that Ant Design Steps expects
+  const stepItems = steps.map(({ title }) => ({ title }));
+
   return (
     <>
-      <Steps current={currentStep} items={steps} />
+      <Steps current={currentStep} items={stepItems} />
       <div className="steps-content">{steps[currentStep].content}</div>
       <div className="steps-action">
         <Button onClick={() => prev()} disabled={currentStep == 0}>
