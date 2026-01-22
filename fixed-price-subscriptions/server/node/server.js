@@ -136,11 +136,11 @@ app.get('/invoice-preview', async (req, res) => {
 app.post('/cancel-subscription', async (req, res) => {
   // Cancel the subscription
   try {
-    const deletedSubscription = await stripe.subscriptions.del(
+    const canceledSubscription = await stripe.subscriptions.cancel(
       req.body.subscriptionId
     );
 
-    res.send({ subscription: deletedSubscription });
+    res.send({ subscription: canceledSubscription });
   } catch (error) {
     return res.status(400).send({ error: { message: error.message } });
   }
@@ -215,11 +215,14 @@ app.post(
           // The subscription automatically activates after successful payment
           // Set the payment method used to pay the first invoice
           // as the default payment method for that subscription
-          const subscription_id = dataObject['subscription']
-          const payment_intent_id = dataObject['payment_intent']
+          const subscription_id = dataObject.parent.subscription_details.subscription;
+
+          const subscription = await stripe.subscriptions.retrieve(subscription_id, {
+            expand: ['latest_invoice.payment_intent']
+          });
 
           // Retrieve the payment intent used to pay the subscription
-          const payment_intent = await stripe.paymentIntents.retrieve(payment_intent_id);
+          const payment_intent = subscription.latest_invoice.payment_intent;
 
           try {
             const subscription = await stripe.subscriptions.update(
