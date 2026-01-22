@@ -53,3 +53,7 @@ dist
 
 #idea
 .idea
+
+# Terraform files
+.terraform*
+terraform.tfstate*
