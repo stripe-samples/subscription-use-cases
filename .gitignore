@@ -41,6 +41,9 @@ dist
 # React
 build
 
+# Next.js
+.next
+
 # act
 .secrets
 

@@ -1,0 +1,11 @@
+import Stripe from "stripe";
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-12-15.clover",
+  appInfo: {
+    // For sample support and debugging, not required for production:
+    name: "stripe-samples/subscription-use-cases",
+    version: "0.0.1",
+    url: "https://github.com/stripe-samples/subscription-use-cases",
+  },
+});
