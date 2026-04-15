@@ -7,6 +7,11 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config({ path: './.env' });
 
 if (
+  // Don't put any keys in code. Use an environment variable (as shown
+  // here) or secrets vault to supply keys to your integration.
+  //
+  // See https://docs.stripe.com/keys-best-practices and find your
+  // keys at https://dashboard.stripe.com/apikeys.
   !process.env.STRIPE_SECRET_KEY ||
   !process.env.STRIPE_PUBLISHABLE_KEY ||
   !process.env.STATIC_DIR

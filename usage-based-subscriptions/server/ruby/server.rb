@@ -14,6 +14,11 @@ Stripe.set_app_info(
   url: 'https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions'
 )
 Stripe.api_version = '2024-09-30.acacia'
+# Don't put any keys in code. Use an environment variable (as shown
+# here) or secrets vault to supply keys to your integration.
+#
+# See https://docs.stripe.com/keys-best-practices and find your
+# keys at https://dashboard.stripe.com/apikeys.
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 
 client = Stripe::StripeClient.new(ENV['STRIPE_SECRET_KEY'])
