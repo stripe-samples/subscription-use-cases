@@ -10,6 +10,11 @@ class ConfigHelper
     'PREMIUM',
     'STATIC_DIR',
     'STRIPE_PUBLISHABLE_KEY',
+    # Don't put any keys in code. Use an environment variable (as shown
+    # here) or secrets vault to supply keys to your integration.
+    #
+    # See https://docs.stripe.com/keys-best-practices and find your
+    # keys at https://dashboard.stripe.com/apikeys.
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
   ]
@@ -100,6 +105,14 @@ class ConfigHelper
     true
   end
 
+  def redact_key(key)
+    return '(unset)' if key.nil? || key == ''
+
+    return key[0, 4] + ('*' * (key.length - 4)) if key.length <= 14
+
+    "#{key[0, 8]}#{'*' * (key.length - 14)}#{key[-6..]}"
+  end
+
   def valid_paths?
     static_dir = ENV['STATIC_DIR']
     if static_dir.nil?
@@ -151,7 +164,7 @@ class ConfigHelper
         api_key: sk
       }).data.first
     rescue => e
-      puts "Failed testing an API request with your STRIPE_SECRET_KEY `#{sk}` check `.env`: \n\n#{e}"
+      puts "Failed testing an API request with your STRIPE_SECRET_KEY `#{redact_key(sk)}` check `.env`: \n\n#{e}"
       return false
     end
 

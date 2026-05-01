@@ -98,6 +98,11 @@ public class Server {
         "0.0.1",
         "https://github.com/stripe-samples/subscription-use-cases/fixed-price"
     );
+    // Don't put any keys in code. Use an environment variable (as shown
+    // here) or secrets vault to supply keys to your integration.
+    //
+    // See https://docs.stripe.com/keys-best-practices and find your
+    // keys at https://dashboard.stripe.com/apikeys.
     Stripe.apiKey = dotenv.get("STRIPE_SECRET_KEY");
 
     staticFiles.externalLocation(

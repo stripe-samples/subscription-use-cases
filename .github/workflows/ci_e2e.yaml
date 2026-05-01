@@ -71,7 +71,9 @@ jobs:
       - name: Collect debug information
         if: ${{ failure() }}
         run: |
-          cat .env
+          # Redact Stripe secret keys, restricted keys, and webhook secrets
+# before logging. Publishable keys (pk_) are safe to log.
+cat .env | sed 's/=\(sk_\|rk_\|whsec_\)[^[:space:]]*/=[REDACTED]/g'
           cat docker-compose.yml
           docker compose ps -a
           docker compose --profile="${{ matrix.implementation.profile }}" logs web frontend

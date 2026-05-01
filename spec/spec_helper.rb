@@ -109,6 +109,11 @@ end
 
 SERVER_URL = ENV.fetch('SERVER_URL', 'http://localhost:4242')
 Dotenv.load
+# Don't put any keys in code. Use an environment variable (as shown
+# here) or secrets vault to supply keys to your integration.
+#
+# See https://docs.stripe.com/keys-best-practices and find your
+# keys at https://dashboard.stripe.com/apikeys.
 Stripe.api_key = ENV['STRIPE_SECRET_KEY']
 Stripe.max_network_retries = 2
 Stripe.api_version = "2022-08-01"

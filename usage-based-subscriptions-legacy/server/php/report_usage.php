@@ -11,6 +11,11 @@ $dotenv->load();
 
 // Set your secret key. Remember to switch to your live secret key in production!
 // See your keys here: https://dashboard.stripe.com/account/apikeys
+# Don't put any keys in code. Use an environment variable (as shown
+# here) or secrets vault to supply keys to your integration.
+#
+# See https://docs.stripe.com/keys-best-practices and find your
+# keys at https://dashboard.stripe.com/apikeys.
 $stripe = new \Stripe\StripeClient(getenv('STRIPE_SECRET_KEY'));
 
 // You need to write some of your own business logic before creating the

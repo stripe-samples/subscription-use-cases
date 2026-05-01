@@ -8,6 +8,11 @@ import (
 func main() {
   // Set your secret key. Remember to switch to your live secret key in production!
   // See your keys here: https://dashboard.stripe.com/account/apikeys
+	// Don't put any keys in code. Use an environment variable (as shown
+	// here) or secrets vault to supply keys to your integration.
+	//
+	// See https://docs.stripe.com/keys-best-practices and find your
+	// keys at https://dashboard.stripe.com/apikeys.
 	stripe.Key = os.Getenv("{{STRIPE_SECRET_KEY}}")
 
   // This code can be run on an interval (e.g., every 24 hours) for each active

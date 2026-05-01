@@ -5,6 +5,11 @@ const bodyParser = require('body-parser');
 // Replace if using a different env file or config
 require('dotenv').config({ path: './.env' });
 
+// Don't put any keys in code. Use an environment variable (as shown
+// here) or secrets vault to supply keys to your integration.
+//
+// See https://docs.stripe.com/keys-best-practices and find your
+// keys at https://dashboard.stripe.com/apikeys.
 if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PUBLISHABLE_KEY) {
   console.log(
     'The .env file is not configured. Follow the instructions in the readme to configure the .env file. https://github.com/stripe-samples/subscription-use-cases'

@@ -167,6 +167,11 @@ public class Server {
         "0.0.1",
         "https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions"
     );
+    // Don't put any keys in code. Use an environment variable (as shown
+    // here) or secrets vault to supply keys to your integration.
+    //
+    // See https://docs.stripe.com/keys-best-practices and find your
+    // keys at https://dashboard.stripe.com/apikeys.
     Stripe.apiKey = dotenv.get("STRIPE_SECRET_KEY");
 
     get(
