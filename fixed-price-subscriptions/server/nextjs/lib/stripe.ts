@@ -6,7 +6,7 @@ import Stripe from "stripe";
 // See https://docs.stripe.com/keys-best-practices and find your
 // keys at https://dashboard.stripe.com/apikeys.
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
+  apiVersion: "2026-07-29.dahlia",
   appInfo: {
     // For sample support and debugging, not required for production:
     name: "stripe-samples/subscription-use-cases",
