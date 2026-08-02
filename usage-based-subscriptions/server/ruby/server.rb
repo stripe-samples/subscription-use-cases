@@ -13,7 +13,7 @@ Stripe.set_app_info(
   version: '0.0.1',
   url: 'https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions'
 )
-Stripe.api_version = '2024-09-30.acacia'
+Stripe.api_version = '2026-07-29.dahlia'
 # Don't put any keys in code. Use an environment variable (as shown
 # here) or secrets vault to supply keys to your integration.
 #
