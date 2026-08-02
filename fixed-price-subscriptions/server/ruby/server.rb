@@ -15,7 +15,7 @@ Stripe.set_app_info(
   version: '0.0.2',
   url: 'https://github.com/stripe-samples/subscription-use-cases/fixed-price'
 )
-Stripe.api_version = '2022-08-01'
+Stripe.api_version = '2026-07-29.dahlia'
 # Don't put any keys in code. Use an environment variable (as shown
 # here) or secrets vault to supply keys to your integration.
 #
@@ -93,10 +93,10 @@ post '/create-subscription' do
       price: price_id,
     }],
     payment_behavior: 'default_incomplete',
-    expand: ['latest_invoice.payment_intent']
+    expand: ['latest_invoice.confirmation_secret']
   )
 
-  { subscriptionId: subscription.id, clientSecret: subscription.latest_invoice.payment_intent.client_secret }.to_json
+  { subscriptionId: subscription.id, clientSecret: subscription.latest_invoice.confirmation_secret.client_secret }.to_json
 end
 
 get '/subscriptions' do
@@ -162,13 +162,16 @@ get '/invoice-preview' do
   # we're updating.
   subscription = Stripe::Subscription.retrieve(params['subscriptionId'])
 
-  invoice = Stripe::Invoice.upcoming(
+  # Basil+: Invoice.upcoming removed → create_preview
+  invoice = Stripe::Invoice.create_preview(
     customer: customer_id,
     subscription: params['subscriptionId'],
-    subscription_items: [{
-      id: subscription.items.data[0].id,
-      price: ENV[params['newPriceLookupKey'].upcase],
-    }]
+    subscription_details: {
+      items: [{
+        id: subscription.items.data[0].id,
+        price: ENV[params['newPriceLookupKey'].upcase],
+      }],
+    }
   )
 
   { invoice: invoice }.to_json
@@ -210,8 +213,12 @@ post '/webhook' do
       # The subscription automatically activates after successful payment
       # Set the payment method used to pay the first invoice
       # as the default payment method for that subscription
-      subscription_id = data_object['subscription']
+      subscription_id = data_object['subscription'] || (data_object.dig('parent', 'subscription_details', 'subscription') rescue nil)
       payment_intent_id = data_object['payment_intent']
+      if payment_intent_id.nil? && data_object['payments']
+        payment_intent_id = data_object.dig('payments', 'data', 0, 'payment', 'payment_intent')
+      end
+      next puts('missing sub/pi basil') if subscription_id.nil? || payment_intent_id.nil?
 
       # Retrieve the payment intent used to pay the subscription
       payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)

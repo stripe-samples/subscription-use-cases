@@ -18,7 +18,7 @@ stripe.set_app_info(
     version='0.0.1',
     url='https://github.com/stripe-samples/subscription-use-cases/fixed-price')
 
-stripe.api_version = '2022-08-01'
+stripe.api_version = '2026-07-29.dahlia'
 # Don't put any keys in code. Use an environment variable (as shown
 # here) or secrets vault to supply keys to your integration.
 #
@@ -105,9 +105,9 @@ def create_subscription():
                 'price': price_id,
             }],
             payment_behavior='default_incomplete',
-            expand=['latest_invoice.payment_intent'],
+            expand=['latest_invoice.confirmation_secret'],
         )
-        return jsonify(subscriptionId=subscription.id, clientSecret=subscription.latest_invoice.payment_intent.client_secret)
+        return jsonify(subscriptionId=subscription.id, clientSecret=subscription.latest_invoice.confirmation_secret.client_secret)
 
     except Exception as e:
         return jsonify(error={'message': e.user_message}), 400
@@ -156,13 +156,16 @@ def preview_invoice():
         subscription = stripe.Subscription.retrieve(subscription_id)
 
         # Retrive the Invoice
-        invoice = stripe.Invoice.upcoming(
+        # Basil+: Invoice.upcoming removed → create_preview
+        invoice = stripe.Invoice.create_preview(
             customer=customer_id,
             subscription=subscription_id,
-            subscription_items=[{
-                'id': subscription['items']['data'][0].id,
-                'price': os.getenv(new_price_lookup_key),
-            }],
+            subscription_details={
+                'items': [{
+                    'id': subscription['items']['data'][0].id,
+                    'price': os.getenv(new_price_lookup_key),
+                }],
+            },
         )
         return jsonify(invoice=invoice)
     except Exception as e:
@@ -215,19 +218,24 @@ def webhook_received():
             # The subscription automatically activates after successful payment
             # Set the payment method used to pay the first invoice
             # as the default payment method for that subscription
-            subscription_id = data_object['subscription']
-            payment_intent_id = data_object['payment_intent']
-
-            # Retrieve the payment intent used to pay the subscription
-            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-
-            # Set the default payment method
-            stripe.Subscription.modify(
-              subscription_id,
-              default_payment_method=payment_intent.payment_method
-            )
-
-            print("Default payment method set for subscription:" + payment_intent.payment_method)
+            subscription_id = data_object.get('subscription') or (
+                (data_object.get('parent') or {}).get('subscription_details') or {}
+            ).get('subscription')
+            payment_intent_id = data_object.get('payment_intent')
+            if not payment_intent_id:
+                payments = (data_object.get('payments') or {}).get('data') or []
+                if payments:
+                    payment_intent_id = (payments[0].get('payment') or {}).get('payment_intent')
+            if not subscription_id or not payment_intent_id:
+                print('invoice.payment_succeeded missing subscription or payment_intent (Basil+)')
+            else:
+                payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+                # Set the default payment method
+                stripe.Subscription.modify(
+                  subscription_id,
+                  default_payment_method=payment_intent.payment_method
+                )
+                print("Default payment method set for subscription:" + str(payment_intent.payment_method))
     elif event_type == 'invoice.payment_failed':
         # If the payment fails or the customer does not have a valid payment method,
         # an invoice.payment_failed event is sent, the subscription becomes past_due.

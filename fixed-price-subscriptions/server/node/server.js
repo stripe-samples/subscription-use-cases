@@ -38,7 +38,7 @@ if (
 }
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-08-01',
+  apiVersion: '2026-07-29.dahlia',
   appInfo: { // For sample support and debugging, not required for production:
     name: "stripe-samples/subscription-use-cases/fixed-price",
     version: "0.0.1",
@@ -106,12 +106,14 @@ app.post('/create-subscription', async (req, res) => {
         price: priceId,
       }],
       payment_behavior: 'default_incomplete',
-      expand: ['latest_invoice.payment_intent'],
+      // Basil+: Invoice.payment_intent removed — use confirmation_secret
+      // https://docs.stripe.com/changelog/basil/2025-03-31/add-support-for-multiple-partial-payments-on-invoices
+      expand: ['latest_invoice.confirmation_secret'],
     });
 
     res.send({
       subscriptionId: subscription.id,
-      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+      clientSecret: subscription.latest_invoice.confirmation_secret.client_secret,
     });
   } catch (error) {
     return res.status(400).send({ error: { message: error.message } });
@@ -126,13 +128,17 @@ app.get('/invoice-preview', async (req, res) => {
     req.query.subscriptionId
   );
 
-  const invoice = await stripe.invoices.retrieveUpcoming({
+  // Basil+: retrieveUpcoming removed — use createPreview
+  // https://docs.stripe.com/changelog/basil/2025-03-31/invoice-preview-api-deprecations
+  const invoice = await stripe.invoices.createPreview({
     customer: customerId,
     subscription: req.query.subscriptionId,
-    subscription_items: [ {
-      id: subscription.items.data[0].id,
-      price: priceId,
-    }],
+    subscription_details: {
+      items: [{
+        id: subscription.items.data[0].id,
+        price: priceId,
+      }],
+    },
   });
 
   res.send({ invoice });
@@ -220,8 +226,17 @@ app.post(
           // The subscription automatically activates after successful payment
           // Set the payment method used to pay the first invoice
           // as the default payment method for that subscription
+          // Basil+: subscription/payment_intent may not be top-level on Invoice
           const subscription_id = dataObject['subscription']
-          const payment_intent_id = dataObject['payment_intent']
+            || dataObject.parent?.subscription_details?.subscription;
+          let payment_intent_id = dataObject['payment_intent'];
+          if (!payment_intent_id && dataObject.payments?.data?.length) {
+            payment_intent_id = dataObject.payments.data[0]?.payment?.payment_intent;
+          }
+          if (!subscription_id || !payment_intent_id) {
+            console.log('⚠️  invoice.payment_succeeded missing subscription or payment_intent after Basil shape change');
+            break;
+          }
 
           // Retrieve the payment intent used to pay the subscription
           const payment_intent = await stripe.paymentIntents.retrieve(payment_intent_id);

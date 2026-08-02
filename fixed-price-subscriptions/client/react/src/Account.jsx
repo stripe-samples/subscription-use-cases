@@ -21,7 +21,7 @@ const AccountSubscription = ({subscription}) => {
       </p>
 
       <p>
-        Current period end: {(new Date(subscription.current_period_end * 1000).toString())}
+        Current period end: {(new Date((subscription.items?.data?.[0]?.current_period_end ?? subscription.current_period_end) * 1000).toString())}
       </p>
 
       {/* <Link to={{pathname: '/change-plan', state: {subscription: subscription.id }}}>Change plan</Link><br /> */}

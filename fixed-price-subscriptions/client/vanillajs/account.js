@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <small>If the last4 is blank, ensure webhooks are being handled. The default payment method is set in the webhook handler.</small>
 
       <p>
-        Current period end: ${new Date(subscription.current_period_end * 1000)}
+        Current period end: ${new Date((subscription.items?.data?.[0]?.current_period_end ?? (subscription.items && subscription.items.data && subscription.items.data[0] && subscription.items.data[0].current_period_end) || subscription.current_period_end) * 1000)}
       </p>
 
       <!--<a href="change-payment-method.html?subscription=${subscription.id}"> Update payment method </a><br />
