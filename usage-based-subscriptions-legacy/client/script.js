@@ -669,7 +669,7 @@ function onSubscriptionSampleDemoComplete({
   let customerId;
   if (subscription) {
     subscriptionId = subscription.id;
-    currentPeriodEnd = subscription.current_period_end;
+    currentPeriodEnd = (subscription.items && subscription.items.data && subscription.items.data[0] && subscription.items.data[0].current_period_end) || subscription.current_period_end;
     if (typeof subscription.customer === 'object') {
       customerId = subscription.customer.id;
     } else {
