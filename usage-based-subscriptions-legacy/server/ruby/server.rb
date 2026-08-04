@@ -72,7 +72,7 @@ post '/create-subscription' do
     Stripe::Subscription.create(
       customer: data['customerId'],
       items: [{ price: ENV[data['priceId']] }],
-      expand: %w[latest_invoice.payment_intent pending_setup_intent]
+      expand: %w[latest_invoice.confirmation_secret pending_setup_intent]
     )
 
   subscription.to_json
@@ -113,14 +113,17 @@ post '/retrieve-upcoming-invoice' do
 
   subscription = Stripe::Subscription.retrieve(data['subscriptionId'])
 
+  # Basil: Invoice.upcoming → create_preview
   invoice =
-    Stripe::Invoice.upcoming(
+    Stripe::Invoice.create_preview(
       customer: data['customerId'],
       subscription: data['subscriptionId'],
-      subscription_items: [
-        { id: subscription.items.data[0].id, deleted: true, clear_usage: true },
-        { price: ENV[data['newPriceId']], deleted: false }
-      ]
+      subscription_details: {
+        items: [
+          { id: subscription.items.data[0].id, deleted: true, clear_usage: true },
+          { price: ENV[data['newPriceId']], deleted: false }
+        ]
+      }
     )
 
   invoice.to_json

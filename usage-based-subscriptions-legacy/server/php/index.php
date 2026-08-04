@@ -113,7 +113,7 @@ $app->post('/create-subscription', function (
                 'price' => getenv($body->priceId),
             ],
         ],
-        'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
+        'expand' => ['latest_invoice.confirmation_secret', 'pending_setup_intent'],
     ]);
 
     return $response->withJson($subscription);
@@ -162,19 +162,21 @@ $app->post('/retrieve-upcoming-invoice', function (
 
     $subscription = $stripe->subscriptions->retrieve($body->subscriptionId);
 
-    $invoice = $stripe->invoices->upcoming([
+    // Basil: invoices->upcoming → createPreview
+    $invoice = $stripe->invoices->createPreview([
         "customer" => $body->customerId,
-        "subscription_prorate" => true,
         "subscription" => $body->subscriptionId,
-        "subscription_items" => [
-            [
-                'id' => $subscription->items->data[0]->id,
-                'deleted' => true,
-                'clear_usage' => true,
-            ],
-            [
-                'price' => getenv($body->newPriceId),
-                'deleted' => false,
+        "subscription_details" => [
+            "items" => [
+                [
+                    'id' => $subscription->items->data[0]->id,
+                    'deleted' => true,
+                    'clear_usage' => true,
+                ],
+                [
+                    'price' => getenv($body->newPriceId),
+                    'deleted' => false,
+                ],
             ],
         ],
     ]);

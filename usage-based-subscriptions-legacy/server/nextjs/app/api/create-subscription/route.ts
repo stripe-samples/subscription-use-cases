@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: actualPriceId }],
-      expand: ["latest_invoice.payment_intent", "pending_setup_intent"],
+      expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
     });
 
     return NextResponse.json(subscription);

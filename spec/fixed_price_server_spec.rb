@@ -11,7 +11,7 @@ def create_and_confirm_subscription(customer_id, price_id)
     priceId: price_id
   }, customer_id)
   subscription_id = resp["subscriptionId"]
-  subscription = Stripe::Subscription.retrieve(id: subscription_id, expand: ['latest_invoice.payment_intent'])
+  subscription = Stripe::Subscription.retrieve(id: subscription_id, expand: ['latest_invoice.confirmation_secret'])
   Stripe::PaymentIntent.confirm(subscription.latest_invoice.payment_intent.id, {
     payment_method: 'pm_card_visa',
   })

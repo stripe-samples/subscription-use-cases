@@ -105,9 +105,12 @@ def create_subscription():
                 'price': price_id,
             }],
             payment_behavior='default_incomplete',
-            expand=['latest_invoice.payment_intent'],
+            expand=['latest_invoice.confirmation_secret'],
         )
-        return jsonify(subscriptionId=subscription.id, clientSecret=subscription.latest_invoice.payment_intent.client_secret)
+        return jsonify(
+            subscriptionId=subscription.id,
+            clientSecret=subscription.latest_invoice.confirmation_secret.client_secret,
+        )
 
     except Exception as e:
         return jsonify(error={'message': e.user_message}), 400
@@ -156,13 +159,16 @@ def preview_invoice():
         subscription = stripe.Subscription.retrieve(subscription_id)
 
         # Retrive the Invoice
-        invoice = stripe.Invoice.upcoming(
+        # Basil: Invoice.upcoming removed → create_preview
+        invoice = stripe.Invoice.create_preview(
             customer=customer_id,
             subscription=subscription_id,
-            subscription_items=[{
-                'id': subscription['items']['data'][0].id,
-                'price': os.getenv(new_price_lookup_key),
-            }],
+            subscription_details={
+                'items': [{
+                    'id': subscription['items']['data'][0].id,
+                    'price': os.getenv(new_price_lookup_key),
+                }],
+            },
         )
         return jsonify(invoice=invoice)
     except Exception as e:

@@ -93,10 +93,10 @@ post '/create-subscription' do
       price: price_id,
     }],
     payment_behavior: 'default_incomplete',
-    expand: ['latest_invoice.payment_intent']
+    expand: ['latest_invoice.confirmation_secret']
   )
 
-  { subscriptionId: subscription.id, clientSecret: subscription.latest_invoice.payment_intent.client_secret }.to_json
+  { subscriptionId: subscription.id, clientSecret: subscription.latest_invoice.confirmation_secret.client_secret }.to_json
 end
 
 get '/subscriptions' do
@@ -162,13 +162,16 @@ get '/invoice-preview' do
   # we're updating.
   subscription = Stripe::Subscription.retrieve(params['subscriptionId'])
 
-  invoice = Stripe::Invoice.upcoming(
+  # Basil: Invoice.upcoming removed → create_preview
+  invoice = Stripe::Invoice.create_preview(
     customer: customer_id,
     subscription: params['subscriptionId'],
-    subscription_items: [{
-      id: subscription.items.data[0].id,
-      price: ENV[params['newPriceLookupKey'].upcase],
-    }]
+    subscription_details: {
+      items: [{
+        id: subscription.items.data[0].id,
+        price: ENV[params['newPriceLookupKey'].upcase],
+      }]
+    }
   )
 
   { invoice: invoice }.to_json
