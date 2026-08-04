@@ -51,7 +51,7 @@ if (
 }
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-08-01',
+  apiVersion: '2026-07-29.dahlia',
   appInfo: { // For sample support and debugging, not required for production:
     name: "stripe-samples/subscription-use-cases/usage-based-subscriptions",
     version: "0.0.1",
@@ -115,7 +115,7 @@ app.post('/create-subscription', async (req, res) => {
   const subscription = await stripe.subscriptions.create({
     customer: req.body.customerId,
     items: [{ price: process.env[req.body.priceId] }],
-    expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+    expand: ['latest_invoice.confirmation_secret', 'pending_setup_intent'],
   });
 
   res.send(subscription);
@@ -151,21 +151,23 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
     req.body.subscriptionId
   );
 
-  const invoice = await stripe.invoices.retrieveUpcoming({
-    subscription_prorate: true,
+  // Basil: retrieveUpcoming → createPreview
+  const invoice = await stripe.invoices.createPreview({
     customer: req.body.customerId,
     subscription: req.body.subscriptionId,
-    subscription_items: [
-      {
-        id: subscription.items.data[0].id,
-        clear_usage: true,
-        deleted: true,
-      },
-      {
-        price: process.env[req.body.newPriceId],
-        deleted: false,
-      },
-    ],
+    subscription_details: {
+      items: [
+        {
+          id: subscription.items.data[0].id,
+          clear_usage: true,
+          deleted: true,
+        },
+        {
+          price: process.env[req.body.newPriceId],
+          deleted: false,
+        },
+      ],
+    },
   });
   res.send(invoice);
 });

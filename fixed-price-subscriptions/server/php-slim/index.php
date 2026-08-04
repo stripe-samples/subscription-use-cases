@@ -48,7 +48,7 @@ $container->set('stripe', function ($c) {
       # See https://docs.stripe.com/keys-best-practices and find your
       # keys at https://dashboard.stripe.com/apikeys.
       'api_key' => getenv('STRIPE_SECRET_KEY'),
-      'stripe_version' => '2022-08-01',
+      'stripe_version' => '2026-07-29.dahlia',
     ]);
 
     return $stripe;
@@ -122,12 +122,12 @@ $app->post('/create-subscription', function (
             'price' => $price_id,
         ]],
         'payment_behavior' => 'default_incomplete',
-        'expand' => ['latest_invoice.payment_intent'],
+        'expand' => ['latest_invoice.confirmation_secret'],
     ]);
 
     return $response->withJson([
       'subscriptionId' => $subscription->id,
-      'clientSecret' => $subscription->latest_invoice->payment_intent->client_secret
+      'clientSecret' => $subscription->latest_invoice->confirmation_secret->client_secret
     ]);
 });
 
@@ -142,13 +142,16 @@ $app->get('/invoice-preview', function (
     $new_price_lookup_key = strtoupper($request->getQueryParam('newPriceLookupKey'));
     $subscription = $stripe->subscriptions->retrieve($subscription_id);
 
-    $invoice = $stripe->invoices->upcoming([
+    // Basil: invoices->upcoming removed → createPreview
+    $invoice = $stripe->invoices->createPreview([
         'customer' => $customer_id,
         'subscription' => $subscription_id,
-        'subscription_items' => [[
-            'id' => $subscription->items->data[0]->id,
-            'price' => getenv($new_price_lookup_key),
-        ]],
+        'subscription_details' => [
+            'items' => [[
+                'id' => $subscription->items->data[0]->id,
+                'price' => getenv($new_price_lookup_key),
+            ]],
+        ],
     ]);
 
     return $response->withJson(['invoice' => $invoice]);

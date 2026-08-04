@@ -79,7 +79,7 @@ namespace dotnet.Controllers
                     },
                 },
             };
-            subscriptionOptions.AddExpand("latest_invoice.payment_intent");
+            subscriptionOptions.AddExpand("latest_invoice.confirmation_secret");
             subscriptionOptions.AddExpand("pending_setup_intent");
             var subscriptionService = new SubscriptionService();
             try
@@ -130,27 +130,30 @@ namespace dotnet.Controllers
             var subscription = service.Get(req.Subscription);
 
             var invoiceService = new InvoiceService();
-            var options = new UpcomingInvoiceOptions
+            // Basil: Upcoming → CreatePreview
+            var options = new InvoiceCreatePreviewOptions
             {
                 Customer = req.Customer,
                 Subscription = req.Subscription,
-                SubscriptionItems = new List<InvoiceSubscriptionItemOptions>
+                SubscriptionDetails = new InvoiceSubscriptionDetailsOptions
                 {
-                    new InvoiceSubscriptionItemOptions
+                    Items = new List<InvoiceSubscriptionDetailsItemOptions>
                     {
-                        Id = subscription.Items.Data[0].Id,
-                        Deleted = true,
-                        ClearUsage = true,
-                    },
-                    new InvoiceSubscriptionItemOptions
-                    {
-                        // TODO: This should be Price, but isnt in Stripe.net yet.
-                        Plan = Environment.GetEnvironmentVariable(req.NewPrice),
-                        Deleted = false,
-                    },
+                        new InvoiceSubscriptionDetailsItemOptions
+                        {
+                            Id = subscription.Items.Data[0].Id,
+                            Deleted = true,
+                            ClearUsage = true,
+                        },
+                        new InvoiceSubscriptionDetailsItemOptions
+                        {
+                            Price = Environment.GetEnvironmentVariable(req.NewPrice),
+                            Deleted = false,
+                        },
+                    }
                 }
             };
-            Invoice upcoming = invoiceService.Upcoming(options);
+            Invoice upcoming = invoiceService.CreatePreview(options);
             return upcoming;
         }
 

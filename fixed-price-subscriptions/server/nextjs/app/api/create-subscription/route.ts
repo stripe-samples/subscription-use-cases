@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       payment_behavior: "default_incomplete",
-      expand: ["latest_invoice.payment_intent"],
+      expand: ["latest_invoice.confirmation_secret"],
     });
 
     const invoice = subscription.latest_invoice;
@@ -35,14 +35,18 @@ export async function POST(req: NextRequest) {
       throw new Error("Invoice not found");
     }
 
-    const paymentIntent = invoice.payment_intent;
-    if (typeof paymentIntent !== "object" || paymentIntent === null) {
-      throw new Error("Payment intent not found");
+    // Basil: confirmation_secret replaces payment_intent on latest_invoice for client_secret
+    const confirmationSecret = invoice.confirmation_secret as
+      | { client_secret?: string | null }
+      | null
+      | undefined;
+    if (!confirmationSecret?.client_secret) {
+      throw new Error("Confirmation secret not found");
     }
 
     return NextResponse.json({
       subscriptionId: subscription.id,
-      clientSecret: paymentIntent.client_secret,
+      clientSecret: confirmationSecret.client_secret,
     });
   } catch (error) {
     const err = error as Error;

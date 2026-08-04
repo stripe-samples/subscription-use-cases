@@ -24,7 +24,7 @@ load_dotenv(find_dotenv())
 stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
 if stripe_secret_key is None:
     raise ValueError("STRIPE_SECRET_KEY environment variable is not set")
-client = StripeClient(api_key=stripe_secret_key, stripe_version='2024-09-30.acacia')
+client = StripeClient(api_key=stripe_secret_key, stripe_version='2026-07-29.dahlia')
 
 app = Flask(__name__, static_url_path="")
 

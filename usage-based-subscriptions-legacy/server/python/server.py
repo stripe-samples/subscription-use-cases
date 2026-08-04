@@ -22,7 +22,7 @@ stripe.set_app_info(
     version='0.0.1',
     url='https://github.com/stripe-samples/subscription-use-cases/usage-based-subscriptions')
 
-stripe.api_version = '2022-08-01'
+stripe.api_version = '2026-07-29.dahlia'
 # Don't put any keys in code. Use an environment variable (as shown
 # here) or secrets vault to supply keys to your integration.
 #
@@ -91,7 +91,7 @@ def createSubscription():
                     'price': os.getenv(data['priceId'])
                 }
             ],
-            expand=['latest_invoice.payment_intent', 'pending_setup_intent'],
+            expand=['latest_invoice.confirmation_secret', 'pending_setup_intent'],
         )
         return jsonify(subscription)
     except Exception as e:
@@ -132,20 +132,23 @@ def retrieveUpcomingInvoice():
         subscription = stripe.Subscription.retrieve(data['subscriptionId'])
 
         # Retrive the Invoice
-        invoice = stripe.Invoice.upcoming(
+        # Basil: Invoice.upcoming → create_preview
+        invoice = stripe.Invoice.create_preview(
             customer=data['customerId'],
             subscription=data['subscriptionId'],
-            subscription_items=[
-                {
-                    'id': subscription['items']['data'][0].id,
-                    'deleted': True,
-                    'clear_usage': True
-                },
-                {
-                    'price': os.getenv(data['newPriceId']),
-                    'deleted': False
-                }
-            ],
+            subscription_details={
+                'items': [
+                    {
+                        'id': subscription['items']['data'][0].id,
+                        'deleted': True,
+                        'clear_usage': True
+                    },
+                    {
+                        'price': os.getenv(data['newPriceId']),
+                        'deleted': False
+                    }
+                ],
+            },
         )
         return jsonify(invoice)
     except Exception as e:

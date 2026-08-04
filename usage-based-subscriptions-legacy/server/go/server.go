@@ -179,7 +179,7 @@ func handleCreateSubscription(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	subscriptionParams.AddExpand("latest_invoice.payment_intent")
+	subscriptionParams.AddExpand("latest_invoice.confirmation_secret")
 	subscriptionParams.AddExpand("pending_setup_intent")
 
 	s, err := sub.New(subscriptionParams)
@@ -243,6 +243,8 @@ func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
 		log.Printf("sub.Get: %v", err)
 		return
 	}
+	// Basil: GetNext/upcoming removed — prefer CreatePreview on modern SDKs.
+	// stripe-go v72 still exposes GetNext; keep shape aligned with createPreview params for upgrade.
 	params := &stripe.InvoiceParams{
 		Customer:     stripe.String(req.CustomerID),
 		Subscription: stripe.String(req.SubscriptionID),
@@ -255,6 +257,7 @@ func handleRetrieveUpcomingInvoice(w http.ResponseWriter, r *http.Request) {
 			Deleted: stripe.Bool(false),
 		}},
 	}
+	// TODO(layerkit): upgrade stripe-go and switch to invoice.CreatePreview
 	in, err := invoice.GetNext(params)
 
 	if err != nil {

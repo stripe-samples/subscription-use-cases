@@ -22,7 +22,7 @@ import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.InvoiceRetrieveParams;
-import com.stripe.param.InvoiceUpcomingParams;
+import com.stripe.param.InvoiceCreatePreviewParams;
 import com.stripe.param.PaymentMethodAttachParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
@@ -308,7 +308,7 @@ public class Server {
               .build()
           )
           .setCustomer(customer.getId())
-          .addAllExpand(Arrays.asList("latest_invoice.payment_intent", "pending_setup_intent"))
+          .addAllExpand(Arrays.asList("latest_invoice.confirmation_secret", "pending_setup_intent"))
           .build();
 
         Subscription subscription = Subscription.create(subCreateParams);
@@ -388,27 +388,30 @@ public class Server {
           postBody.getSubscriptionId()
         );
 
-        InvoiceUpcomingParams invoiceParams = InvoiceUpcomingParams
+        // Basil: Invoice.upcoming → createPreview
+        InvoiceCreatePreviewParams invoiceParams = InvoiceCreatePreviewParams
           .builder()
           .setCustomer(postBody.getCustomerId())
           .setSubscription(postBody.getSubscriptionId())
-          .addSubscriptionItem(
-            InvoiceUpcomingParams
-              .SubscriptionItem.builder()
-              .setId(subscription.getItems().getData().get(0).getId())
-              .setDeleted(true)
-              .setClearUsage(true)
-              .build()
-          )
-          .addSubscriptionItem(
-            InvoiceUpcomingParams
-              .SubscriptionItem.builder()
-              .setPrice(dotenv.get(postBody.getNewPriceId().toUpperCase()))
+          .setSubscriptionDetails(
+            InvoiceCreatePreviewParams.SubscriptionDetails.builder()
+              .addItem(
+                InvoiceCreatePreviewParams.SubscriptionDetails.Item.builder()
+                  .setId(subscription.getItems().getData().get(0).getId())
+                  .setDeleted(true)
+                  .setClearUsage(true)
+                  .build()
+              )
+              .addItem(
+                InvoiceCreatePreviewParams.SubscriptionDetails.Item.builder()
+                  .setPrice(dotenv.get(postBody.getNewPriceId().toUpperCase()))
+                  .build()
+              )
               .build()
           )
           .build();
 
-        Invoice invoice = Invoice.upcoming(invoiceParams);
+        Invoice invoice = Invoice.createPreview(invoiceParams);
 
         return invoice.toJson();
       }

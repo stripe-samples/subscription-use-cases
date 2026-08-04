@@ -38,7 +38,8 @@ if (
 }
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-08-01',
+  // Basil-era API: field renames + createPreview (not pin-only as full heal)
+  apiVersion: '2026-07-29.dahlia',
   appInfo: { // For sample support and debugging, not required for production:
     name: "stripe-samples/subscription-use-cases/fixed-price",
     version: "0.0.1",
@@ -106,12 +107,13 @@ app.post('/create-subscription', async (req, res) => {
         price: priceId,
       }],
       payment_behavior: 'default_incomplete',
-      expand: ['latest_invoice.payment_intent'],
+      // Basil: invoice payment confirmation secret (not latest_invoice.payment_intent)
+      expand: ['latest_invoice.confirmation_secret'],
     });
 
     res.send({
       subscriptionId: subscription.id,
-      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+      clientSecret: subscription.latest_invoice.confirmation_secret.client_secret,
     });
   } catch (error) {
     return res.status(400).send({ error: { message: error.message } });
@@ -126,13 +128,19 @@ app.get('/invoice-preview', async (req, res) => {
     req.query.subscriptionId
   );
 
-  const invoice = await stripe.invoices.retrieveUpcoming({
+  // Basil: retrieveUpcoming removed → createPreview
+  // https://docs.stripe.com/changelog/basil/2025-03-31/invoice-preview-api-deprecations
+  const invoice = await stripe.invoices.createPreview({
     customer: customerId,
     subscription: req.query.subscriptionId,
-    subscription_items: [ {
-      id: subscription.items.data[0].id,
-      price: priceId,
-    }],
+    subscription_details: {
+      items: [
+        {
+          id: subscription.items.data[0].id,
+          price: priceId,
+        },
+      ],
+    },
   });
 
   res.send({ invoice });

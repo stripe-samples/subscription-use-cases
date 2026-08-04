@@ -84,17 +84,14 @@ function SubscriptionForm({
         return;
       }
 
-      // Handle payment confirmation if needed
-      if (subscription.latest_invoice?.payment_intent) {
-        const { client_secret, status } = subscription.latest_invoice.payment_intent;
-
-        if (status === "requires_action" || status === "requires_payment_method") {
-          const { error: confirmError } = await stripe.confirmCardPayment(client_secret);
-          if (confirmError) {
-            setError(confirmError.message || "Payment confirmation failed");
-            setLoading(false);
-            return;
-          }
+      // Basil: confirmation_secret on latest_invoice (not payment_intent)
+      if (subscription.latest_invoice?.confirmation_secret?.client_secret) {
+        const client_secret = subscription.latest_invoice.confirmation_secret.client_secret;
+        const { error: confirmError } = await stripe.confirmCardPayment(client_secret);
+        if (confirmError) {
+          setError(confirmError.message || "Payment confirmation failed");
+          setLoading(false);
+          return;
         }
       }
 
@@ -102,7 +99,7 @@ function SubscriptionForm({
         subscriptionId: subscription.id,
         customerId: customer.id,
         priceId,
-        currentPeriodEnd: subscription.current_period_end,
+        currentPeriodEnd: (subscription.items?.data?.[0]?.current_period_end ?? subscription.current_period_end),
         paymentMethodId: paymentMethod.id,
       });
     } catch (err) {
@@ -265,7 +262,7 @@ function SubscriptionManager({
         onUpdate({
           ...subscription,
           priceId: newPriceId,
-          currentPeriodEnd: updated.current_period_end,
+          currentPeriodEnd: (updated.items?.data?.[0]?.current_period_end ?? updated.current_period_end),
         });
       }
     } catch {

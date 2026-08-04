@@ -16,20 +16,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const invoice = await stripe.invoices.retrieveUpcoming({
+    // Basil: retrieveUpcoming → createPreview
+    const invoice = await stripe.invoices.createPreview({
       customer: customerId,
       subscription: subscriptionId,
-      subscription_items: [
-        {
-          id: subscription.items.data[0].id,
-          clear_usage: true,
-          deleted: true,
-        },
-        {
-          price: actualPriceId,
-          deleted: false,
-        },
-      ],
+      subscription_details: {
+        items: [
+          {
+            id: subscription.items.data[0].id,
+            clear_usage: true,
+            deleted: true,
+          },
+          {
+            price: actualPriceId,
+            deleted: false,
+          },
+        ],
+      },
     });
 
     return NextResponse.json(invoice);

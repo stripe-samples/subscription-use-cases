@@ -309,7 +309,7 @@ function handlePaymentThatRequiresCustomerAction({
   // If it's a retry, the payment intent will be on the invoice itself.
   let paymentIntent = invoice
     ? invoice.payment_intent
-    : subscription.latest_invoice.payment_intent;
+    : subscription.latest_invoice.confirmation_secret;
 
   if (!paymentIntent)
     return { subscription, priceId, paymentMethodId };
@@ -357,7 +357,8 @@ function handleRequiresPaymentMethod({
     // subscription is active, no customer actions required.
     return { subscription, priceId, paymentMethodId };
   } else if (
-    subscription.latest_invoice.payment_intent.status ===
+    (subscription.latest_invoice.confirmation_secret?.status ||
+      subscription.latest_invoice.payment_intent?.status) ===
     'requires_payment_method'
   ) {
     // Using localStorage to store the state of the retry here
@@ -366,7 +367,7 @@ function handleRequiresPaymentMethod({
     localStorage.setItem('latestInvoiceId', subscription.latest_invoice.id);
     localStorage.setItem(
       'latestInvoicePaymentIntentStatus',
-      subscription.latest_invoice.payment_intent.status
+      (subscription.latest_invoice.confirmation_secret||subscription.latest_invoice.payment_intent||{}).status
     );
     throw { error: { message: 'Your card was declined.' } };
   } else {
@@ -668,7 +669,7 @@ function onSubscriptionSampleDemoComplete({
   let customerId;
   if (subscription) {
     subscriptionId = subscription.id;
-    currentPeriodEnd = subscription.current_period_end;
+    currentPeriodEnd = (subscription.items && subscription.items.data && subscription.items.data[0] && subscription.items.data[0].current_period_end) || subscription.current_period_end;
     if (typeof subscription.customer === 'object') {
       customerId = subscription.customer.id;
     } else {
