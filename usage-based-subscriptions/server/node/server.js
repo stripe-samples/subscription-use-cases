@@ -27,7 +27,7 @@ if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PUBLISHABLE_KEY) {
 }
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-09-30.acacia',
+  apiVersion: '2026-07-29.dahlia',
   appInfo: {
     // For sample support and debugging, not required for production:
     name: 'stripe-samples/subscription-use-cases/usage-based-subscriptions',

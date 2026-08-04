@@ -39,7 +39,7 @@ if (
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
   // Basil-era API: field renames + createPreview (not pin-only as full heal)
-  apiVersion: '2025-03-31.basil',
+  apiVersion: '2026-07-29.dahlia',
   appInfo: { // For sample support and debugging, not required for production:
     name: "stripe-samples/subscription-use-cases/fixed-price",
     version: "0.0.1",

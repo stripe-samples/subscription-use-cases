@@ -51,7 +51,7 @@ if (
 }
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-08-01',
+  apiVersion: '2026-07-29.dahlia',
   appInfo: { // For sample support and debugging, not required for production:
     name: "stripe-samples/subscription-use-cases/usage-based-subscriptions",
     version: "0.0.1",

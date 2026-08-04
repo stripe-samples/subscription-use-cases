@@ -15,7 +15,7 @@ Stripe.set_app_info(
   version: '0.0.2',
   url: 'https://github.com/stripe-samples/subscription-use-cases/fixed-price'
 )
-Stripe.api_version = '2022-08-01'
+Stripe.api_version = '2026-07-29.dahlia'
 # Don't put any keys in code. Use an environment variable (as shown
 # here) or secrets vault to supply keys to your integration.
 #

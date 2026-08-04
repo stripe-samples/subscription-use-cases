@@ -42,7 +42,7 @@ $container['stripe'] = function ($c) {
       # See https://docs.stripe.com/keys-best-practices and find your
       # keys at https://dashboard.stripe.com/apikeys.
       'api_key' => getenv('STRIPE_SECRET_KEY'),
-      'stripe_version' => '2022-08-01',
+      'stripe_version' => '2026-07-29.dahlia',
     ]);
 
     return $stripe;
