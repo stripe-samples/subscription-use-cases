@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       payment_behavior: "default_incomplete",
-      expand: ["latest_invoice.payment_intent"],
+      expand: ["latest_invoice.payments.data.payment"],
     });
 
     const invoice = subscription.latest_invoice;
@@ -35,10 +35,15 @@ export async function POST(req: NextRequest) {
       throw new Error("Invoice not found");
     }
 
-    const paymentIntent = invoice.payment_intent;
-    if (typeof paymentIntent !== "object" || paymentIntent === null) {
+    // Get the PaymentIntent ID from the payments collection and retrieve it separately
+    const payment = invoice.payments?.data[0]?.payment;
+    const paymentIntentRef = payment?.payment_intent;
+    if (!paymentIntentRef) {
       throw new Error("Payment intent not found");
     }
+    const paymentIntentId =
+      typeof paymentIntentRef === "string" ? paymentIntentRef : paymentIntentRef.id;
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     return NextResponse.json({
       subscriptionId: subscription.id,

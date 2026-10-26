@@ -122,12 +122,16 @@ $app->post('/create-subscription', function (
             'price' => $price_id,
         ]],
         'payment_behavior' => 'default_incomplete',
-        'expand' => ['latest_invoice.payment_intent'],
+        'expand' => ['latest_invoice.payments.data.payment'],
     ]);
+
+    // Get the PaymentIntent ID from the payments collection and retrieve it separately
+    $payment_intent_id = $subscription->latest_invoice->payments->data[0]->payment->payment_intent;
+    $payment_intent = $stripe->paymentIntents->retrieve($payment_intent_id, []);
 
     return $response->withJson([
       'subscriptionId' => $subscription->id,
-      'clientSecret' => $subscription->latest_invoice->payment_intent->client_secret
+      'clientSecret' => $payment_intent->client_secret
     ]);
 });
 
@@ -243,8 +247,12 @@ $app->post('/webhook', function (Request $request, Response $response) {
             // The subscription automatically activates after successful payment
             // Set the payment method used to pay the first invoice
             // as the default payment method for that subscription
-            $subscription_id = $object['subscription'];
-            $payment_intent_id = $object['payment_intent'];
+            $subscription_id = $object['parent']['subscription_details']['subscription'];
+            $invoice_payments = $stripe->invoicePayments->all([
+              'invoice' => $object['id'],
+              'expand' => ['data.payment'],
+            ]);
+            $payment_intent_id = $invoice_payments->data[0]->payment->payment_intent;
 
             # Retrieve the payment intent used to pay the subscription
             $payment_intent = $stripe->paymentIntents->retrieve(

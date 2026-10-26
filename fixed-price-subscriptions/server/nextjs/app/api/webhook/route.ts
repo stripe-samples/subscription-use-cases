@@ -34,8 +34,24 @@ export async function POST(req: NextRequest) {
         // The subscription automatically activates after successful payment
         // Set the payment method used to pay the first invoice
         // as the default payment method for that subscription
-        const subscriptionId = invoice.subscription as string;
-        const paymentIntentId = invoice.payment_intent as string;
+        const subscriptionRef = invoice.parent?.subscription_details?.subscription;
+        const subscriptionId =
+          typeof subscriptionRef === "string" ? subscriptionRef : subscriptionRef?.id;
+        if (!subscriptionId) {
+          throw new Error("Subscription not found on invoice");
+        }
+
+        // Find the payment intent used to pay the invoice
+        const invoicePayments = await stripe.invoicePayments.list({
+          invoice: invoice.id!,
+          expand: ["data.payment"],
+        });
+        const paymentIntentRef = invoicePayments.data[0]?.payment.payment_intent;
+        if (!paymentIntentRef) {
+          throw new Error("Payment intent not found for invoice");
+        }
+        const paymentIntentId =
+          typeof paymentIntentRef === "string" ? paymentIntentRef : paymentIntentRef.id;
 
         // Retrieve the payment intent used to pay the subscription
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
